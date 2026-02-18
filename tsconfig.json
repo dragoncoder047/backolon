@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "noEmit": true,
+        "target": "ESNext",
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitAny": true,
+        "noFallthroughCasesInSwitch": true,
+        "strictNullChecks": true,
+        "moduleResolution": "Bundler",
+        "module": "ESNext",
+        "lib": [
+            "esnext",
+            "dom"
+        ]
+    },
+    "include": [
+        "./**/*.ts"
+    ]
+}

@@ -1,0 +1,34 @@
+{
+    "name": "backolon",
+    "version": "0.0.0",
+    "private": true,
+    "description": "",
+    "keywords": [],
+    "author": "dragoncoder047",
+    "main": "src/index.ts",
+    "scripts": {
+        "build": "pnpm esbuild --bundle --sourcemap --platform=browser --target=esnext --format=esm src/index.ts --outfile=dist/backolon.js",
+        "test": "pnpm bun test",
+        "test:watch": "pnpm test --watch",
+        "prepare": "pnpm build --minify --mangle-props=^_"
+    },
+    "license": "GPL-3.0-only",
+    "devDependencies": {
+        "@types/bun": "^1.3.9",
+        "bun": "^1.3.9",
+        "esbuild": "^0.25.0",
+        "typescript": "^5.6.2"
+    },
+    "type": "module",
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "bun",
+            "esbuild"
+        ]
+    },
+    "dependencies": {
+        "jsoncrush": "^1.1.8",
+        "lib0": "^0.2.117",
+        "resurrect-esm": "^2.0.3"
+    }
+}
