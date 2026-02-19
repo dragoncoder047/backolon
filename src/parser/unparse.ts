@@ -1,5 +1,5 @@
-import { isMap } from "./map";
-import { Thing, ThingType } from "./thing";
+import { isMap } from "../objects/map";
+import { Thing } from "../objects/thing";
 
 export interface UnparseContext {
     pre(thing: Thing): string;

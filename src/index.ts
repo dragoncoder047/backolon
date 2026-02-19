@@ -1,5 +1,5 @@
 export {
-    BackolonError, ErrorNote, LocationTrace, ParseError, RuntimeError as ValueError
+    BackolonError, ErrorNote, LocationTrace, ParseError, RuntimeError, UNKNOWN_LOCATION
 } from "./errors";
 export {
     isMap, mapDeleteKeyCopying,
@@ -7,14 +7,14 @@ export {
     mapUpdateKeyCopying,
     mapUpdateKeyMutating,
     newEmptyMap
-} from "./map";
+} from "./objects/map";
 export {
     parse
-} from "./parse";
+} from "./parser/parse";
 export {
     BlockType, boxBlock, boxCurlyBlock, boxEnd, boxNameSymbol, boxNil, boxNumber, boxOperatorSymbol, boxRoundBlock, boxSpaceSymbol, boxSquareBlock, boxString, boxSymbol, boxToplevelBlock, CollectionType, LambdaType, PatternType, SymbolType, Thing, ThingType
-} from "./thing";
+} from "./objects/thing";
 export {
     unparse, type UnparseContext
-} from "./unparse";
+} from "./parser/unparse";
 

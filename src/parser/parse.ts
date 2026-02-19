@@ -1,6 +1,6 @@
 import { blockParse, BlockRule } from "./blockParse";
-import { ErrorNote, LocationTrace, ParseError, UNKNOWN_LOCATION } from "./errors";
-import { BlockType, boxBlock, boxString, boxStringBlock, SymbolType, Thing, ThingType } from "./thing";
+import { ErrorNote, LocationTrace, ParseError, UNKNOWN_LOCATION } from "../errors";
+import { BlockType, boxBlock, boxString, boxStringBlock, SymbolType, Thing, ThingType } from "../objects/thing";
 import { tokenize } from "./tokenizer";
 import { unparse } from "./unparse";
 

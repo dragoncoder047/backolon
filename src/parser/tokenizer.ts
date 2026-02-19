@@ -1,6 +1,6 @@
 import { id } from "lib0/function";
-import { LocationTrace, ParseError, UNKNOWN_LOCATION } from "./errors";
-import { boxEnd, SymbolType, Thing, ThingType } from "./thing";
+import { LocationTrace, ParseError, UNKNOWN_LOCATION } from "../errors";
+import { boxEnd, SymbolType, Thing, ThingType } from "../objects/thing";
 
 type Rule = [
     RegExp,

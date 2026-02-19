@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { LocationTrace, SymbolType, Thing, ThingType } from "../src";
-import { tokenize } from "../src/tokenizer";
+import { tokenize } from "../src/parser/tokenizer";
 import { F } from "./astCheck";
 
 const getTokenContents = (a: Thing[]) => a.map(t => t.value);

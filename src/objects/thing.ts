@@ -1,4 +1,4 @@
-import { LocationTrace } from "./errors";
+import { LocationTrace } from "../errors";
 import { javaHash } from "./hash";
 
 export enum ThingType {

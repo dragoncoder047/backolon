@@ -1,4 +1,4 @@
-import { LocationTrace, RuntimeError } from "./errors";
+import { LocationTrace, RuntimeError } from "../errors";
 import { CollectionType, Thing, ThingType } from "./thing";
 
 export function newEmptyMap(srcLocation: LocationTrace): Thing {

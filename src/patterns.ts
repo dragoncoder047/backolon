@@ -1,4 +1,4 @@
-import { SymbolType, Thing, ThingType } from "./thing";
+import { SymbolType, Thing, ThingType } from "./objects/thing";
 
 export function convertBlockBodyToPattern(body: Thing[]): Thing {
     // Don't mutate the input list.
