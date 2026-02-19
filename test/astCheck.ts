@@ -1,7 +1,8 @@
 import { expect } from "bun:test";
-import { BackolonError, ErrorNote, parse, ThingType } from "../src";
+import { BackolonError, ErrorNote, LocationTrace, parse, ThingType } from "../src";
 
 export const F = new URL("about:test");
+export const L = new LocationTrace(1, 1, F);
 
 type ASTSpec = {
     type: ThingType,

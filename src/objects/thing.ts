@@ -1,4 +1,4 @@
-import { LocationTrace } from "../errors";
+import { LocationTrace, UNKNOWN_LOCATION } from "../errors";
 import { javaHash } from "./hash";
 
 export enum ThingType {
@@ -99,17 +99,17 @@ export enum PatternType {
     repeat_joined = "repeat_joined",
 }
 
-export function boxNil(trace: LocationTrace): Thing { return new Thing(ThingType.nil, null, [], null, "", "", "", trace); }
-export function boxEnd(trace: LocationTrace): Thing { return new Thing(ThingType.end, null, [], null, "", "", "", trace); }
-export function boxSymbol(value: string, subtype: SymbolType, trace: LocationTrace): Thing { return new Thing(ThingType.symbol, subtype, [], value, value, "", "", trace); }
-export function boxNameSymbol(value: string, trace: LocationTrace): Thing { return boxSymbol(value, SymbolType.name, trace); }
-export function boxOperatorSymbol(value: string, trace: LocationTrace): Thing { return boxSymbol(value, SymbolType.operator, trace); }
-export function boxSpaceSymbol(value: string, trace: LocationTrace): Thing { return boxSymbol(value, SymbolType.space, trace); }
-export function boxNumber(value: number, trace: LocationTrace, repr = value.toString()): Thing { return new Thing(ThingType.number, null, [], value, repr, "", "", trace); }
-export function boxString(value: string, trace: LocationTrace, raw: string, quote: string): Thing { return new Thing(ThingType.string, null, [], value, quote + raw, quote, "", trace); }
-export function boxBlock(children: Thing[], subtype: BlockType, trace: LocationTrace, start: string, end: string): Thing { return new Thing(ThingType.block, subtype, children, null, start, end, "", trace); }
-export function boxRoundBlock(children: Thing[], trace: LocationTrace): Thing { return boxBlock(children, BlockType.round, trace, "(", ")"); }
-export function boxSquareBlock(children: Thing[], trace: LocationTrace): Thing { return boxBlock(children, BlockType.square, trace, "[", "]"); }
-export function boxCurlyBlock(children: Thing[], trace: LocationTrace): Thing { return boxBlock(children, BlockType.curly, trace, "{", "}"); }
-export function boxToplevelBlock(children: Thing[], trace: LocationTrace): Thing { return boxBlock(children, BlockType.toplevel, trace, "", ""); }
-export function boxStringBlock(children: Thing[], trace: LocationTrace, quote: string): Thing { return boxBlock(children, BlockType.string, trace, quote, quote); }
+export function boxNil(trace = UNKNOWN_LOCATION): Thing { return new Thing(ThingType.nil, null, [], null, "", "", "", trace); }
+export function boxEnd(trace = UNKNOWN_LOCATION): Thing { return new Thing(ThingType.end, null, [], null, "", "", "", trace); }
+export function boxSymbol(value: string, subtype: SymbolType, trace = UNKNOWN_LOCATION): Thing { return new Thing(ThingType.symbol, subtype, [], value, value, "", "", trace); }
+export function boxNameSymbol(value: string, trace = UNKNOWN_LOCATION): Thing { return boxSymbol(value, SymbolType.name, trace); }
+export function boxOperatorSymbol(value: string, trace = UNKNOWN_LOCATION): Thing { return boxSymbol(value, SymbolType.operator, trace); }
+export function boxSpaceSymbol(value: string, trace = UNKNOWN_LOCATION): Thing { return boxSymbol(value, SymbolType.space, trace); }
+export function boxNumber(value: number, trace = UNKNOWN_LOCATION, repr = value.toString()): Thing { return new Thing(ThingType.number, null, [], value, repr, "", "", trace); }
+export function boxString(value: string, trace = UNKNOWN_LOCATION, raw: string, quote: string): Thing { return new Thing(ThingType.string, null, [], value, quote + raw, quote, "", trace); }
+export function boxBlock(children: Thing[], subtype: BlockType, trace = UNKNOWN_LOCATION, start: string, end: string): Thing { return new Thing(ThingType.block, subtype, children, null, start, end, "", trace); }
+export function boxRoundBlock(children: Thing[], trace = UNKNOWN_LOCATION): Thing { return boxBlock(children, BlockType.round, trace, "(", ")"); }
+export function boxSquareBlock(children: Thing[], trace = UNKNOWN_LOCATION): Thing { return boxBlock(children, BlockType.square, trace, "[", "]"); }
+export function boxCurlyBlock(children: Thing[], trace = UNKNOWN_LOCATION): Thing { return boxBlock(children, BlockType.curly, trace, "{", "}"); }
+export function boxToplevelBlock(children: Thing[], trace = UNKNOWN_LOCATION): Thing { return boxBlock(children, BlockType.toplevel, trace, "", ""); }
+export function boxStringBlock(children: Thing[], trace = UNKNOWN_LOCATION, quote: string): Thing { return boxBlock(children, BlockType.string, trace, quote, quote); }

@@ -4,6 +4,9 @@
         "backolon",
         "callcc",
         "imaginarny",
+        "jsoncrush",
+        "uncrush",
+        "unhashable",
         "unhygenic",
         "UNPARSE"
     ]

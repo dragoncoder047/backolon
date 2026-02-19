@@ -1,12 +1,15 @@
-import { LocationTrace, RuntimeError } from "../errors";
+import { LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
 import { CollectionType, Thing, ThingType } from "./thing";
 
-export function newEmptyMap(srcLocation: LocationTrace): Thing {
+export function newEmptyMap(parent: Thing | null = null, srcLocation = UNKNOWN_LOCATION): Thing {
+    if (parent && !isMap(parent)) {
+        throw new RuntimeError("Cannot inherit from non-map", srcLocation);
+    }
     return new Thing(
         ThingType.collection,
         CollectionType.map,
         [],
-        null,
+        parent,
         "[",
         "]",
         ", ",
@@ -14,9 +17,15 @@ export function newEmptyMap(srcLocation: LocationTrace): Thing {
         false)
 }
 
-export function mapGetKey(map: Thing, key: Thing): Thing | undefined {
+export function mapGetKey(map: Thing, key: Thing, followParents = false, opTrace?: LocationTrace): Thing | undefined {
+    if (!isMap(map)){
+        throw new RuntimeError("Cannot search non-map", opTrace);
+    }
     const pair = mapFindPair(map, key);
     if (pair) return pair.children[1];
+    if (followParents && map.value && isMap(map.value)) {
+        return mapGetKey(map.value, key, followParents, opTrace);
+    }
 }
 
 export function isMap(x: Thing): boolean {
