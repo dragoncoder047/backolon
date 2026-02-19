@@ -1,6 +1,6 @@
 import { id } from "lib0/function";
 import { LocationTrace, ParseError, UNKNOWN_LOCATION } from "./errors";
-import { boxNil, SymbolType, Thing, ThingType } from "./thing";
+import { boxEnd, SymbolType, Thing, ThingType } from "./thing";
 
 type Rule = [
     RegExp,
@@ -40,6 +40,6 @@ export function tokenize(source: string, filename: URL = UNKNOWN_LOCATION.file) 
         // the last rule should always match, we should never get here
         throw new ParseError("unreachable", new LocationTrace(line, col, filename));
     }
-    out.push(boxNil(new LocationTrace(line, col, filename)));
+    out.push(boxEnd(new LocationTrace(line, col, filename)));
     return out;
 }

@@ -100,6 +100,7 @@ export enum PatternType {
 }
 
 export function boxNil(trace: LocationTrace): Thing { return new Thing(ThingType.nil, null, [], null, "", "", "", trace); }
+export function boxEnd(trace: LocationTrace): Thing { return new Thing(ThingType.end, null, [], null, "", "", "", trace); }
 export function boxSymbol(value: string, subtype: SymbolType, trace: LocationTrace): Thing { return new Thing(ThingType.symbol, subtype, [], value, value, "", "", trace); }
 export function boxNameSymbol(value: string, trace: LocationTrace): Thing { return boxSymbol(value, SymbolType.name, trace); }
 export function boxOperatorSymbol(value: string, trace: LocationTrace): Thing { return boxSymbol(value, SymbolType.operator, trace); }

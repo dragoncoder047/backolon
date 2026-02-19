@@ -12,8 +12,7 @@ export {
     parse
 } from "./parse";
 export {
-    BlockType, CollectionType, LambdaType, PatternType, SymbolType, Thing, ThingType,
-    boxNil, boxString, boxSymbol, boxNameSymbol, boxOperatorSymbol, boxSpaceSymbol, boxNumber, boxBlock, boxRoundBlock, boxSquareBlock, boxCurlyBlock, boxToplevelBlock
+    BlockType, boxBlock, boxCurlyBlock, boxEnd, boxNameSymbol, boxNil, boxNumber, boxOperatorSymbol, boxRoundBlock, boxSpaceSymbol, boxSquareBlock, boxString, boxSymbol, boxToplevelBlock, CollectionType, LambdaType, PatternType, SymbolType, Thing, ThingType
 } from "./thing";
 export {
     unparse, type UnparseContext

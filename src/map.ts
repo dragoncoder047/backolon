@@ -1,4 +1,3 @@
-import { max, min } from "lib0/math";
 import { LocationTrace, RuntimeError } from "./errors";
 import { CollectionType, Thing, ThingType } from "./thing";
 
@@ -24,6 +23,7 @@ export function isMap(x: Thing): boolean {
     return x.type === ThingType.collection
 }
 
+const childComparator = (a: Thing, b: Thing) => a.children[0]!.hash! - b.children[0]!.hash!;
 export function mapUpdateKeyMutating(map: Thing, key: Thing, item: Thing, opTrace?: LocationTrace): void {
     if (!isMap(map)) {
         throw new RuntimeError("Cannot insert into non-map", opTrace);
@@ -31,7 +31,7 @@ export function mapUpdateKeyMutating(map: Thing, key: Thing, item: Thing, opTrac
     const pair = mapFindPair(map, key);
     if (!pair) {
         map.children.push(createNewKVPair(key, item, opTrace));
-        map.children.sort((a, b) => a.hash! - b.hash!);
+        map.children.sort(childComparator);
     } else {
         pair.children[1] = item;
     }
@@ -43,7 +43,7 @@ export function mapUpdateKeyCopying(map: Thing, key: Thing, item: Thing, opTrace
     }
     const index = mapFindPairIndex(map, key);
     const newItem = createNewKVPair(key, item, opTrace);
-    return copyMapWithNewItems(map, index !== undefined ? map.children.with(index, newItem) : map.children.toSpliced(0, 0, newItem).sort((a, b) => a.hash! - b.hash!));
+    return copyMapWithNewItems(map, index !== undefined ? map.children.with(index, newItem) : map.children.toSpliced(0, 0, newItem).sort(childComparator));
 }
 
 export function mapDeleteKeyMutating(map: Thing, key: Thing, opTrace?: LocationTrace): void {
@@ -67,20 +67,25 @@ function mapFindPairIndex(map: Thing, key: Thing, opTrace?: LocationTrace): numb
     const len = items.length;
     const lm1 = len - 1;
     const targetKeyHash = key.hash;
-    console.log("Finding key with hash", targetKeyHash, "in map with keys", items.map(i => i.children[0]));
     if (targetKeyHash === null) {
         throw new RuntimeError("unhashable object", opTrace);
     }
     if (len === 0) return undefined;
-    var probe = len >> 1;
-    var step = len >> 2 || 1;
-    for (; step > 0; step >>= 1) {
-        console.log("Probing index", probe);
+    var left = 0, right = lm1
+    for (; left <= right;) {
+        const probe = left + ((right - left) >> 1);
         const currentKeyHash = items[probe]!.children[0]!.hash!;
-        if (currentKeyHash === targetKeyHash) break;
-        probe = currentKeyHash < targetKeyHash ? min(lm1, probe + step) : max(0, probe - step);
+        if (currentKeyHash === targetKeyHash) {
+            // TODO: actually check equality of keys (hash collisions)
+            return probe;
+        }
+        if (currentKeyHash < targetKeyHash) {
+            left = probe + 1;
+        } else {
+            right = probe - 1;
+        }
     }
-    return items[probe]!.children[0]!.hash === targetKeyHash ? probe : undefined;
+    return undefined;
 }
 
 function mapFindPair(map: Thing, key: Thing, opTrace?: LocationTrace): Thing | undefined {
@@ -97,7 +102,7 @@ function copyMapWithNewItems(map: Thing, newItems: Thing[]): Thing {
         map.type,
         map.subtype,
         newItems,
-        null,
+        map.value,
         map.srcPrefix,
         map.srcSuffix,
         map.srcJoiner,
