@@ -1,6 +1,6 @@
 import { blockParse, BlockRule } from "./blockParse";
 import { ErrorNote, LocationTrace, ParseError, UNKNOWN_LOCATION } from "./errors";
-import { BlockType, SymbolType, Thing, ThingType } from "./thing";
+import { BlockType, boxBlock, boxString, boxStringBlock, SymbolType, Thing, ThingType } from "./thing";
 import { tokenize } from "./tokenizer";
 import { unparse } from "./unparse";
 
@@ -15,11 +15,11 @@ const baseBlocks = {
 }
 
 function makeBlock(this: BlockRule, items: Thing[], start: string, end: string, loc: LocationTrace): Thing {
-    return new Thing(ThingType.block, this.type, items, null, start, end, loc);
+    return boxBlock(items, this.type, loc, start, end);
 }
 
 function makeComment(items: Thing[], start: string, end: string, loc: LocationTrace): Thing {
-    return new Thing(ThingType.symbol, SymbolType.space, [], start, start + items.map(i => unparse(i)).join(""), end, loc);
+    return new Thing(ThingType.symbol, SymbolType.space, [], start, start + items.map(i => unparse(i)).join(""), end, "", loc);
 }
 
 const defaultBlockRules: Record<string, BlockRule> = {
@@ -57,8 +57,9 @@ const defaultBlockRules: Record<string, BlockRule> = {
         skip: ["\\'", "\\\\"],
         inner: {},
         process(items, start, end, loc) {
+            if (end !== start) throw new ParseError("unreachable", loc);
             const raw = items.map(item => unparse(item)).join("");
-            return new Thing(ThingType.string, null, [], raw.replaceAll(/\\(['"\\])/g, "$1"), start + raw, end, loc);
+            return boxString(raw.replaceAll(/\\(['\\])/g, "$1"), loc, raw, start);
         },
     },
     string: {
@@ -70,7 +71,7 @@ const defaultBlockRules: Record<string, BlockRule> = {
             var curString = "", curStringRaw = "", startLoc: LocationTrace | null = loc;
             const bits: Thing[] = [];
             const chuck = () => {
-                bits.push(new Thing(ThingType.string, null, [], curString, curStringRaw, "", startLoc!));
+                bits.push(boxString(curString, startLoc!, curStringRaw, ""));
                 curString = curStringRaw = "";
                 startLoc = null;
             }
@@ -108,7 +109,7 @@ const defaultBlockRules: Record<string, BlockRule> = {
                 }
             }
             if (bits.length === 0) chuck();
-            return bits.length === 1 ? bits[0]! : new Thing(ThingType.block, BlockType.string, bits, null, start, end, loc);
+            return bits.length === 1 ? bits[0]! : boxStringBlock(bits, loc, start);
         },
     },
     stringInterpolation: {

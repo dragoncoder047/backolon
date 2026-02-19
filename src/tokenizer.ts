@@ -1,6 +1,6 @@
 import { id } from "lib0/function";
 import { LocationTrace, ParseError, UNKNOWN_LOCATION } from "./errors";
-import { SymbolType, Thing, ThingType } from "./thing";
+import { boxNil, SymbolType, Thing, ThingType } from "./thing";
 
 type Rule = [
     RegExp,
@@ -25,7 +25,7 @@ export function tokenize(source: string, filename: URL = UNKNOWN_LOCATION.file) 
             const match = regex.exec(source);
             if (match) {
                 const chunk = match[0];
-                out.push(new Thing(type, subtype, [], process(match[0]), match[0], "", new LocationTrace(line, col, filename)));
+                out.push(new Thing(type, subtype, [], process(match[0]), match[0], "", "", new LocationTrace(line, col, filename)));
                 const interlines = chunk.split("\n");
                 if (interlines.length > 1) {
                     col = interlines.at(-1)!.length;
@@ -40,6 +40,6 @@ export function tokenize(source: string, filename: URL = UNKNOWN_LOCATION.file) 
         // the last rule should always match, we should never get here
         throw new ParseError("unreachable", new LocationTrace(line, col, filename));
     }
-    out.push(new Thing(ThingType.end, null, [], null, "", "", new LocationTrace(line, col, filename)));
+    out.push(boxNil(new LocationTrace(line, col, filename)));
     return out;
 }

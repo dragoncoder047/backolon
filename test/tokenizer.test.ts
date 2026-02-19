@@ -29,21 +29,21 @@ test("maintains column and line", () => {
 test("parses hex numbers", () => {
     const x = tokenize("0xFFE65A", F);
     expect(x).toBeArrayOfSize(2);
-    expect(x[0]).toEqual(new Thing(ThingType.number, null, [], 0xFFE65A, "0xFFE65A", "", new LocationTrace(0, 0, F)));
+    expect(x[0]).toEqual(new Thing(ThingType.number, null, [], 0xFFE65A, "0xFFE65A", "", "", new LocationTrace(0, 0, F)));
 });
 test("parses binary numbers", () => {
     const x = tokenize("0b00010001", F);
     expect(x).toBeArrayOfSize(2);
-    expect(x[0]).toEqual(new Thing(ThingType.number, null, [], 0b00010001, "0b00010001", "", new LocationTrace(0, 0, F)));
+    expect(x[0]).toEqual(new Thing(ThingType.number, null, [], 0b00010001, "0b00010001", "", "", new LocationTrace(0, 0, F)));
 });
 test("parses float numbers", () => {
     const x = tokenize("123456.789E+56", F);
     expect(x).toBeArrayOfSize(2);
-    expect(x[0]).toEqual(new Thing(ThingType.number, null, [], 123456.789E+56, "123456.789E+56", "", new LocationTrace(0, 0, F)));
+    expect(x[0]).toEqual(new Thing(ThingType.number, null, [], 123456.789E+56, "123456.789E+56", "", "", new LocationTrace(0, 0, F)));
 });
 test("invalid float numbers get broken up", () => {
     const x = tokenize("123456..789E+56", F);
     expect(x).toBeArrayOfSize(3);
-    expect(x[0]).toEqual(new Thing(ThingType.number, null, [], 123456., "123456.", "", new LocationTrace(0, 0, F)));
-    expect(x[1]).toEqual(new Thing(ThingType.number, null, [], .789E+56, ".789E+56", "", new LocationTrace(0, 7, F)));
+    expect(x[0]).toEqual(new Thing(ThingType.number, null, [], 123456., "123456.", "", "", new LocationTrace(0, 0, F)));
+    expect(x[1]).toEqual(new Thing(ThingType.number, null, [], .789E+56, ".789E+56", "", "", new LocationTrace(0, 7, F)));
 });

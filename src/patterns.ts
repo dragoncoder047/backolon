@@ -6,3 +6,7 @@ export function convertBlockBodyToPattern(body: Thing[]): Thing {
     // Step 1: if it starts with an unnamed "...", this means to let ... be a literal everywhere
 
 }
+
+export function doMatchPattern(source: Thing[], pattern: Thing): Thing {
+
+}

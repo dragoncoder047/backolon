@@ -32,4 +32,5 @@ export class BackolonError extends Error {
     }
 }
 
-export class ParseError extends BackolonError { };
+export class ParseError extends BackolonError { }
+export class RuntimeError extends BackolonError { }
