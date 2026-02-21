@@ -3,11 +3,11 @@ import { LocationTrace, ParseError } from "../errors";
 import { BlockType, Thing, ThingType } from "../objects/thing";
 
 export interface BlockRule {
-    type: BlockType,
-    end: (string | null)[],
-    inner: Record<string, string>,
-    skip: string[],
-    process(items: Thing[], start: string, end: string, loc: LocationTrace): Thing;
+    _type: BlockType,
+    _end: (string | null)[],
+    _inner: Record<string, string>,
+    _skip: string[],
+    _process(items: Thing[], start: string, end: string, loc: LocationTrace): Thing;
 }
 
 type Counter = [tokens: number, chars: number];
@@ -42,14 +42,14 @@ export function blockParse(tokens: Thing[], blockRules: Record<string, BlockRule
     }
     const parseBlock = (rule: BlockRule, beginStr: string, beginLoc: LocationTrace) => {
         const blockContents: Thing[] = [];
-        const ruleStarts = Object.keys(rule.inner);
-        const ruleTargets = Object.values(rule.inner);
+        const ruleStarts = Object.keys(rule._inner);
+        const ruleTargets = Object.values(rule._inner);
         const indices: Counter[] = ruleStarts.map(_ => [0, 0]);
-        const skips = rule.skip;
+        const skips = rule._skip;
         const skipIndices: Counter[] = skips.map(_ => [0, 0]);
-        const end = rule.end;
+        const end = rule._end;
         var endStr = "";
-        const endCounters: Counter[] = rule.end?.map(_ => [0, 0]) ?? [];
+        const endCounters: Counter[] = rule._end?.map(_ => [0, 0]) ?? [];
         var forceContinue: boolean,
             innerBlock: string | null = null,
             innerBlockStart: string | null = null,
@@ -79,7 +79,7 @@ export function blockParse(tokens: Thing[], blockRules: Record<string, BlockRule
                 blockContents.push(parseBlock(blockRules[innerBlock]!, innerBlockStart!, startingTokens[0]!.srcLocation));
             }
         }
-        return rule.process(blockContents, beginStr, endStr, beginLoc);
+        return rule._process(blockContents, beginStr, endStr, beginLoc);
     };
     return parseBlock(blockRules[toplevel]!, "", tokens[0]!.srcLocation);
 }

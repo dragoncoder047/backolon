@@ -15,7 +15,7 @@ const baseBlocks = {
 }
 
 function makeBlock(this: BlockRule, items: Thing[], start: string, end: string, loc: LocationTrace): Thing {
-    return boxBlock(items, this.type, loc, start, end);
+    return boxBlock(items, this._type, loc, start, end);
 }
 
 function makeComment(items: Thing[], start: string, end: string, loc: LocationTrace): Thing {
@@ -24,50 +24,50 @@ function makeComment(items: Thing[], start: string, end: string, loc: LocationTr
 
 const defaultBlockRules: Record<string, BlockRule> = {
     toplevel: {
-        type: BlockType.toplevel,
-        end: [null],
-        skip: [],
-        inner: baseBlocks,
-        process: makeBlock,
+        _type: BlockType.toplevel,
+        _end: [null],
+        _skip: [],
+        _inner: baseBlocks,
+        _process: makeBlock,
     },
     round: {
-        type: BlockType.round,
-        end: [")"],
-        skip: [],
-        inner: baseBlocks,
-        process: makeBlock,
+        _type: BlockType.round,
+        _end: [")"],
+        _skip: [],
+        _inner: baseBlocks,
+        _process: makeBlock,
     },
     square: {
-        type: BlockType.square,
-        end: ["]"],
-        skip: [],
-        inner: baseBlocks,
-        process: makeBlock,
+        _type: BlockType.square,
+        _end: ["]"],
+        _skip: [],
+        _inner: baseBlocks,
+        _process: makeBlock,
     },
     curly: {
-        type: BlockType.curly,
-        end: ["}"],
-        skip: [],
-        inner: baseBlocks,
-        process: makeBlock,
+        _type: BlockType.curly,
+        _end: ["}"],
+        _skip: [],
+        _inner: baseBlocks,
+        _process: makeBlock,
     },
     rawstring: {
-        type: BlockType.string,
-        end: ["'"],
-        skip: ["\\'", "\\\\"],
-        inner: {},
-        process(items, start, end, loc) {
+        _type: BlockType.string,
+        _end: ["'"],
+        _skip: ["\\'", "\\\\"],
+        _inner: {},
+        _process(items, start, end, loc) {
             if (end !== start) throw new ParseError("unreachable", loc);
             const raw = items.map(item => unparse(item)).join("");
             return boxString(raw.replaceAll(/\\(['\\])/g, "$1"), loc, raw, start);
         },
     },
     string: {
-        type: BlockType.string,
-        end: ['"'],
-        skip: ['\\"', "\\\\", "\\{"],
-        inner: { "{": "stringInterpolation" },
-        process(items, start, end, loc) {
+        _type: BlockType.string,
+        _end: ['"'],
+        _skip: ['\\"', "\\\\", "\\{"],
+        _inner: { "{": "stringInterpolation" },
+        _process(items, start, end, loc) {
             var curString = "", curStringRaw = "", startLoc: LocationTrace | null = loc;
             const bits: Thing[] = [];
             const chuck = () => {
@@ -113,25 +113,25 @@ const defaultBlockRules: Record<string, BlockRule> = {
         },
     },
     stringInterpolation: {
-        type: BlockType.round,
-        end: ["}"],
-        skip: [],
-        inner: baseBlocks,
-        process: makeBlock,
+        _type: BlockType.round,
+        _end: ["}"],
+        _skip: [],
+        _inner: baseBlocks,
+        _process: makeBlock,
     },
     comment: {
-        type: BlockType.round,
-        end: ["##"],
-        skip: [],
-        inner: {},
-        process: makeComment,
+        _type: BlockType.round,
+        _end: ["##"],
+        _skip: [],
+        _inner: {},
+        _process: makeComment,
     },
     lineComment: {
-        type: BlockType.round,
-        end: ["\n", null],
-        skip: [],
-        inner: {},
-        process: makeComment,
+        _type: BlockType.round,
+        _end: ["\n", null],
+        _skip: [],
+        _inner: {},
+        _process: makeComment,
     }
 }
 
