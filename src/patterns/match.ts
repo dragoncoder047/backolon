@@ -22,9 +22,12 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
     var waitingStates: NFASubstate<T>[] = [];
     var progressStates: NFASubstate<T>[] = [];
     const results: MatchResult<T>[] = [];
-    const hashes = new Set<number>();
+    const addIfNotAlreadySeen = (item: NFASubstate<T>, hashSet: Set<number>, list: NFASubstate<T>[]) => {
+        hashSet.has(item._hash) || (hashSet.add(item._hash), list.push(item));
+    }
     const zippy = (index: number, input: Thing | null, end: boolean) => {
-        hashes.clear();
+        const waitingHashes = new Set<number>();
+        const progressHashes = new Set<number>();
         while (progressStates.length > 0) {
             const orig = progressStates.shift()!;
             const result = stepNFASubstate(orig, input, index, end);
@@ -37,12 +40,11 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
                         span: [newItem._startIndex, index],
                     });
                 }
-                else if (newItem === orig) {
-                    waitingStates.push(orig);
+                else if (newItem === orig || input !== null) {
+                    addIfNotAlreadySeen(newItem, waitingHashes, waitingStates);
                 }
-                else if (!hashes.has(newItem._hash)) {
-                    hashes.add(newItem._hash);
-                    progressStates.push(newItem);
+                else {
+                    addIfNotAlreadySeen(newItem, progressHashes, progressStates);
                 }
             }
         }
@@ -62,10 +64,5 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
 }
 
 export function bestMatch<T>(matches: MatchResult<T>[]): MatchResult<T> {
-    return matches.sort((left, right) => {
-        var n: number;
-        if ((n = left.span[0] - right.span[0]) !== 0) return n; // Leftmost
-        if ((n = left.span[1] - right.span[1]) !== 0) return -n; // Longest
-        return 0;
-    })[0]!;
+    return matches.sort((left, right) => left.span[0] - right.span[0])[0]!;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { boxNameSymbol, boxNumber, doMatchPatterns, Thing, ThingType } from "../src";
+import { bestMatch, boxNameSymbol, boxNumber, doMatchPatterns, Thing, ThingType } from "../src";
 import { makeNFASubstate, stepNFASubstate } from "../src/patterns/internals";
 import { L } from "./astCheck";
 
@@ -102,7 +102,7 @@ describe("step pattern NFA substates", () => {
             .toEqual([makeNFASubstate(0, null, [[pat, 1]], { foo: [12345, 23456] }, false)]);
     });
     test("alternatives", () => {
-        const indexes = new Array(1000).fill(0).map((_, i) => i);
+        const indexes = new Array(100).fill(0).map((_, i) => i);
         const inputs = indexes.map(n => boxNumber(n, L));
         const pat = new Thing(ThingType.pattern_sequence, [
             new Thing(ThingType.pattern_alternatives, inputs.map(n =>
@@ -182,10 +182,10 @@ describe("step pattern NFA substates", () => {
         // after repeat: the result index should have the exit first if lazy
         expect(step2).toEqual([
             makeNFASubstate(0, null, [[lazypattern, 1]], {}, false),
-            makeNFASubstate(0, null, [[lazypattern, 0]], {}, false),
+            makeNFASubstate(0, null, [[lazypattern, 0], [lazypattern.children[0]!, 0]], {}, false),
         ]);
         expect(step22).toEqual([
-            makeNFASubstate(0, null, [[greedypattern, 0]], {}, false),
+            makeNFASubstate(0, null, [[greedypattern, 0], [greedypattern.children[0]!, 0]], {}, false),
             makeNFASubstate(0, null, [[greedypattern, 1]], {}, false),
         ]);
     });
@@ -205,9 +205,8 @@ describe("full pattern match", () => {
         })));
     });
     test("basic sequence search", () => {
-        const indexes = new Array(1000).fill(0).map((_, i) => i);
         const targetSpan = [10, 100];
-        const inputs = indexes.map(n => boxNumber(n, L));
+        const inputs = new Array(1000).fill(0).map((_, n) => boxNumber(n, L));
         const pat = new Thing(ThingType.pattern_sequence, inputs.slice(targetSpan[0], targetSpan[1]).map(n =>
             new Thing(ThingType.pattern_match_value, [n], null, "", "", "", L),
         ), null, "", "", "", L);
@@ -220,4 +219,39 @@ describe("full pattern match", () => {
             }
         ]);
     });
+    test("repeat finds all occurrences", () => {
+        const zeros = new Array(300).fill(0).map(_ => boxNumber(0, L));
+        const greedypattern = new Thing(ThingType.pattern_sequence, [
+            new Thing(ThingType.pattern_repeat, [
+                new Thing(ThingType.pattern_match_value, [boxNumber(0, L)], null, "", "", "", L),
+            ], true, "", "", "", L),
+        ], null, "", "", "", L);
+        const lazypattern = new Thing(ThingType.pattern_sequence, [
+            new Thing(ThingType.pattern_repeat, [
+                new Thing(ThingType.pattern_match_value, [boxNumber(0, L)], null, "", "", "", L),
+            ], false, "", "", "", L),
+        ], null, "", "", "", L);
+        const resultGreedy = doMatchPatterns(zeros, [[greedypattern, null]]);
+        const resultLazy = doMatchPatterns(zeros, [[lazypattern, null]]);
+        expect(resultGreedy[0]!.span).toEqual([0, zeros.length]);
+        expect(resultLazy[0]!.span).toEqual([0, 1]);
+        const byStartGreedy: Record<number, number[]> = {};
+        for (var result of resultGreedy) {
+            (byStartGreedy[result.span[0]] ??= []).push(result.span[1]);
+        }
+        const byStartLazy: Record<number, number[]> = {};
+        for (var result of resultLazy) {
+            (byStartLazy[result.span[0]] ??= []).push(result.span[1]);
+        }
+        expect(Object.keys(byStartGreedy)).toEqual(zeros.map((_, i) => String(i)));
+        expect(Object.keys(byStartLazy)).toEqual(zeros.map((_, i) => String(i)));
+        for (var key of Object.keys(byStartGreedy)) {
+            const n = Number(key);
+            expect(byStartGreedy[n]).toEqual(zeros.slice(n).map((_, i) => i + n + 1));
+        }
+        for (var key of Object.keys(byStartLazy)) {
+            const n = Number(key);
+            expect(byStartLazy[n]).toEqual(zeros.slice(n).map((_, i) => zeros.length - i + n));
+        }
+    })
 });

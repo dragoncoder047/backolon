@@ -2,6 +2,7 @@ import { imul } from "lib0/math";
 import { RuntimeError } from "../errors";
 import { javaHash } from "../objects/hash";
 import { extractSymbolName, Thing, ThingType } from "../objects/thing";
+import { rotate32 } from "../utils";
 
 export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, inputIndex: number, isAtEnd: boolean): NFASubstate<T>[] {
     // Handle atomic commands (no children)
@@ -16,6 +17,7 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
             ];
         }
         const exit = () => updateNFASubstate(state, 1, null, pIndex2 + 1, null, 0, false);
+        const loop = () => updateNFASubstate(state, 0, null, 0, null, 0, false);
         switch (cmd2!.type) {
             case ThingType.pattern_optional:
             case ThingType.pattern_sequence:
@@ -24,12 +26,12 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
             case ThingType.pattern_repeat:
                 return cmd2!.value ? [
                     // Greedy
-                    updateNFASubstate(state, 1, null, 0, null, 0, false),
+                    loop(),
                     exit(),
                 ] : [
                     // Not greedy
                     exit(),
-                    updateNFASubstate(state, 1, null, 0, null, 0, false),
+                    loop(),
                 ];
             case ThingType.pattern_capture:
                 return [
@@ -45,8 +47,8 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
     }
     const next = () => (
         cmd2 !== null && cmd2.type === ThingType.pattern_alternatives
-        ? updateNFASubstate(state, 1, null, pIndex2 + 1, null, 0, false) // Alternatives jump out always
-        : updateNFASubstate(state, 0, null, pIndex + 1, null, 0, false) // otherwise just go to the next one
+            ? updateNFASubstate(state, 1, null, pIndex2 + 1, null, 0, false) // Alternatives jump out always
+            : updateNFASubstate(state, 0, null, pIndex + 1, null, 0, false) // otherwise just go to the next one
     );
     const enter = () => updateNFASubstate(state, 0, cmd, 0, null, 0, false);
     const firstChild = cmd.children[0]!;
@@ -68,7 +70,6 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
             if (input.type !== firstChild.type || input.hash !== firstChild.hash) return [];
             return [next()];
         case ThingType.pattern_match_type:
-            if (input === null) return [state];
             if (input === null) return [state];
             if (input.type !== cmd.value) return [];
             return [next()];
@@ -99,11 +100,11 @@ function updateNFASubstate<T>(orig: NFASubstate<T>, popElements: number, push: T
     return makeNFASubstate(orig._startIndex, orig._data, p, b, false);
 }
 
-const x23 = (a: number, b: number) => imul(a ^ b, b >>> 23);
+const x23 = (a: number, b: number) => imul((a + 0x1a2b3c4d) ^ b, rotate32(b, 23));
 export function makeNFASubstate<T>(start: number, data: T, path: NFASubstate<T>["_path"], bindings: NFASubstate<T>["_bindingSpans"], complete: boolean): NFASubstate<T> {
-    var hash = path.map(p => p[0].hash! ^ (javaHash(p[1].toString(16)) >>> 19)).reduce(x23, 0) ^ start;
+    var hash = path.map(p => p[0].hash! ^ rotate32(p[1], 19)).reduce(x23, 0) ^ rotate32(start, 22);
     // Uncomment if backreferences are added
-    // hash ^= Object.entries(bindings).map(b => (javaHash(b[0]) + javaHash(b[1][0].toString(16)) ^ javaHash(String(b[1][1]))) >>> 29).reduce(x23, 0);
+    hash ^= Object.entries(bindings).map(b => rotate32(javaHash(b[0]) + b[1][0] ^ (b[1][1] ?? 0x12345678), 29)).reduce(x23, 0);
     return {
         _data: data,
         _startIndex: start,

@@ -1,4 +1,5 @@
 import { LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
+import { rotate32 } from "../utils";
 import { javaHash } from "./hash";
 
 export enum ThingType {
@@ -71,9 +72,9 @@ export class Thing {
         var hash = javaHash(type + "");
         for (var c of children) {
             if (c.hash === null) return;
-            hash ^= ((hash ^ 0xabcdef01) >>> 30) + c.hash;
+            hash ^= rotate32(hash ^ 0xabcdef01, 30) + c.hash;
         }
-        hash ^= ((hash ^ 0x31415926) >>> 7) + (valueInHash ? javaHash(String(value)) : 0);
+        hash ^= rotate32(hash ^ 0x31415926, 7) + (valueInHash ? javaHash(String(value)) : 0);
         this.hash = hash;
     }
 }
