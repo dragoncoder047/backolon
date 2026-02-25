@@ -24,7 +24,9 @@ For example, `a + b` gets rewritten into `(add a b)`. And `[a b] => {body}` gets
 
 These are kind of a hybrid between a macro and a function. The parameters can be marked as lazy, in which case when it's called, the chunk of code that would normally be evaluated to produce the argument is instead left unevaluated and passed in as a one-argument lambda that when called with a mapping, evaluates the body in its original scope + that mapping. The mapping is mutated.
 
-If the whole lambda is marked as lazy, it's a macro: the result is evaluated again in the caller's scope and the result of *that* is used as the return value. Combined with the template block, this can be used to create constructs that lazy parameters themselves cannot, or even self-modifying code.
+If the whole lambda is marked as a macro, the result is evaluated again in the caller's scope and the result of *that* is used as the return value. Combined with the template block, this can be used to create constructs that lazy parameters themselves cannot, or even self-modifying code.
+
+Lambdas can also be marked as splice functions, which means that the result (after macro expansion, if so marked) will be spliced into the caller's argument list expression, instead of just being passed as a single list value.
 
 ### Patterns
 

@@ -5,6 +5,7 @@
         "callcc",
         "imaginarny",
         "jsoncrush",
+        "repr",
         "uncrush",
         "unhashable",
         "unhygenic",

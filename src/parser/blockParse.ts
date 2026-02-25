@@ -1,9 +1,9 @@
 import { stringify } from "lib0/json";
 import { LocationTrace, ParseError } from "../errors";
-import { BlockType, Thing, ThingType } from "../objects/thing";
+import { Thing, ThingType } from "../objects/thing";
 
 export interface BlockRule {
-    _type: BlockType,
+    _type: ThingType,
     _end: (string | null)[],
     _inner: Record<string, string>,
     _skip: string[],

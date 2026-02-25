@@ -1,5 +1,4 @@
-import { isMap } from "../objects/map";
-import { Thing } from "../objects/thing";
+import { Thing, ThingType } from "../objects/thing";
 
 export interface UnparseContext {
     pre(thing: Thing): string;
@@ -10,7 +9,7 @@ export interface UnparseContext {
 const DEFAULT_UNPARSE_CONTEXT: UnparseContext = {
     pre: thing => thing.srcPrefix,
     join(thing, parts) {
-        if (isMap(thing) && parts.length === 0) return ":"; // empty map = [:], vs empty list = []
+        if (thing.type === ThingType.map && parts.length === 0) return ":"; // empty map = [:], vs empty list = []
         return parts.join(thing.srcJoiner);
     },
     post: thing => thing.srcSuffix

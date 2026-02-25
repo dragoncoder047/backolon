@@ -1,13 +1,12 @@
 import { LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
-import { CollectionType, Thing, ThingType } from "./thing";
+import { Thing, ThingType } from "./thing";
 
 export function newEmptyMap(parent: Thing | null = null, srcLocation = UNKNOWN_LOCATION): Thing {
-    if (parent && !isMap(parent)) {
+    if (parent && parent.type !== ThingType.map) {
         throw new RuntimeError("Cannot inherit from non-map", srcLocation);
     }
     return new Thing(
-        ThingType.collection,
-        CollectionType.map,
+        ThingType.map,
         [],
         parent,
         "[",
@@ -18,23 +17,19 @@ export function newEmptyMap(parent: Thing | null = null, srcLocation = UNKNOWN_L
 }
 
 export function mapGetKey(map: Thing, key: Thing, followParents = false, opTrace?: LocationTrace): Thing | undefined {
-    if (!isMap(map)){
+    if (map.type !== ThingType.map){
         throw new RuntimeError("Cannot search non-map", opTrace);
     }
     const pair = mapFindPair(map, key);
     if (pair) return pair.children[1];
-    if (followParents && map.value && isMap(map.value)) {
+    if (followParents && map.value && "type" in map.value && map.value.type === ThingType.map) {
         return mapGetKey(map.value, key, followParents, opTrace);
     }
 }
 
-export function isMap(x: Thing): boolean {
-    return x.type === ThingType.collection
-}
-
 const childComparator = (a: Thing, b: Thing) => a.children[0]!.hash! - b.children[0]!.hash!;
 export function mapUpdateKeyMutating(map: Thing, key: Thing, item: Thing, opTrace?: LocationTrace): void {
-    if (!isMap(map)) {
+    if (map.type !== ThingType.map) {
         throw new RuntimeError("Cannot insert into non-map", opTrace);
     }
     const pair = mapFindPair(map, key);
@@ -47,7 +42,7 @@ export function mapUpdateKeyMutating(map: Thing, key: Thing, item: Thing, opTrac
 }
 
 export function mapUpdateKeyCopying(map: Thing, key: Thing, item: Thing, opTrace?: LocationTrace): Thing {
-    if (!isMap(map)) {
+    if (map.type !== ThingType.map) {
         throw new RuntimeError("Cannot insert into non-map", opTrace);
     }
     const index = mapFindPairIndex(map, key);
@@ -56,7 +51,7 @@ export function mapUpdateKeyCopying(map: Thing, key: Thing, item: Thing, opTrace
 }
 
 export function mapDeleteKeyMutating(map: Thing, key: Thing, opTrace?: LocationTrace): void {
-    if (!isMap(map)) {
+    if (map.type !== ThingType.map) {
         throw new RuntimeError("Cannot delete from non-map", opTrace);
     }
     const index = mapFindPairIndex(map, key);
@@ -64,7 +59,7 @@ export function mapDeleteKeyMutating(map: Thing, key: Thing, opTrace?: LocationT
 }
 
 export function mapDeleteKeyCopying(map: Thing, key: Thing, opTrace?: LocationTrace): Thing {
-    if (!isMap(map)) {
+    if (map.type !== ThingType.map) {
         throw new RuntimeError("Cannot delete from non-map", opTrace);
     }
     const index = mapFindPairIndex(map, key);
@@ -103,13 +98,12 @@ function mapFindPair(map: Thing, key: Thing, opTrace?: LocationTrace): Thing | u
 }
 
 function createNewKVPair(key: Thing, value: Thing, opTrace?: LocationTrace): Thing {
-    return new Thing(ThingType.collection, CollectionType.kv_pair, [key, value], null, "", "", ": ", opTrace ?? key.srcLocation, true, false);
+    return new Thing(ThingType.kv_pair, [key, value], null, "", "", ": ", opTrace ?? key.srcLocation, true, false);
 }
 
 function copyMapWithNewItems(map: Thing, newItems: Thing[]): Thing {
     return new Thing(
         map.type,
-        map.subtype,
         newItems,
         map.value,
         map.srcPrefix,

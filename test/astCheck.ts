@@ -6,7 +6,6 @@ export const L = new LocationTrace(1, 1, F);
 
 type ASTSpec = {
     type: ThingType,
-    subtype: string | null,
     value?: any,
     children: readonly ASTSpec[]
 }
@@ -28,8 +27,8 @@ function checkAST(ast: any, spec: ASTSpec, path: string) {
     }
 }
 
-export function makespec(type: ThingType, subtype: string | null, value: any | null = null, ...children: readonly ASTSpec[]): ASTSpec {
-    const obj: ASTSpec = { type: type, subtype: subtype, children: children };
+export function makespec(type: ThingType, value: any | null = null, ...children: readonly ASTSpec[]): ASTSpec {
+    const obj: ASTSpec = { type: type, children: children };
     if (value !== null) obj.value = value;
     return obj;
 }

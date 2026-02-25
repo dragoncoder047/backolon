@@ -1,6 +1,6 @@
-import { blockParse, BlockRule } from "./blockParse";
 import { ErrorNote, LocationTrace, ParseError, UNKNOWN_LOCATION } from "../errors";
-import { BlockType, boxBlock, boxString, boxStringBlock, SymbolType, Thing, ThingType } from "../objects/thing";
+import { boxBlock, boxString, boxStringBlock, isBlock, isSymbol, Thing, ThingType } from "../objects/thing";
+import { blockParse, BlockRule } from "./blockParse";
 import { tokenize } from "./tokenizer";
 import { unparse } from "./unparse";
 
@@ -19,40 +19,40 @@ function makeBlock(this: BlockRule, items: Thing[], start: string, end: string, 
 }
 
 function makeComment(items: Thing[], start: string, end: string, loc: LocationTrace): Thing {
-    return new Thing(ThingType.symbol, SymbolType.space, [], start, start + items.map(i => unparse(i)).join(""), end, "", loc);
+    return new Thing(ThingType.space_symbol, [], start, start + items.map(i => unparse(i)).join(""), end, "", loc);
 }
 
 const defaultBlockRules: Record<string, BlockRule> = {
     toplevel: {
-        _type: BlockType.toplevel,
+        _type: ThingType.toplevel_block,
         _end: [null],
         _skip: [],
         _inner: baseBlocks,
         _process: makeBlock,
     },
     round: {
-        _type: BlockType.round,
+        _type: ThingType.round_block,
         _end: [")"],
         _skip: [],
         _inner: baseBlocks,
         _process: makeBlock,
     },
     square: {
-        _type: BlockType.square,
+        _type: ThingType.square_block,
         _end: ["]"],
         _skip: [],
         _inner: baseBlocks,
         _process: makeBlock,
     },
     curly: {
-        _type: BlockType.curly,
+        _type: ThingType.curly_block,
         _end: ["}"],
         _skip: [],
         _inner: baseBlocks,
         _process: makeBlock,
     },
     rawstring: {
-        _type: BlockType.string,
+        _type: ThingType.string_block,
         _end: ["'"],
         _skip: ["\\'", "\\\\"],
         _inner: {},
@@ -63,7 +63,7 @@ const defaultBlockRules: Record<string, BlockRule> = {
         },
     },
     string: {
-        _type: BlockType.string,
+        _type: ThingType.string_block,
         _end: ['"'],
         _skip: ['\\"', "\\\\", "\\{"],
         _inner: { "{": "stringInterpolation" },
@@ -77,7 +77,7 @@ const defaultBlockRules: Record<string, BlockRule> = {
             }
             for (var i = 0; i < items.length; i++) {
                 const item = items[i]!;
-                if (item.type === ThingType.block) {
+                if (isBlock(item.type)) {
                     chuck();
                     bits.push(item);
                     continue;
@@ -90,11 +90,14 @@ const defaultBlockRules: Record<string, BlockRule> = {
                     if (/^['"{}]$/.test(next.value)) {
                         curStringRaw += "\\" + next.value;
                         curString += next.value;
-                    } else if (next.type === ThingType.symbol) {
+                    } else if (isSymbol(next.type)) {
                         const escPortion = unescape(next.value, next.srcLocation, false);
                         if (escPortion.length === 0) {
                             const curlyblock = items[++i];
-                            if (curlyblock?.type !== ThingType.block) throw new ParseError(`expected \"{\" after \"\\${next.value}\"`, (curlyblock ?? next).srcLocation, [new ErrorNote("note: use ' instead of \" to make this a raw string", loc)]);
+                            if (!curlyblock || !isBlock(curlyblock.type)) {
+                                throw new ParseError(`expected \"{\" after \"\\${next.value}\"`, (curlyblock ?? next).srcLocation,
+                                    [new ErrorNote("note: use ' instead of \" to make this a raw string", loc)]);
+                            }
                             const fullEscape = "u" + unparse(curlyblock);
                             curStringRaw += "\\" + fullEscape;
                             curString += unescape(fullEscape, curlyblock.srcLocation, true);
@@ -113,21 +116,21 @@ const defaultBlockRules: Record<string, BlockRule> = {
         },
     },
     stringInterpolation: {
-        _type: BlockType.round,
+        _type: ThingType.round_block,
         _end: ["}"],
         _skip: [],
         _inner: baseBlocks,
         _process: makeBlock,
     },
     comment: {
-        _type: BlockType.round,
+        _type: ThingType.round_block,
         _end: ["##"],
         _skip: [],
         _inner: {},
         _process: makeComment,
     },
     lineComment: {
-        _type: BlockType.round,
+        _type: ThingType.round_block,
         _end: ["\n", null],
         _skip: [],
         _inner: {},

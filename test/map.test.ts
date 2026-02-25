@@ -145,9 +145,9 @@ describe("throws errors when expected", () => {
 
     });
     test("trying to add/search/delete unhashable object", () => {
-        expect(() => mapUpdateKeyCopying(map2, new Thing(ThingType.custom, null, [], null, "", "", "", L, false), boxNil())).toThrow(new RuntimeError("unhashable object"));
-        expect(() => mapGetKey(map2, new Thing(ThingType.custom, null, [], null, "", "", "", L, false))).toThrow(new RuntimeError("unhashable object"));
-        expect(() => mapDeleteKeyCopying(map2, new Thing(ThingType.custom, null, [], null, "", "", "", L, false))).toThrow(new RuntimeError("unhashable object"));
+        expect(() => mapUpdateKeyCopying(map2, new Thing("custom", [], null, "", "", "", L, false), boxNil())).toThrow(new RuntimeError("unhashable object"));
+        expect(() => mapGetKey(map2, new Thing("custom", [], null, "", "", "", L, false))).toThrow(new RuntimeError("unhashable object"));
+        expect(() => mapDeleteKeyCopying(map2, new Thing("custom", [], null, "", "", "", L, false))).toThrow(new RuntimeError("unhashable object"));
     })
 });
 describe("map inheritance", () => {

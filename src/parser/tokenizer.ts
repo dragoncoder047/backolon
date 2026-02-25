@@ -1,31 +1,30 @@
 import { id } from "lib0/function";
 import { LocationTrace, ParseError, UNKNOWN_LOCATION } from "../errors";
-import { boxEnd, SymbolType, Thing, ThingType } from "../objects/thing";
+import { boxEnd, Thing, ThingType } from "../objects/thing";
 
 type Rule = [
     RegExp,
     ThingType,
-    subtype: SymbolType | null,
     process: (x: string) => any
 ];
 const TOKENIZE_RULES: Rule[] = [
-    [/^0x[a-f0-9]+|^-?0b[01]+/i, ThingType.number, null, Number],
-    [/^(\.\d+|\d+\.?\d*)(e[+-]?\d+)?/i, ThingType.number, null, Number],
-    [/^\p{Punctuation}/u, ThingType.symbol, SymbolType.operator, id],
-    [/^\p{Alpha}[\p{Alpha}\p{Number}_]*/u, ThingType.symbol, SymbolType.name, id],
-    [/^\n|^((?!\n)\s)+/, ThingType.symbol, SymbolType.space, id],
-    [/^./, ThingType.symbol, SymbolType.operator, id]
+    [/^0x[a-f0-9]+|^-?0b[01]+/i, ThingType.number, Number],
+    [/^(\.\d+|\d+\.?\d*)(e[+-]?\d+)?/i, ThingType.number, Number],
+    [/^\p{Punctuation}/u, ThingType.operator_symbol, id],
+    [/^\p{Alpha}[\p{Alpha}\p{Number}_]*/u, ThingType.name_symbol, id],
+    [/^\n|^((?!\n)\s)+/, ThingType.space_symbol, id],
+    [/^./, ThingType.operator_symbol, id]
 ];
 
 export function tokenize(source: string, filename: URL = UNKNOWN_LOCATION.file) {
     var line = 0, col = 0;
     const out: Thing[] = [];
     tokens: while (source.length > 0) {
-        for (var [regex, type, subtype, process] of TOKENIZE_RULES) {
+        for (var [regex, type, process] of TOKENIZE_RULES) {
             const match = regex.exec(source);
             if (match) {
                 const chunk = match[0];
-                out.push(new Thing(type, subtype, [], process(match[0]), match[0], "", "", new LocationTrace(line, col, filename)));
+                out.push(new Thing(type, [], process(match[0]), match[0], "", "", new LocationTrace(line, col, filename)));
                 const interlines = chunk.split("\n");
                 if (interlines.length > 1) {
                     col = interlines.at(-1)!.length;
