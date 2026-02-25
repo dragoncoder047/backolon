@@ -18,7 +18,7 @@ export {
     unparse, type UnparseContext
 } from "./parser/unparse";
 export {
-    bestMatch, doMatchPatterns, type MatchResult
+    doMatchPatterns, type MatchResult
 } from "./patterns/match";
 export {
     Scheduler

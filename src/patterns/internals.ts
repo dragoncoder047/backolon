@@ -104,7 +104,7 @@ const x23 = (a: number, b: number) => imul((a + 0x1a2b3c4d) ^ b, rotate32(b, 23)
 export function makeNFASubstate<T>(start: number, data: T, path: NFASubstate<T>["_path"], bindings: NFASubstate<T>["_bindingSpans"], complete: boolean): NFASubstate<T> {
     var hash = path.map(p => p[0].hash! ^ rotate32(p[1], 19)).reduce(x23, 0) ^ rotate32(start, 22);
     // Uncomment if backreferences are added
-    hash ^= Object.entries(bindings).map(b => rotate32(javaHash(b[0]) + b[1][0] ^ (b[1][1] ?? 0x12345678), 29)).reduce(x23, 0);
+    // hash ^= Object.entries(bindings).map(b => rotate32(javaHash(b[0]) + b[1][0] ^ (b[1][1] ?? 0x12345678), 29)).reduce(x23, 0);
     return {
         _data: data,
         _startIndex: start,

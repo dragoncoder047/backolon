@@ -22,16 +22,16 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
     var waitingStates: NFASubstate<T>[] = [];
     var progressStates: NFASubstate<T>[] = [];
     const results: MatchResult<T>[] = [];
-    const addIfNotAlreadySeen = (item: NFASubstate<T>, hashSet: Set<number>, list: NFASubstate<T>[]) => {
-        hashSet.has(item._hash) || (hashSet.add(item._hash), list.push(item));
+    const addIfNotAlreadySeen = (item: NFASubstate<T>, hashSet: Record<number, true>, list: NFASubstate<T>[], insertAt = Infinity) => {
+        hashSet[item._hash] || (hashSet[item._hash] = true, list.splice(insertAt, 0, item));
     }
     const zippy = (index: number, input: Thing | null, end: boolean) => {
-        const waitingHashes = new Set<number>();
-        const progressHashes = new Set<number>();
+        const waitingHashes = {};
+        const progressHashes = {};
         while (progressStates.length > 0) {
             const orig = progressStates.shift()!;
             const result = stepNFASubstate(orig, input, index, end);
-            for (var j = 0; j < result.length; j++) {
+            for (var j = 0, k = 0; j < result.length; j++) {
                 const newItem = result[j]!;
                 if (newItem._complete) {
                     results.push({
@@ -44,7 +44,8 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
                     addIfNotAlreadySeen(newItem, waitingHashes, waitingStates);
                 }
                 else {
-                    addIfNotAlreadySeen(newItem, progressHashes, progressStates);
+                    addIfNotAlreadySeen(newItem, progressHashes, progressStates, k);
+                    k++;
                 }
             }
         }
@@ -61,8 +62,4 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
     }
     zippy(inputIndex, null, true);
     return results;
-}
-
-export function bestMatch<T>(matches: MatchResult<T>[]): MatchResult<T> {
-    return matches.sort((left, right) => left.span[0] - right.span[0])[0]!;
 }
