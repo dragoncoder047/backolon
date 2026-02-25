@@ -1,92 +1,12 @@
 import { imul } from "lib0/math";
-import { RuntimeError } from "./errors";
-import { javaHash } from "./objects/hash";
-import { extractSymbolName, Thing, ThingType } from "./objects/thing";
-
-export interface MatchResult<T> {
-    data: T;
-    bindings: Record<string, Thing[]>;
-    span: [number, number];
-}
-
-/**
- * Finds all of the matches of the pattern and returns (for each match) the bindings
- * and the span.
- *
- * Uses a tree-walking version of Thompson's NFA construction internally, for speed.
- *
- * @param source Stream of tokens to be fed to the pattern matching.
- * @param patterns List of structured trees of `pattern`-type Things describing the patterns to be matched against.
- */
-export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): MatchResult<T>[] {
-    var waitingStates: NFASubstate<T>[] = [];
-    var progressStates: NFASubstate<T>[] = [];
-    const results: MatchResult<T>[] = [];
-    const hashes = new Set<number>();
-    const zippy = (index: number, input: Thing | null, end: boolean) => {
-        hashes.clear();
-        for (var i = 0; i < progressStates.length; i++) {
-            const orig = progressStates[i]!;
-            const result = stepNFASubstate(orig, input, index, end);
-            var k = i;
-            for (var j = 0; j < result.length; j++) {
-                const newItem = result[j]!;
-                if (newItem._complete) {
-                    results.push({
-                        data: newItem._data,
-                        bindings: Object.fromEntries(Object.entries(newItem._bindingSpans).map(k => [k[0], source.slice(k[1][0], k[1][1]!)])),
-                        span: [newItem._startIndex, index],
-                    });
-                    progressStates.splice(i, 1);
-                    i--;
-                    break;
-                }
-                if (newItem === orig) {
-                    waitingStates.push(orig);
-                    progressStates.splice(i, 1);
-                    i--;
-                    break;
-                }
-                if (!hashes.has(newItem._hash)) {
-                    hashes.add(newItem._hash);
-                    progressStates.splice(k, 0, newItem);
-                    k++;
-                }
-            }
-        }
-    }
-    const swap = () => {
-        const temp = waitingStates;
-        waitingStates = progressStates;
-        progressStates = temp;
-    }
-    var i: number;
-    for (var inputIndex = 0; inputIndex < source.length; inputIndex++) {
-        for (i = 0; i < patterns.length; i++) {
-            progressStates.push(makeNFASubstate(inputIndex, patterns[i]![1], [[patterns[i]![0], 0]], {}, false));
-        }
-        zippy(inputIndex, null, false);
-        swap();
-        zippy(inputIndex, source[inputIndex]!, false);
-        swap();
-    }
-    zippy(inputIndex, null, true);
-    return results;
-}
-
-export function bestMatch<T>(matches: MatchResult<T>[]): MatchResult<T> {
-    return matches.sort((left, right) => {
-        var n: number;
-        if ((n = left.span[0] - right.span[0]) !== 0) return n; // Leftmost
-        if ((n = left.span[1] - right.span[1]) !== 0) return -n; // Longest
-        return 0;
-    })[0]!;
-}
-
+import { RuntimeError } from "../errors";
+import { javaHash } from "../objects/hash";
+import { extractSymbolName, Thing, ThingType } from "../objects/thing";
 
 export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, inputIndex: number, isAtEnd: boolean): NFASubstate<T>[] {
     // Handle atomic commands (no children)
     const { _thing: cmd, _index: pIndex } = getCurrentCommand(state, 1);
+    const { _thing: cmd2, _index: pIndex2 } = getCurrentCommand(state, 2);
     if (cmd === null) {
         // We fell off the end of the group. Go back up one.
         if (state._path.length === 1) {
@@ -95,20 +15,21 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
                 makeNFASubstate(state._startIndex, state._data, [], state._bindingSpans, true)
             ];
         }
-        const { _thing: cmd2, _index: pIndex2 } = getCurrentCommand(state, 2);
+        const exit = () => updateNFASubstate(state, 1, null, pIndex2 + 1, null, 0, false);
         switch (cmd2!.type) {
             case ThingType.pattern_optional:
             case ThingType.pattern_sequence:
             case ThingType.pattern_alternatives:
-                return [
-                    // just move on
-                    updateNFASubstate(state, 1, null, pIndex2 + 1, null, 0, false),
-                ];
+                return [exit()];
             case ThingType.pattern_repeat:
-                return [
-                    // One is the repeat back to itself code, the other is the continue-on code
-                    updateNFASubstate(state, 1, null, pIndex2 + (cmd2!.value ? 1 : 0), null, 0, false),
-                    updateNFASubstate(state, 1, null, pIndex2 + (cmd2!.value ? 0 : 1), null, 0, false)
+                return cmd2!.value ? [
+                    // Greedy
+                    updateNFASubstate(state, 1, null, 0, null, 0, false),
+                    exit(),
+                ] : [
+                    // Not greedy
+                    exit(),
+                    updateNFASubstate(state, 1, null, 0, null, 0, false),
                 ];
             case ThingType.pattern_capture:
                 return [
@@ -122,7 +43,11 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
                 throw new RuntimeError("Non-pattern in pattern!!", cmd2!.srcLocation);
         }
     }
-    const next = () => updateNFASubstate(state, 0, null, pIndex + 1, null, 0, false);
+    const next = () => (
+        cmd2 !== null && cmd2.type === ThingType.pattern_alternatives
+        ? updateNFASubstate(state, 1, null, pIndex2 + 1, null, 0, false) // Alternatives jump out always
+        : updateNFASubstate(state, 0, null, pIndex + 1, null, 0, false) // otherwise just go to the next one
+    );
     const enter = () => updateNFASubstate(state, 0, cmd, 0, null, 0, false);
     const firstChild = cmd.children[0]!;
     switch (cmd.type) {
@@ -132,7 +57,8 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
         case ThingType.pattern_repeat:
             return [enter()];
         case ThingType.pattern_alternatives:
-            return cmd.children.map(subcmd => updateNFASubstate(state, 0, subcmd, 0, null, 0, false));
+            return cmd.children.map((_, i) =>
+                updateNFASubstate(state, 0, cmd, i, null, 0, false));
         case ThingType.pattern_anchor:
             return (cmd.value ? (inputIndex === 0) : isAtEnd) ? [next()] : [];
         case ThingType.pattern_capture:
@@ -153,7 +79,7 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
 
 function getCurrentCommand(state: NFASubstate<any>, index: number): { _thing: Thing | null, _index: number } {
     const cur = state._path.at(-index)!;
-    return { _thing: cur[0].children[cur[1]] ?? null, _index: cur[1] };
+    return { _thing: cur?.[0].children[cur?.[1]] ?? null, _index: cur?.[1] };
 }
 
 function updateNFASubstate<T>(orig: NFASubstate<T>, popElements: number, push: Thing | null, newIndex: number, binding: string | null, bindingIndex: number, bindingIsSecond: boolean): NFASubstate<T> {
@@ -188,7 +114,7 @@ export function makeNFASubstate<T>(start: number, data: T, path: NFASubstate<T>[
     }
 }
 
-interface NFASubstate<T> {
+export interface NFASubstate<T> {
     readonly _data: T;
     readonly _startIndex: number;
     readonly _path: readonly (readonly [Thing, number])[];
