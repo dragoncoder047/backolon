@@ -255,5 +255,41 @@ describe("full pattern match", () => {
             const n = Number(key);
             expect(byStartLazy[n]).toEqual(zeros.slice(n).map((_, i) => zeros.length - i + n));
         }
-    })
+    });
+    test("capture groups", () => {
+        const pat = new Thing(ThingType.pattern_sequence, [
+            new Thing(ThingType.pattern_match_value, [boxNumber(0, L)], null, "", "", "", L),
+            new Thing(ThingType.pattern_capture, [boxNameSymbol("foo", L), new Thing(ThingType.pattern_sequence, [
+                new Thing(ThingType.pattern_match_type, [], ThingType.name_symbol, "", "", "", L),
+            ], true, "", "", "", L)], null, "", "", "", L),
+            new Thing(ThingType.pattern_match_value, [boxNumber(1, L)], null, "", "", "", L),
+        ], null, "", "", "", L);
+        const inputs = [
+            boxNumber(2, L),
+            boxNameSymbol("hi 1", L),
+            boxNumber(1, L),
+            boxNumber(7, L),
+            boxNumber(0, L),
+            boxNameSymbol("hi 2", L),
+            boxNumber(1, L),
+            boxNumber(4, L),
+            boxNumber(2, L),
+            boxNumber(0, L),
+            boxNameSymbol("hi 3", L),
+            boxNumber(1, L),
+        ];
+        const results = doMatchPatterns(inputs, [[pat, null]]);
+        expect(results).toEqual([
+            {
+                data: null,
+                bindings: { foo: [boxNameSymbol("hi 2", L)] },
+                span: [4, 7]
+            },
+            {
+                data: null,
+                bindings: { foo: [boxNameSymbol("hi 3", L)] },
+                span: [9, 12]
+            }
+        ]);
+    });
 });
