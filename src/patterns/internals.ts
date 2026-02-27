@@ -1,7 +1,6 @@
 import { imul } from "lib0/math";
 import { RuntimeError } from "../errors";
-import { javaHash } from "../objects/hash";
-import { extractSymbolName, Thing, ThingType } from "../objects/thing";
+import { extractSymbolName, isValuePattern, Thing, ThingType } from "../objects/thing";
 import { rotate32 } from "../utils";
 
 export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, inputIndex: number, isAtEnd: boolean): NFASubstate<T>[] {
@@ -13,11 +12,11 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
         if (state._path.length === 1) {
             // No parent = we're done.
             return [
-                makeNFASubstate(state._startIndex, state._data, [], state._bindingSpans, true)
+                makeNFASubstate(state._startIndex, state._data, [], state._bindingSpans, true, state._atomicBindings),
             ];
         }
-        const exit = () => updateNFASubstate(state, 1, null, pIndex2 + 1, null, 0, false);
-        const loop = () => updateNFASubstate(state, 0, null, 0, null, 0, false);
+        const exit = () => updateNFASubstate(state, 1, null, pIndex2 + 1);
+        const loop = () => updateNFASubstate(state, 0, null, 0);
         switch (cmd2!.type) {
             case ThingType.pattern_optional:
             case ThingType.pattern_sequence:
@@ -47,11 +46,12 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
     }
     const next = () => (
         cmd2 !== null && cmd2.type === ThingType.pattern_alternatives
-            ? updateNFASubstate(state, 1, null, pIndex2 + 1, null, 0, false) // Alternatives jump out always
-            : updateNFASubstate(state, 0, null, pIndex + 1, null, 0, false) // otherwise just go to the next one
+            ? updateNFASubstate(state, 1, null, pIndex2 + 1) // Alternatives jump out always
+            : updateNFASubstate(state, 0, null, pIndex + 1) // otherwise just go to the next one
     );
-    const enter = () => updateNFASubstate(state, 0, cmd, 0, null, 0, false);
+    const enter = () => updateNFASubstate(state, 0, cmd, 0);
     const firstChild = cmd.children[0]!;
+    const secondChild = cmd.children[1]!;
     switch (cmd.type) {
         case ThingType.pattern_optional:
             return cmd.value ? [enter(), next()] : [next(), enter()];
@@ -60,11 +60,11 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
             return [enter()];
         case ThingType.pattern_alternatives:
             return cmd.children.map((_, i) =>
-                updateNFASubstate(state, 0, cmd, i, null, 0, false));
+                updateNFASubstate(state, 0, cmd, i));
         case ThingType.pattern_anchor:
             return (cmd.value ? (inputIndex === 0) : isAtEnd) ? [next()] : [];
         case ThingType.pattern_capture:
-            return [updateNFASubstate(state, 0, cmd, 1, extractSymbolName(firstChild), inputIndex, false)];
+            return [updateNFASubstate(state, 0, cmd, 1, extractSymbolName(firstChild), inputIndex, false, cmd.children.length === 2 && isValuePattern(secondChild.type))];
         case ThingType.pattern_match_value:
             if (input === null) return [state];
             if (input.type !== firstChild.type || input.hash !== firstChild.hash) return [];
@@ -83,25 +83,29 @@ function getCurrentCommand(state: NFASubstate<any>, index: number): { _thing: Th
     return { _thing: cur?.[0].children[cur?.[1]] ?? null, _index: cur?.[1] };
 }
 
-function updateNFASubstate<T>(orig: NFASubstate<T>, popElements: number, push: Thing | null, newIndex: number, binding: string | null, bindingIndex: number, bindingIsSecond: boolean): NFASubstate<T> {
-    const p = orig._path.slice();
-    for (; popElements > 0; popElements--) p.pop();
-    if (push) p.push([push, newIndex]);
-    else p.push(p.pop()!.with(1, newIndex) as [Thing, number]);
-    var b = orig._bindingSpans;
+function updateNFASubstate<T>(orig: NFASubstate<T>, popElements: number, push: Thing | null, newIndex: number, binding: string | null = null, bindingIndex = 0, bindingIsSecond = false, newAtomic = false): NFASubstate<T> {
+    const newPath = orig._path.slice();
+    for (; popElements > 0; popElements--) newPath.pop();
+    if (push) newPath.push([push, newIndex]);
+    else newPath.push(newPath.pop()!.with(1, newIndex) as [Thing, number]);
+    var bindings = orig._bindingSpans;
     if (binding) {
-        b = { ...b };
+        bindings = { ...bindings };
         if (bindingIsSecond) {
-            b[binding] = b[binding]!.with(1, bindingIndex) as any;
+            bindings[binding] = bindings[binding]!.with(1, bindingIndex) as any;
         } else {
-            b[binding] = [bindingIndex, null];
+            bindings[binding] = [bindingIndex, null];
         }
     }
-    return makeNFASubstate(orig._startIndex, orig._data, p, b, false);
+    var atomics = orig._atomicBindings;
+    if (newAtomic) {
+        atomics = atomics.toSpliced(Infinity, 0, binding!);
+    }
+    return makeNFASubstate(orig._startIndex, orig._data, newPath, bindings, false, atomics);
 }
 
 const x23 = (a: number, b: number) => imul((a + 0x1a2b3c4d) ^ b, rotate32(b, 23));
-export function makeNFASubstate<T>(start: number, data: T, path: NFASubstate<T>["_path"], bindings: NFASubstate<T>["_bindingSpans"], complete: boolean): NFASubstate<T> {
+export function makeNFASubstate<T>(start: number, data: T, path: NFASubstate<T>["_path"], bindings: NFASubstate<T>["_bindingSpans"] = {}, complete = false, atomicB: string[] = []): NFASubstate<T> {
     var hash = path.map(p => p[0].hash! ^ rotate32(p[1], 19)).reduce(x23, 0) ^ rotate32(start, 22);
     // Uncomment if backreferences are added
     // hash ^= Object.entries(bindings).map(b => rotate32(javaHash(b[0]) + b[1][0] ^ (b[1][1] ?? 0x12345678), 29)).reduce(x23, 0);
@@ -111,7 +115,8 @@ export function makeNFASubstate<T>(start: number, data: T, path: NFASubstate<T>[
         _path: path,
         _bindingSpans: bindings,
         _complete: complete,
-        _hash: hash
+        _hash: hash,
+        _atomicBindings: atomicB,
     }
 }
 
@@ -120,6 +125,7 @@ export interface NFASubstate<T> {
     readonly _startIndex: number;
     readonly _path: readonly (readonly [Thing, number])[];
     readonly _bindingSpans: Record<string, readonly [number, number | null]>;
+    readonly _atomicBindings: string[],
     readonly _complete: boolean;
     readonly _hash: number;
 }

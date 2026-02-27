@@ -4,7 +4,7 @@ import { NFASubstate, stepNFASubstate, makeNFASubstate } from "./internals";
 
 export interface MatchResult<T> {
     data: T;
-    bindings: Record<string, Thing[]>;
+    bindings: Record<string, Thing[] | Thing>;
     span: [number, number];
 }
 
@@ -36,7 +36,7 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
                 if (newItem._complete) {
                     results.push({
                         data: newItem._data,
-                        bindings: Object.fromEntries(Object.entries(newItem._bindingSpans).map(k => [k[0], source.slice(k[1][0], k[1][1]!)])),
+                        bindings: Object.fromEntries(Object.entries(newItem._bindingSpans).map(k => [k[0], newItem._atomicBindings.includes(k[0]) ? source[k[1][0]]! : source.slice(k[1][0], k[1][1]!)])),
                         span: [newItem._startIndex, index],
                     });
                 }
@@ -55,7 +55,7 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
     };
     for (var inputIndex = 0; inputIndex < source.length; inputIndex++) {
         for (var i = 0; i < patterns.length; i++) {
-            progressStates.push(makeNFASubstate(inputIndex, patterns[i]![1], [[patterns[i]![0], 0]], {}, false));
+            progressStates.push(makeNFASubstate(inputIndex, patterns[i]![1], [[patterns[i]![0], 0]]));
         }
         zippy(inputIndex, null, false);
         zippy(inputIndex, source[inputIndex]!, false);
