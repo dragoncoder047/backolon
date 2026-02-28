@@ -12,7 +12,7 @@ export function stepNFASubstate<T>(state: NFASubstate<T>, input: Thing | null, i
         if (state._path.length === 1) {
             // No parent = we're done.
             return [
-                makeNFASubstate(state._startIndex, state._data, [], state._bindingSpans, true, state._atomicBindings),
+                makeNFASubstate(state._sortValue, state._startIndex, state._data, [], state._bindingSpans, true, state._atomicBindings),
             ];
         }
         const exit = () => updateNFASubstate(state, 1, null, pIndex2 + 1);
@@ -101,11 +101,11 @@ function updateNFASubstate<T>(orig: NFASubstate<T>, popElements: number, push: T
     if (newAtomic) {
         atomics = atomics.toSpliced(Infinity, 0, binding!);
     }
-    return makeNFASubstate(orig._startIndex, orig._data, newPath, bindings, false, atomics);
+    return makeNFASubstate(orig._sortValue, orig._startIndex, orig._data, newPath, bindings, false, atomics);
 }
 
 const x23 = (a: number, b: number) => imul((a + 0x1a2b3c4d) ^ b, rotate32(b, 23));
-export function makeNFASubstate<T>(start: number, data: T, path: NFASubstate<T>["_path"], bindings: NFASubstate<T>["_bindingSpans"] = {}, complete = false, atomicB: string[] = []): NFASubstate<T> {
+export function makeNFASubstate<T>(sortValue: number, start: number, data: T, path: NFASubstate<T>["_path"], bindings: NFASubstate<T>["_bindingSpans"] = {}, complete = false, atomicB: string[] = []): NFASubstate<T> {
     var hash = path.map(p => p[0].hash! ^ rotate32(p[1], 19)).reduce(x23, 0) ^ rotate32(start, 22);
     // Uncomment if backreferences are added
     // hash ^= Object.entries(bindings).map(b => rotate32(javaHash(b[0]) + b[1][0] ^ (b[1][1] ?? 0x12345678), 29)).reduce(x23, 0);
@@ -117,6 +117,7 @@ export function makeNFASubstate<T>(start: number, data: T, path: NFASubstate<T>[
         _complete: complete,
         _hash: hash,
         _atomicBindings: atomicB,
+        _sortValue: sortValue,
     }
 }
 
@@ -128,4 +129,5 @@ export interface NFASubstate<T> {
     readonly _atomicBindings: string[],
     readonly _complete: boolean;
     readonly _hash: number;
+    readonly _sortValue: number;
 }

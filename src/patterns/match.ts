@@ -21,31 +21,33 @@ export interface MatchResult<T> {
 export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): MatchResult<T>[] {
     var waitingStates: NFASubstate<T>[] = [];
     var progressStates: NFASubstate<T>[] = [];
-    const results: MatchResult<T>[] = [];
-    const addIfNotAlreadySeen = (item: NFASubstate<T>, hashSet: Record<number, true>, list: NFASubstate<T>[], insertAt = Infinity) => {
-        hashSet[item._hash] || (hashSet[item._hash] = true, list.splice(insertAt, 0, item));
+    const results: (MatchResult<T> & { _sort?: number })[] = [];
+    var sortIndex = 0;
+    const addIfNotAlreadySeen = (item: NFASubstate<T>, hashSet: Record<number, true>, list: NFASubstate<T>[]) => {
+        hashSet[item._hash] || (hashSet[item._hash] = true, list.push(item));
     }
     const zippy = (index: number, input: Thing | null, end: boolean) => {
         const waitingHashes = {};
         const progressHashes = {};
         while (progressStates.length > 0) {
             const orig = progressStates.shift()!;
+            sortIndex++;
             const result = stepNFASubstate(orig, input, index, end);
-            for (var j = 0, k = 0; j < result.length; j++) {
+            for (var j = 0; j < result.length; j++) {
                 const newItem = result[j]!;
                 if (newItem._complete) {
                     results.push({
                         data: newItem._data,
                         bindings: Object.fromEntries(Object.entries(newItem._bindingSpans).map(k => [k[0], newItem._atomicBindings.includes(k[0]) ? source[k[1][0]]! : source.slice(k[1][0], k[1][1]!)])),
                         span: [newItem._startIndex, index],
+                        _sort: newItem._sortValue,
                     });
                 }
                 else if (newItem === orig || input !== null) {
                     addIfNotAlreadySeen(newItem, waitingHashes, waitingStates);
                 }
                 else {
-                    addIfNotAlreadySeen(newItem, progressHashes, progressStates, k);
-                    k++;
+                    addIfNotAlreadySeen(newItem, progressHashes, progressStates);
                 }
             }
         }
@@ -55,11 +57,11 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
     };
     for (var inputIndex = 0; inputIndex < source.length; inputIndex++) {
         for (var i = 0; i < patterns.length; i++) {
-            progressStates.push(makeNFASubstate(inputIndex, patterns[i]![1], [[patterns[i]![0], 0]]));
+            progressStates.push(makeNFASubstate(++sortIndex, inputIndex, patterns[i]![1], [[patterns[i]![0], 0]]));
         }
         zippy(inputIndex, null, false);
         zippy(inputIndex, source[inputIndex]!, false);
     }
     zippy(inputIndex, null, true);
-    return results;
+    return results.sort((a, b) => a._sort! - b._sort!).map(obj => (delete obj._sort, obj));
 }

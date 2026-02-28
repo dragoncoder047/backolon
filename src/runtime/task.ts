@@ -1,12 +1,13 @@
 import { Thing } from "../objects/thing";
 
-enum EvalState {
+interface StackEntry {
 
 }
 
 export class Task {
     suspended = false;
     completed = true;
+    stack: StackEntry[] = [];
     constructor(public priority: number) { }
     start(code: Thing) {
         if (!this.completed) throw new Error("tried to reuse an in-use task");
@@ -28,7 +29,9 @@ export class Task {
 
         apply:
             eval the function form
-            if it's a macro: 
+            evaluate params that need evaluating
+            call
+            deal with result
         */
     }
 }
