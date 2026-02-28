@@ -1,5 +1,6 @@
 import { imul } from "lib0/math";
 import { RuntimeError } from "../errors";
+import { javaHash } from "../objects/hash";
 import { extractSymbolName, isValuePattern, Thing, ThingType } from "../objects/thing";
 import { rotate32 } from "../utils";
 
@@ -17,8 +18,7 @@ export class NFASubstate<T> {
         public readonly _atomicBindings: string[] = [],
     ) {
         var hash = _path.map(p => p[0].hash! ^ rotate32(p[1], 19)).reduce(x23, 0) ^ rotate32(_startIndex, 22);
-        // Uncomment if backreferences are added
-        // hash ^= Object.entries(bindings).map(b => rotate32(javaHash(b[0]) + b[1][0] ^ (b[1][1] ?? 0x12345678), 29)).reduce(x23, 0);
+        hash ^= Object.entries(_bindingSpans).map(b => rotate32(javaHash(b[0]) + b[1][0] ^ (b[1][1] ?? 0x12345678), 29)).reduce(x23, 0);
         this._hash = hash;
     }
 

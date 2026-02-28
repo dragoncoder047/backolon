@@ -102,7 +102,7 @@ describe("step pattern NFA substates", () => {
             .toEqual([new NFASubstate(0, null, [[pat, 1]], { foo: [12345, 23456] }, false, ["foo"])]);
     });
     test("alternatives", () => {
-        const indexes = new Array(100).fill(0).map((_, i) => i);
+        const indexes = new Array(1000).fill(0).map((_, i) => i);
         const inputs = indexes.map(n => boxNumber(n, L));
         const pat = new Thing(ThingType.pattern_sequence, [
             new Thing(ThingType.pattern_alternatives, inputs.map(n =>
@@ -193,7 +193,7 @@ describe("step pattern NFA substates", () => {
 describe("full pattern match", () => {
     test("empty matches don't lock up or spam", () => {
         const pat = new Thing(ThingType.pattern_sequence, [], null, "", "", "", L);
-        const indexes = new Array(1000).fill(0).map((_, i) => i);
+        const indexes = new Array(10000).fill(0).map((_, i) => i);
         const data = ["test", 22] as const;
         const inputs = indexes.map(n => boxNumber(n, L));
 
@@ -205,8 +205,8 @@ describe("full pattern match", () => {
         )));
     });
     test("basic sequence search", () => {
-        const targetSpan = [10, 100];
-        const inputs = new Array(1000).fill(0).map((_, n) => boxNumber(n, L));
+        const targetSpan = [100, 900];
+        const inputs = new Array(10000).fill(0).map((_, n) => boxNumber(n, L));
         const pat = new Thing(ThingType.pattern_sequence, inputs.slice(targetSpan[0], targetSpan[1]).map(n =>
             new Thing(ThingType.pattern_match_value, [n], null, "", "", "", L),
         ), null, "", "", "", L);
@@ -220,7 +220,7 @@ describe("full pattern match", () => {
         ]);
     });
     test("repeat finds all occurrences", () => {
-        const zeros = new Array(100).fill(0).map(_ => boxNumber(0, L));
+        const zeros = new Array(300).fill(0).map(_ => boxNumber(0, L));
         const greedypattern = new Thing(ThingType.pattern_sequence, [
             new Thing(ThingType.pattern_repeat, [
                 new Thing(ThingType.pattern_match_value, [boxNumber(0, L)], null, "", "", "", L),
@@ -359,10 +359,12 @@ describe("full pattern match", () => {
             ], false, "", "", "", L),
             new Thing(ThingType.pattern_anchor, [], false, "", "", "", L),
         ], null, "", "", "", L);
-        const inputs = new Array(100).fill(0).map(_ => boxNumber(0, L));
+        const inputs = new Array(300).fill(0).map(_ => boxNumber(0, L));
         const resultslazyfirst = doMatchPatterns(inputs, [[lazyfirstpat, null]]);
         const resultslazysecond = doMatchPatterns(inputs, [[lazysecondpat, null]]);
-        expect(resultslazyfirst.map(r => (r.bindings.foo as Thing[]).length)).toEqual([1]);
-        expect(resultslazysecond.map(r => (r.bindings.foo as Thing[]).length)).toEqual([inputs.length - 1]);
+        expect(resultslazyfirst.map(r => (r.bindings.foo as Thing[]).length))
+            .toEqual(inputs.slice(1).map((_, i) => i + 1));
+        expect(resultslazysecond.map(r => (r.bindings.foo as Thing[]).length))
+            .toEqual(inputs.slice(1).map((_, i) => inputs.length - i - 1));
     })
 });
