@@ -1,11 +1,14 @@
+import { is } from "lib0/function";
 import { Thing } from "../objects/thing";
-import { NFASubstate, stepNFASubstate, makeNFASubstate } from "./internals";
+import { NFASubstate } from "./internals";
 
 
-export interface MatchResult<T> {
-    data: T;
-    bindings: Record<string, Thing[] | Thing>;
-    span: [number, number];
+export class MatchResult<T> {
+    constructor(
+        public data: T,
+        public bindings: Record<string, Thing[] | Thing>,
+        public span: [number, number]
+    ) { }
 }
 
 /**
@@ -19,49 +22,50 @@ export interface MatchResult<T> {
  */
 
 export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): MatchResult<T>[] {
-    var waitingStates: NFASubstate<T>[] = [];
-    var progressStates: NFASubstate<T>[] = [];
-    const results: (MatchResult<T> & { _sort?: number })[] = [];
-    var sortIndex = 0;
-    const addIfNotAlreadySeen = (item: NFASubstate<T>, hashSet: Record<number, true>, list: NFASubstate<T>[]) => {
-        hashSet[item._hash] || (hashSet[item._hash] = true, list.push(item));
+    const queue: (NFASubstate<T> | MatchResult<T>)[] = [];
+    const addIfNotAlreadySeen = (item: NFASubstate<T>, hashSet: Record<number, true>, i: number) => {
+        if (hashSet[item._hash]) return;
+        hashSet[item._hash] = true;
+        queue.splice(i, 0, item);
     }
     const zippy = (index: number, input: Thing | null, end: boolean) => {
         const waitingHashes = {};
         const progressHashes = {};
-        while (progressStates.length > 0) {
-            const orig = progressStates.shift()!;
-            sortIndex++;
-            const result = stepNFASubstate(orig, input, index, end);
+        for (var i = 0; i < queue.length; i++) {
+            const orig = queue[i]!;
+            if (is(orig, MatchResult)) continue;
+            var k = i;
+            queue.splice(i--, 1);
+            const result = orig._step(input, index, end);
             for (var j = 0; j < result.length; j++) {
                 const newItem = result[j]!;
                 if (newItem._complete) {
-                    results.push({
-                        data: newItem._data,
-                        bindings: Object.fromEntries(Object.entries(newItem._bindingSpans).map(k => [k[0], newItem._atomicBindings.includes(k[0]) ? source[k[1][0]]! : source.slice(k[1][0], k[1][1]!)])),
-                        span: [newItem._startIndex, index],
-                        _sort: newItem._sortValue,
-                    });
+                    queue.splice(k++, 0, new MatchResult(
+                        newItem._data,
+                        Object.fromEntries(Object.entries(newItem._bindingSpans).map(k => [k[0], newItem._atomicBindings.includes(k[0]) ? source[k[1][0]]! : source.slice(k[1][0], k[1][1]!)])),
+                        [newItem._startIndex, index],
+                    ));
                 }
                 else if (newItem === orig || input !== null) {
-                    addIfNotAlreadySeen(newItem, waitingHashes, waitingStates);
+                    addIfNotAlreadySeen(newItem, waitingHashes, k++);
+                    i++;
                 }
                 else {
-                    addIfNotAlreadySeen(newItem, progressHashes, progressStates);
+                    addIfNotAlreadySeen(newItem, progressHashes, k++);
                 }
             }
         }
-        const temp = waitingStates;
-        waitingStates = progressStates;
-        progressStates = temp;
     };
     for (var inputIndex = 0; inputIndex < source.length; inputIndex++) {
         for (var i = 0; i < patterns.length; i++) {
-            progressStates.push(makeNFASubstate(++sortIndex, inputIndex, patterns[i]![1], [[patterns[i]![0], 0]]));
+            queue.push(new NFASubstate(inputIndex, patterns[i]![1], [[patterns[i]![0], 0]]));
         }
         zippy(inputIndex, null, false);
         zippy(inputIndex, source[inputIndex]!, false);
     }
     zippy(inputIndex, null, true);
-    return results.sort((a, b) => a._sort! - b._sort!).map(obj => (delete obj._sort, obj));
+    for (var i = 0; i < queue.length; i++) {
+        if (is(queue[i], NFASubstate)) queue.splice(i--, 1);
+    }
+    return queue as MatchResult<T>[];
 }
