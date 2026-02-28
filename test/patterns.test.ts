@@ -332,4 +332,37 @@ describe("full pattern match", () => {
             }
         ]);
     });
+    test("lazy vs. greedy grouping", () => {
+        const lazyfirstpat = new Thing(ThingType.pattern_sequence, [
+            new Thing(ThingType.pattern_anchor, [], true, "", "", "", L),
+            new Thing(ThingType.pattern_capture, [
+                boxNameSymbol("foo", L),
+                new Thing(ThingType.pattern_repeat, [
+                    new Thing(ThingType.pattern_match_value, [boxNumber(0, L)], null, "", "", "", L),
+                ], false, "", "", "", L),
+            ], null, "", "", "", L),
+            new Thing(ThingType.pattern_repeat, [
+                new Thing(ThingType.pattern_match_value, [boxNumber(0, L)], null, "", "", "", L),
+            ], true, "", "", "", L),
+            new Thing(ThingType.pattern_anchor, [], false, "", "", "", L),
+        ], null, "", "", "", L);
+        const lazysecondpat = new Thing(ThingType.pattern_sequence, [
+            new Thing(ThingType.pattern_anchor, [], true, "", "", "", L),
+            new Thing(ThingType.pattern_capture, [
+                boxNameSymbol("foo", L),
+                new Thing(ThingType.pattern_repeat, [
+                    new Thing(ThingType.pattern_match_value, [boxNumber(0, L)], null, "", "", "", L),
+                ], true, "", "", "", L),
+            ], null, "", "", "", L),
+            new Thing(ThingType.pattern_repeat, [
+                new Thing(ThingType.pattern_match_value, [boxNumber(0, L)], null, "", "", "", L),
+            ], false, "", "", "", L),
+            new Thing(ThingType.pattern_anchor, [], false, "", "", "", L),
+        ], null, "", "", "", L);
+        const inputs = new Array(100).fill(0).map(_ => boxNumber(0, L));
+        const resultslazyfirst = doMatchPatterns(inputs, [[lazyfirstpat, null]]);
+        const resultslazysecond = doMatchPatterns(inputs, [[lazysecondpat, null]]);
+        expect(resultslazyfirst.map(r => (r.bindings.foo as Thing[]).length)).toEqual([1]);
+        expect(resultslazysecond.map(r => (r.bindings.foo as Thing[]).length)).toEqual([inputs.length - 1]);
+    })
 });
