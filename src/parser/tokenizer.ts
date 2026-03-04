@@ -1,3 +1,4 @@
+import { last } from "lib0/array";
 import { id } from "lib0/function";
 import { LocationTrace, ParseError, UNKNOWN_LOCATION } from "../errors";
 import { boxEnd, Thing, ThingType } from "../objects/thing";
@@ -10,10 +11,10 @@ type Rule = [
 const TOKENIZE_RULES: Rule[] = [
     [/^0x[a-f0-9]+|^-?0b[01]+/i, ThingType.number, Number],
     [/^(\.\d+|\d+\.?\d*)(e[+-]?\d+)?/i, ThingType.number, Number],
-    [/^\p{Punctuation}/u, ThingType.operator_symbol, id],
-    [/^\p{Alpha}[\p{Alpha}\p{Number}_]*/u, ThingType.name_symbol, id],
-    [/^\n|^((?!\n)\s)+/, ThingType.space_symbol, id],
-    [/^./, ThingType.operator_symbol, id]
+    [/^\p{Punctuation}/u, ThingType.sym_op, id],
+    [/^\p{Alpha}[\p{Alpha}\p{Number}_]*/u, ThingType.sym_name, id],
+    [/^\n|^((?!\n)\s)+/, ThingType.sym_space, id],
+    [/^./, ThingType.sym_op, id]
 ];
 
 export function tokenize(source: string, filename: URL = UNKNOWN_LOCATION.file) {
@@ -27,7 +28,7 @@ export function tokenize(source: string, filename: URL = UNKNOWN_LOCATION.file) 
                 out.push(new Thing(type, [], process(match[0]), match[0], "", "", new LocationTrace(line, col, filename)));
                 const interlines = chunk.split("\n");
                 if (interlines.length > 1) {
-                    col = interlines.at(-1)!.length;
+                    col = last(interlines)!.length;
                     line += interlines.length - 1;
                 } else {
                     col += chunk.length;
@@ -39,6 +40,6 @@ export function tokenize(source: string, filename: URL = UNKNOWN_LOCATION.file) 
         // the last rule should always match, we should never get here
         throw new ParseError("unreachable", new LocationTrace(line, col, filename));
     }
-    out.push(boxEnd(new LocationTrace(line, col, filename)));
+    out.push(boxEnd(new LocationTrace(line, col, filename)) as any);
     return out;
 }

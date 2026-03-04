@@ -1,25 +1,26 @@
 import { stringify } from "lib0/json";
+import { keys, values } from "lib0/object";
 import { LocationTrace, ParseError } from "../errors";
-import { Thing, ThingType } from "../objects/thing";
+import { CheckedType, isBlock, Thing, ThingType, typecheck } from "../objects/thing";
 
 export interface BlockRule {
-    _type: ThingType,
-    _end: (string | null)[],
-    _inner: Record<string, string>,
-    _skip: string[],
-    _process(items: Thing[], start: string, end: string, loc: LocationTrace): Thing;
+    t: CheckedType<typeof isBlock>,
+    e: (string | null)[],
+    i: Record<string, string>,
+    x: string[],
+    p(items: Thing[], start: string, end: string, loc: LocationTrace): Thing;
 }
 
 type Counter = [tokens: number, chars: number];
 
-export function blockParse(tokens: Thing[], blockRules: Record<string, BlockRule>, toplevel: string): Thing {
+export function blockParse<T extends Record<string, BlockRule>, U extends keyof T>(tokens: Thing[], blockRules: T, toplevel: U): ReturnType<T[U]["p"]> {
     var pos = 0;
     const nextToken = (advanceEnd: boolean, beginStr: string, beginLoc: LocationTrace): Thing => {
         if (pos >= tokens.length) {
             throw new ParseError(`${stringify(beginStr)} was never closed`, beginLoc);
         }
         const token = tokens[pos]!;
-        if (token.type !== ThingType.end || advanceEnd) pos++;
+        if (!typecheck(ThingType.end)(token) || advanceEnd) pos++;
         return token;
     };
     const processCounters = (txt: string | null, starts: (string | null)[], counters: Counter[], targets: string[], onMatch: (target: string, counter: Counter, start: string) => void) => {
@@ -40,16 +41,16 @@ export function blockParse(tokens: Thing[], blockRules: Record<string, BlockRule
             } else counter[0] = counter[1] = 0;
         }
     }
-    const parseBlock = (rule: BlockRule, beginStr: string, beginLoc: LocationTrace) => {
+    const parseBlock = <T extends BlockRule>(rule: T, beginStr: string, beginLoc: LocationTrace): ReturnType<T["p"]> => {
         const blockContents: Thing[] = [];
-        const ruleStarts = Object.keys(rule._inner);
-        const ruleTargets = Object.values(rule._inner);
+        const ruleStarts = keys(rule.i);
+        const ruleTargets = values(rule.i);
         const indices: Counter[] = ruleStarts.map(_ => [0, 0]);
-        const skips = rule._skip;
+        const skips = rule.x;
         const skipIndices: Counter[] = skips.map(_ => [0, 0]);
-        const end = rule._end;
+        const end = rule.e;
         var endStr = "";
-        const endCounters: Counter[] = rule._end?.map(_ => [0, 0]) ?? [];
+        const endCounters: Counter[] = rule.e?.map(_ => [0, 0]) ?? [];
         var forceContinue: boolean,
             innerBlock: string | null = null,
             innerBlockStart: string | null = null,
@@ -58,7 +59,7 @@ export function blockParse(tokens: Thing[], blockRules: Record<string, BlockRule
         for (; ;) {
             forceContinue = false;
             innerBlock = innerBlockStarterTokens = null;
-            const curToken = nextToken(!end.includes(null), beginStr, beginLoc), txt: string | null = curToken.value;
+            const curToken = nextToken(!end.includes(null), beginStr, beginLoc), txt: string | null = curToken.v as string;
             processCounters(txt, skips, skipIndices, [], _ => forceContinue = true);
             if (!forceContinue) {
                 processCounters(txt, ruleStarts, indices, ruleTargets, (target, counter, start) => {
@@ -76,10 +77,11 @@ export function blockParse(tokens: Thing[], blockRules: Record<string, BlockRule
             blockContents.push(curToken);
             if (!forceContinue && innerBlock) {
                 const startingTokens = blockContents.splice(blockContents.length - innerBlockStarterTokens!, innerBlockStarterTokens!);
-                blockContents.push(parseBlock(blockRules[innerBlock]!, innerBlockStart!, startingTokens[0]!.srcLocation));
+                blockContents.push(parseBlock(blockRules[innerBlock]!, innerBlockStart!, startingTokens[0]!.loc) as any);
             }
         }
-        return rule._process(blockContents, beginStr, endStr, beginLoc);
+        // @ts-expect-error
+        return rule.p(blockContents, beginStr, endStr, beginLoc);
     };
-    return parseBlock(blockRules[toplevel]!, "", tokens[0]!.srcLocation);
+    return parseBlock(blockRules[toplevel]!, "", tokens[0]!.loc);
 }

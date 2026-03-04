@@ -1,42 +1,63 @@
 import JSONCrush from "jsoncrush";
-import { is } from "lib0/function";
 import { NamespaceResolver, Resurrect } from "resurrect-esm";
 import { LocationTrace } from "../errors";
-import { Thing } from "../objects/thing";
+import { Thing, ThingType } from "../objects/thing";
 import { parse } from "../parser/parse";
-import { Task } from "./task";
+import { StackEntry, Task } from "./task";
+
+interface NativeFunctionDetails {
+    params: (Thing<ThingType.fn_param_descriptor> | Thing<ThingType.sym_name>)[],
+}
 
 export class Scheduler {
     tasks: Task[] = [];
-    private _serializer: Resurrect;
+    private s: Resurrect;
 
-    constructor(customNames: ConstructorParameters<typeof NamespaceResolver>[0] = {}) {
-        this._serializer = new Resurrect({ resolver: new NamespaceResolver({ ...customNames, Task, Thing, LocationTrace }) });
+    constructor(
+        public apiFunctions: Record<string, NativeFunctionDetails>,
+        public baseEnv: Thing<ThingType.env | ThingType.nil>,
+        customNames: ConstructorParameters<typeof NamespaceResolver>[0] = {}
+    ) {
+        this.s = new Resurrect({
+            resolver: new NamespaceResolver({
+                ...customNames,
+                Task,
+                Thing,
+                LocationTrace,
+                StackEntry,
+            }),
+        });
     }
-    startTask(task: Task): void;
-    startTask(priority: number, code: string, filename: URL): Task;
-    startTask(priority: number, code: Thing): Task;
-    startTask(priority: number | Task, code?: string | Thing, filename?: URL): Task | undefined {
-        if (is(priority, Task)) {
-            this.tasks.push(priority);
-            this._sortTasks();
-        }
-        else {
-            if (typeof code === "string") code = parse(code, filename);
-            const task = new Task(priority);
-            task.start(code!);
-            this.tasks.push(task);
-            this._sortTasks();
-            return task;
-        }
+    startTask(priority: number, code: string, env: Thing<ThingType.env | ThingType.nil> | null, filename: URL): Task;
+    startTask(priority: number, code: Thing, env?: Thing<ThingType.env | ThingType.nil>): Task;
+    startTask(priority: number, code: string | Thing, env?: Thing<ThingType.env | ThingType.nil> | null, filename?: URL): Task {
+        if (typeof code === "string") code = parse(code, filename);
+        const task = new Task(priority, this, code, env ?? this.baseEnv);
+        this.tasks.push(task);
+        this.t();
+        return task;
     }
-    private _sortTasks() {
+    private t() {
         this.tasks.sort((t1, t2) => t1.priority - t2.priority);
     }
     serializeTasks(): string {
-        return encodeURIComponent(JSONCrush.crush(this._serializer.stringify(this.tasks)));
+        return encodeURIComponent(JSONCrush.crush(this.s.stringify(this.tasks, (k, v) => k === "scheduler" ? undefined : v)));
     }
     loadFromSerialized(str: string): void {
-        this.tasks.push(...this._serializer.resurrect(JSONCrush.uncrush(decodeURIComponent(str))));
+        this.tasks.push(...this.s.resurrect(JSONCrush.uncrush(decodeURIComponent(str))));
+    }
+    stepUntilSuspended() {
+        do {
+            var madeProgress = false;
+            for (var i = 0; i < this.tasks.length; i++) {
+                madeProgress ||= this.tasks[i]!.step();
+            }
+        } while (madeProgress);
+    }
+    getParamDescriptor(name: string, index: number): Thing<ThingType.fn_param_descriptor>|Thing<ThingType.sym_name> {
+        return this.apiFunctions[name]?.params[index]!;
+    }
+    callFunction(task: Task, name: string, args: Thing[]) {
+        throw "not implemented";
     }
 }

@@ -1,48 +1,58 @@
 import { imul } from "lib0/math";
+import { map } from "lib0/object";
 import { RuntimeError } from "../errors";
-import { javaHash } from "../objects/hash";
-import { extractSymbolName, isValuePattern, Thing, ThingType } from "../objects/thing";
+import { javaHash } from "../utils";
+import { extractSymbolName, isValuePattern, Thing, ThingType, typecheck } from "../objects/thing";
 import { rotate32 } from "../utils";
 
 
 const x23 = (a: number, b: number) => imul((a + 0x1a2b3c4d) ^ b, rotate32(b, 23));
 
-export class NFASubstate<T> {
+export class NFASubstate {
     public readonly _hash: number;
     constructor(
-        public readonly _startIndex: number,
-        public readonly _data: T,
-        public readonly _path: readonly (readonly [Thing, number])[],
-        public readonly _bindingSpans: Record<string, readonly [number, number | null]> = {},
-        public readonly _complete: boolean = false,
-        public readonly _atomicBindings: string[] = [],
+        /** start index */
+        public readonly s: number,
+        /** path state */
+        public readonly p: readonly (readonly [Thing, number])[],
+        /** binding spans */
+        public readonly b: Record<string, readonly [number, number | null]> = {},
+        /** complete */
+        public readonly x: boolean = false,
+        /** atomic binding names */
+        public readonly ab: string[] = [],
+        /** binding source symbols */
+        public readonly bs: Record<string, Thing<ThingType.sym_name>> = {},
     ) {
-        var hash = _path.map(p => p[0].hash! ^ rotate32(p[1], 19)).reduce(x23, 0) ^ rotate32(_startIndex, 22);
-        hash ^= Object.entries(_bindingSpans).map(b => rotate32(javaHash(b[0]) + b[1][0] ^ (b[1][1] ?? 0x12345678), 29)).reduce(x23, 0);
+        var hash = p.map(p => p[0].h! ^ rotate32(p[1], 19)).reduce(x23, 0) ^ rotate32(s, 22);
+        hash ^= map(b, (val, key) => rotate32(javaHash(key) + val[0] ^ (val[1] ?? 0x12345678), 29)).reduce(x23, 0);
         this._hash = hash;
     }
 
-    _step(input: Thing | null, inputIndex: number, isAtEnd: boolean): NFASubstate<T>[] {
+    a(input: Thing | null, inputIndex: number, isAtEnd: boolean): NFASubstate[] {
         // Handle atomic commands (no children)
-        const { _thing: cmd, _index: pIndex } = this._current(1);
-        const { _thing: cmd2, _index: pIndex2 } = this._current(2);
+        const { _thing: cmd, _index: pIndex } = this.c(1);
+        const { _thing: cmd2, _index: pIndex2 } = this.c(2);
+        const nonPatternError = (src: Thing): never => {
+            throw new RuntimeError("Non-pattern in pattern!!", src.loc);
+        }
         if (cmd === null) {
             // We fell off the end of the group. Go back up one.
-            if (this._path.length === 1) {
+            if (this.p.length === 1) {
                 // No parent = we're done.
                 return [
-                    this._toCompleted(),
+                    this.d(),
                 ];
             }
-            const exit = () => this._toUpdated(1, null, pIndex2 + 1);
-            const loop = () => this._toUpdated(0, null, 0);
-            switch (cmd2!.type) {
-                case ThingType.pattern_optional:
-                case ThingType.pattern_sequence:
-                case ThingType.pattern_alternatives:
+            const exit = () => this.u(1, null, pIndex2 + 1);
+            const loop = () => this.u(0, null, 0);
+            switch (cmd2!.t) {
+                case ThingType.pat_opt:
+                case ThingType.pat_seq:
+                case ThingType.pat_alt:
                     return [exit()];
-                case ThingType.pattern_repeat:
-                    return cmd2!.value ? [
+                case ThingType.pat_rep:
+                    return cmd2!.v ? [
                         // Greedy
                         loop(),
                         exit(),
@@ -51,77 +61,83 @@ export class NFASubstate<T> {
                         exit(),
                         loop(),
                     ];
-                case ThingType.pattern_capture:
+                case ThingType.pat_group:
                     return [
-                        this._toUpdated(1, null, pIndex2 + 1, extractSymbolName(cmd2!.children[0]!), inputIndex, true),
+                        this.u(1, null, pIndex2 + 1, cmd2!.c[0]! as any, inputIndex, true),
                     ]
-                case ThingType.pattern_anchor:
-                case ThingType.pattern_match_value:
-                case ThingType.pattern_match_type:
-                    throw new RuntimeError("Atomic command reached compound command exit code!!", cmd2!.srcLocation);
+                case ThingType.pat_anchor:
+                case ThingType.pat_m_val:
+                case ThingType.pat_m_type:
+                    throw new RuntimeError("Atomic command reached compound command exit code!!", cmd2!.loc);
                 default:
-                    throw new RuntimeError("Non-pattern in pattern!!", cmd2!.srcLocation);
+                    nonPatternError(cmd2!);
+                    throw 1; // TS is stupid
             }
         }
         const next = () => (
-            cmd2 !== null && cmd2.type === ThingType.pattern_alternatives
-                ? this._toUpdated(1, null, pIndex2 + 1) // Alternatives jump out always
-                : this._toUpdated(0, null, pIndex + 1) // otherwise just go to the next one
+            cmd2 !== null && typecheck(ThingType.pat_alt)(cmd2)
+                ? this.u(1, null, pIndex2 + 1) // Alternatives jump out always
+                : this.u(0, null, pIndex + 1) // otherwise just go to the next one
         );
-        const enter = () => this._toUpdated(0, cmd, 0);
-        const firstChild = cmd.children[0]!;
-        const secondChild = cmd.children[1]!;
-        switch (cmd.type) {
-            case ThingType.pattern_optional:
-                return cmd.value ? [enter(), next()] : [next(), enter()];
-            case ThingType.pattern_sequence:
-            case ThingType.pattern_repeat:
+        const enter = () => this.u(0, cmd, 0);
+        const firstChild = cmd.c[0]!;
+        const secondChild = cmd.c[1]!;
+        switch (cmd.t) {
+            case ThingType.pat_opt:
+                return cmd.v ? [enter(), next()] : [next(), enter()];
+            case ThingType.pat_seq:
+            case ThingType.pat_rep:
                 return [enter()];
-            case ThingType.pattern_alternatives:
-                return cmd.children.map((_, i) =>
-                    this._toUpdated(0, cmd, i));
-            case ThingType.pattern_anchor:
-                return (cmd.value ? (inputIndex === 0) : isAtEnd) ? [next()] : [];
-            case ThingType.pattern_capture:
-                return [this._toUpdated(0, cmd, 1, extractSymbolName(firstChild), inputIndex, false, cmd.children.length === 2 && isValuePattern(secondChild.type))];
-            case ThingType.pattern_match_value:
+            case ThingType.pat_alt:
+                return cmd.c.map((_, i) =>
+                    this.u(0, cmd, i));
+            case ThingType.pat_anchor:
+                return (cmd.v ? (inputIndex === 0) : isAtEnd) ? [next()] : [];
+            case ThingType.pat_group:
+                return [this.u(0, cmd, 1, firstChild as any, inputIndex, false, cmd.c.length === 2 && isValuePattern(secondChild))];
+            case ThingType.pat_m_val:
                 if (input === null) return [this];
-                if (input.type !== firstChild.type || input.hash !== firstChild.hash) return [];
+                if (!typecheck(firstChild.t as ThingType)(input) || input.h !== firstChild.h) return [];
                 return [next()];
-            case ThingType.pattern_match_type:
+            case ThingType.pat_m_type:
                 if (input === null) return [this];
-                if (input.type !== cmd.value) return [];
+                if (!typecheck(cmd.v as ThingType)(input)) return [];
                 return [next()];
             default:
-                throw new RuntimeError("Non-pattern in pattern!!", cmd.srcLocation);
+                nonPatternError(cmd);
+                throw 1; // Typescript is stupid
         }
     }
-    _current(index: number): { _thing: Thing | null, _index: number } {
-        const cur = this._path.at(-index)!;
-        return { _thing: cur?.[0].children[cur?.[1]] ?? null, _index: cur?.[1] };
+    c(index: number): { _thing: Thing | null, _index: number } {
+        const cur = this.p.at(-index)!;
+        return { _thing: cur?.[0].c[cur?.[1]] ?? null, _index: cur?.[1] };
     }
 
-    _toUpdated(popElements: number, push: Thing | null, newIndex: number, binding: string | null = null, bindingIndex = 0, bindingIsSecond = false, newAtomic = false): NFASubstate<T> {
-        const newPath = this._path.slice();
+    u(popElements: number, push: Thing | null, newIndex: number, binding: Thing<ThingType.sym_name> | null = null, bindingIndex = 0, bindingIsSecond = false, newAtomic = false): NFASubstate {
+        const newPath = this.p.slice();
         for (; popElements > 0; popElements--) newPath.pop();
         if (push) newPath.push([push, newIndex]);
         else newPath.push(newPath.pop()!.with(1, newIndex) as [Thing, number]);
-        var bindings = this._bindingSpans;
+        var bindings = this.b;
+        var sources = this.bs;
+        var atomics = this.ab;
         if (binding) {
+            const name = extractSymbolName(binding);
             bindings = { ...bindings };
             if (bindingIsSecond) {
-                bindings[binding] = bindings[binding]!.with(1, bindingIndex) as any;
+                bindings[name] = bindings[name]!.with(1, bindingIndex) as any;
             } else {
-                bindings[binding] = [bindingIndex, null];
+                sources = { ...sources };
+                bindings[name] = [bindingIndex, null];
+                sources[name] = binding;
+            }
+            if (newAtomic) {
+                atomics = atomics.toSpliced(Infinity, 0, name!);
             }
         }
-        var atomics = this._atomicBindings;
-        if (newAtomic) {
-            atomics = atomics.toSpliced(Infinity, 0, binding!);
-        }
-        return new NFASubstate(this._startIndex, this._data, newPath, bindings, false, atomics);
+        return new NFASubstate(this.s, newPath, bindings, false, atomics, sources);
     }
-    _toCompleted(): NFASubstate<T> {
-        return new NFASubstate(this._startIndex, this._data, [], this._bindingSpans, true, this._atomicBindings);
+    d(): NFASubstate {
+        return new NFASubstate(this.s, [], this.b, true, this.ab, this.bs);
     }
 }

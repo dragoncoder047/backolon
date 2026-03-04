@@ -10,7 +10,7 @@
         "build": "pnpm esbuild --bundle --sourcemap --platform=browser --target=esnext --format=esm src/index.ts --outfile=dist/backolon.js",
         "test": "pnpm bun test",
         "test:watch": "pnpm test --watch",
-        "prepare": "pnpm build --minify --mangle-props=^_"
+        "prepare": "pnpm build --minify"
     },
     "license": "GPL-3.0-only",
     "devDependencies": {

@@ -1,16 +1,17 @@
 import { expect } from "bun:test";
+import { keys } from "lib0/object";
 import { BackolonError, ErrorNote, LocationTrace, parse, ThingType } from "../src";
 
 export const F = new URL("about:test");
 export const L = new LocationTrace(1, 1, F);
 
 type ASTSpec = {
-    type: ThingType,
-    value?: any,
-    children: readonly ASTSpec[]
+    t: ThingType,
+    v?: any,
+    c: readonly ASTSpec[]
 }
 function checkAST(ast: any, spec: ASTSpec, path: string) {
-    for (var prop of Object.keys(spec)) {
+    for (var prop of keys(spec)) {
         const newpath = path + "." + prop;
         const failMsg = "AST failed to match at " + newpath;
         const desc = spec[prop as keyof ASTSpec]!;
@@ -28,8 +29,8 @@ function checkAST(ast: any, spec: ASTSpec, path: string) {
 }
 
 export function makespec(type: ThingType, value: any | null = null, ...children: readonly ASTSpec[]): ASTSpec {
-    const obj: ASTSpec = { type: type, children: children };
-    if (value !== null) obj.value = value;
+    const obj: ASTSpec = { t: type, c: children };
+    if (value !== null) obj.v = value;
     return obj;
 }
 

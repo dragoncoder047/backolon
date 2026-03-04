@@ -1,25 +1,56 @@
 export {
-    BackolonError, ErrorNote, LocationTrace, ParseError, RuntimeError, UNKNOWN_LOCATION
+    BackolonError,
+    ErrorNote,
+    LocationTrace,
+    ParseError,
+    RuntimeError,
+    UNKNOWN_LOCATION
 } from "./errors";
 export {
     mapDeleteKeyCopying,
-    mapDeleteKeyMutating, mapGetKey,
+    mapDeleteKeyMutating,
+    mapGetKey,
     mapUpdateKeyCopying,
     mapUpdateKeyMutating,
     newEmptyMap
 } from "./objects/map";
 export {
-    boxBlock, boxCurlyBlock, boxEnd, boxNameSymbol, boxNil, boxNumber, boxOperatorSymbol, boxRoundBlock, boxSpaceSymbol, boxSquareBlock, boxString, boxSymbol, boxToplevelBlock, isBlock, isCallable, isPattern, isSymbol, Thing, ThingType
+    boxBlock,
+    boxCurlyBlock,
+    boxEnd,
+    boxList,
+    boxNameSymbol,
+    boxNil,
+    boxNumber,
+    boxOperatorSymbol,
+    boxRoundBlock,
+    boxSpaceSymbol,
+    boxSquareBlock,
+    boxString,
+    boxSymbol,
+    boxToplevelBlock,
+    isBlock,
+    isCallable,
+    isPattern,
+    isSymbol,
+    Thing,
+    ThingType,
+    type CheckedType
 } from "./objects/thing";
 export {
     parse
 } from "./parser/parse";
 export {
-    unparse, type UnparseContext
+    unparse,
+    type UnparseContext
 } from "./parser/unparse";
 export {
-    doMatchPatterns, MatchResult
+    matchPattern,
+    MatchResult
 } from "./patterns/match";
+export {
+    newEnv
+} from "./runtime/env";
 export {
     Scheduler
 } from "./runtime/scheduler";

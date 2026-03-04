@@ -1,12 +1,12 @@
 import { is } from "lib0/function";
-import { Thing } from "../objects/thing";
+import { map } from "lib0/object";
+import { Thing, ThingType } from "../objects/thing";
 import { NFASubstate } from "./internals";
 
 
-export class MatchResult<T> {
+export class MatchResult {
     constructor(
-        public data: T,
-        public bindings: Record<string, Thing[] | Thing>,
+        public bindings: [Thing<ThingType.sym_name>, Thing[] | Thing][],
         public span: [number, number]
     ) { }
 }
@@ -21,9 +21,9 @@ export class MatchResult<T> {
  * @param patterns List of structured trees of `pattern`-type Things describing the patterns to be matched against.
  */
 
-export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): MatchResult<T>[] {
-    const queue: (NFASubstate<T> | MatchResult<T>)[] = [];
-    const addIfNotAlreadySeen = (item: NFASubstate<T>, hashSet: Record<number, true>, i: number) => {
+export function matchPattern(source: readonly Thing[], pattern: Thing, findAll = true): MatchResult[] {
+    const queue: (NFASubstate | MatchResult)[] = [];
+    const addIfNotAlreadySeen = (item: NFASubstate, hashSet: Record<number, true>, i: number) => {
         if (hashSet[item._hash]) return;
         hashSet[item._hash] = true;
         queue.splice(i, 0, item);
@@ -36,15 +36,15 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
             if (is(orig, MatchResult)) continue;
             var k = i;
             queue.splice(i--, 1);
-            const result = orig._step(input, index, end);
+            const result = orig.a(input, index, end);
             for (var j = 0; j < result.length; j++) {
                 const newItem = result[j]!;
-                if (newItem._complete) {
+                if (newItem.x) {
                     queue.splice(k++, 0, new MatchResult(
-                        newItem._data,
-                        Object.fromEntries(Object.entries(newItem._bindingSpans).map(k => [k[0], newItem._atomicBindings.includes(k[0]) ? source[k[1][0]]! : source.slice(k[1][0], k[1][1]!)])),
-                        [newItem._startIndex, index],
+                        map(newItem.b, (value, key) => [newItem.bs[key]!, newItem.ab.includes(key) ? source[value[0]]! : source.slice(value[0], value[1]!)]),
+                        [newItem.s, index],
                     ));
+                    if (k === 1 && !findAll) return true;
                 }
                 else if (newItem === orig || input !== null) {
                     addIfNotAlreadySeen(newItem, waitingHashes, k++);
@@ -56,16 +56,16 @@ export function doMatchPatterns<T>(source: Thing[], patterns: [Thing, T][]): Mat
             }
         }
     };
-    for (var inputIndex = 0; inputIndex < source.length; inputIndex++) {
-        for (var i = 0; i < patterns.length; i++) {
-            queue.push(new NFASubstate(inputIndex, patterns[i]![1], [[patterns[i]![0], 0]]));
+    b: {
+        for (var inputIndex = 0; inputIndex < source.length; inputIndex++) {
+            queue.push(new NFASubstate(inputIndex, [[pattern, 0]]));
+            if (zippy(inputIndex, null, false)) break b;
+            if (zippy(inputIndex, source[inputIndex]!, false)) break b;
         }
-        zippy(inputIndex, null, false);
-        zippy(inputIndex, source[inputIndex]!, false);
+        zippy(inputIndex, null, true);
     }
-    zippy(inputIndex, null, true);
     for (var i = 0; i < queue.length; i++) {
         if (is(queue[i], NFASubstate)) queue.splice(i--, 1);
     }
-    return queue as MatchResult<T>[];
+    return queue as MatchResult[];
 }

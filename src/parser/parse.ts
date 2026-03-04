@@ -14,60 +14,60 @@ const baseBlocks = {
     "# ": "lineComment",
 }
 
-function makeBlock(this: BlockRule, items: Thing[], start: string, end: string, loc: LocationTrace): Thing {
-    return boxBlock(items, this._type, loc, start, end);
+function makeBlock(this: BlockRule, items: Thing[], start: string, end: string, loc: LocationTrace) {
+    return boxBlock(items, this.t, loc, start, end);
 }
 
-function makeComment(items: Thing[], start: string, end: string, loc: LocationTrace): Thing {
-    return new Thing(ThingType.space_symbol, [], start, start + items.map(i => unparse(i)).join(""), end, "", loc);
+function makeComment(items: Thing[], start: string, end: string, loc: LocationTrace) {
+    return new Thing(ThingType.sym_space, [], start, start + items.map(i => unparse(i)).join(""), end, "", loc);
 }
 
 const defaultBlockRules: Record<string, BlockRule> = {
     toplevel: {
-        _type: ThingType.toplevel_block,
-        _end: [null],
-        _skip: [],
-        _inner: baseBlocks,
-        _process: makeBlock,
+        t: ThingType.blk_top,
+        e: [null],
+        x: [],
+        i: baseBlocks,
+        p: makeBlock,
     },
     round: {
-        _type: ThingType.round_block,
-        _end: [")"],
-        _skip: [],
-        _inner: baseBlocks,
-        _process: makeBlock,
+        t: ThingType.blk_round,
+        e: [")"],
+        x: [],
+        i: baseBlocks,
+        p: makeBlock,
     },
     square: {
-        _type: ThingType.square_block,
-        _end: ["]"],
-        _skip: [],
-        _inner: baseBlocks,
-        _process: makeBlock,
+        t: ThingType.blk_square,
+        e: ["]"],
+        x: [],
+        i: baseBlocks,
+        p: makeBlock,
     },
     curly: {
-        _type: ThingType.curly_block,
-        _end: ["}"],
-        _skip: [],
-        _inner: baseBlocks,
-        _process: makeBlock,
+        t: ThingType.blk_curly,
+        e: ["}"],
+        x: [],
+        i: baseBlocks,
+        p: makeBlock,
     },
     rawstring: {
-        _type: ThingType.string_block,
-        _end: ["'"],
-        _skip: ["\\'", "\\\\"],
-        _inner: {},
-        _process(items, start, end, loc) {
+        t: ThingType.blk_str,
+        e: ["'"],
+        x: ["\\'", "\\\\"],
+        i: {},
+        p(items, start, end, loc) {
             if (end !== start) throw new ParseError("unreachable", loc);
             const raw = items.map(item => unparse(item)).join("");
             return boxString(raw.replaceAll(/\\(['\\])/g, "$1"), loc, raw, start);
         },
     },
     string: {
-        _type: ThingType.string_block,
-        _end: ['"'],
-        _skip: ['\\"', "\\\\", "\\{"],
-        _inner: { "{": "stringInterpolation" },
-        _process(items, start, end, loc) {
+        t: ThingType.blk_str,
+        e: ['"'],
+        x: ['\\"', "\\\\", "\\{"],
+        i: { "{": "stringInterpolation" },
+        p(items, start, end, loc) {
             var curString = "", curStringRaw = "", startLoc: LocationTrace | null = loc;
             const bits: Thing[] = [];
             const chuck = () => {
@@ -77,38 +77,38 @@ const defaultBlockRules: Record<string, BlockRule> = {
             }
             for (var i = 0; i < items.length; i++) {
                 const item = items[i]!;
-                if (isBlock(item.type)) {
+                if (isBlock(item)) {
                     chuck();
                     bits.push(item);
                     continue;
                 }
-                startLoc ??= item.srcLocation;
-                if (item.value === "\\") {
+                startLoc ??= item.loc;
+                if (item.v === "\\") {
                     // Process escape characters
                     const next = items[++i];
-                    if (!next) throw new ParseError("unreachable (backslash at end of string)", item.srcLocation);
-                    if (/^['"{}]$/.test(next.value)) {
-                        curStringRaw += "\\" + next.value;
-                        curString += next.value;
-                    } else if (isSymbol(next.type)) {
-                        const escPortion = unescape(next.value, next.srcLocation, false);
+                    if (!next) throw new ParseError("unreachable (backslash at end of string)", item.loc);
+                    if (/^['"{}]$/.test(next.v as string)) {
+                        curStringRaw += "\\" + next.v;
+                        curString += next.v;
+                    } else if (isSymbol(next)) {
+                        const escPortion = unescape(next.v, next.loc, false);
                         if (escPortion.length === 0) {
                             const curlyblock = items[++i];
-                            if (!curlyblock || !isBlock(curlyblock.type)) {
-                                throw new ParseError(`expected \"{\" after \"\\${next.value}\"`, (curlyblock ?? next).srcLocation,
+                            if (!curlyblock || !isBlock(curlyblock)) {
+                                throw new ParseError(`expected \"{\" after \"\\${next.v}\"`, (curlyblock ?? next).loc,
                                     [new ErrorNote("note: use ' instead of \" to make this a raw string", loc)]);
                             }
                             const fullEscape = "u" + unparse(curlyblock);
                             curStringRaw += "\\" + fullEscape;
-                            curString += unescape(fullEscape, curlyblock.srcLocation, true);
+                            curString += unescape(fullEscape, curlyblock.loc, true);
                         } else {
-                            curStringRaw += "\\" + next.value;
+                            curStringRaw += "\\" + next.v;
                             curString += escPortion;
                         }
-                    } else throw new ParseError("invalid escape", next.srcLocation);
+                    } else throw new ParseError("invalid escape", next.loc);
                 } else {
-                    curStringRaw += item.value;
-                    curString += item.value;
+                    curStringRaw += item.v;
+                    curString += item.v;
                 }
             }
             if (bits.length === 0) chuck();
@@ -116,25 +116,25 @@ const defaultBlockRules: Record<string, BlockRule> = {
         },
     },
     stringInterpolation: {
-        _type: ThingType.round_block,
-        _end: ["}"],
-        _skip: [],
-        _inner: baseBlocks,
-        _process: makeBlock,
+        t: ThingType.blk_round,
+        e: ["}"],
+        x: [],
+        i: baseBlocks,
+        p: makeBlock,
     },
     comment: {
-        _type: ThingType.round_block,
-        _end: ["##"],
-        _skip: [],
-        _inner: {},
-        _process: makeComment,
+        t: ThingType.blk_round,
+        e: ["##"],
+        x: [],
+        i: {},
+        p: makeComment,
     },
     lineComment: {
-        _type: ThingType.round_block,
-        _end: ["\n", null],
-        _skip: [],
-        _inner: {},
-        _process: makeComment,
+        t: ThingType.blk_round,
+        e: ["\n", null],
+        x: [],
+        i: {},
+        p: makeComment,
     }
 }
 

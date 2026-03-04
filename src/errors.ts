@@ -20,7 +20,7 @@ function formatTrace(trace: LocationTrace, message: string, sources: Record<stri
 }
 
 export class ErrorNote {
-    constructor(public message: string, public location: LocationTrace) { }
+    constructor(public message: string, public loc: LocationTrace) { }
 }
 
 export class BackolonError extends Error {
@@ -28,7 +28,7 @@ export class BackolonError extends Error {
         super(message);
     }
     displayOn(sources: Record<string, string>): string {
-        return formatTrace(this.trace, "error: " + this.message, sources) + this.notes.map(note => "\n" + formatTrace(note.location, note.message, sources)).join("") + "\n";
+        return formatTrace(this.trace, "error: " + this.message, sources) + this.notes.map(note => "\n" + formatTrace(note.loc, note.message, sources)).join("") + "\n";
     }
 }
 

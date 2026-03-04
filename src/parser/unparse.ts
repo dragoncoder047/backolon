@@ -1,4 +1,4 @@
-import { Thing, ThingType } from "../objects/thing";
+import { Thing, ThingType, typecheck } from "../objects/thing";
 
 export interface UnparseContext {
     pre(thing: Thing): string;
@@ -7,14 +7,14 @@ export interface UnparseContext {
 }
 
 const DEFAULT_UNPARSE_CONTEXT: UnparseContext = {
-    pre: thing => thing.srcPrefix,
+    pre: thing => thing.s0,
     join(thing, parts) {
-        if (thing.type === ThingType.map && parts.length === 0) return ":"; // empty map = [:], vs empty list = []
-        return parts.join(thing.srcJoiner);
+        if (typecheck(ThingType.map)(thing) && parts.length === 0) return ":"; // empty map = [:], vs empty list = []
+        return parts.join(thing.sj);
     },
-    post: thing => thing.srcSuffix
+    post: thing => thing.s1
 }
 
 export function unparse(thing: Thing, context: UnparseContext = DEFAULT_UNPARSE_CONTEXT): string {
-    return context.pre(thing) + context.join(thing, thing.children.map(c => unparse(c, context))) + context.post(thing);
+    return context.pre(thing) + context.join(thing, thing.c.map(c => unparse(c as any, context))) + context.post(thing);
 }
