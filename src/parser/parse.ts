@@ -4,14 +4,26 @@ import { blockParse, BlockRule } from "./blockParse";
 import { tokenize } from "./tokenizer";
 import { unparse } from "./unparse";
 
+export enum BlockHandler {
+    round = "r",
+    square = "s",
+    curly = "c",
+    string = "t",
+    rawstring = "a",
+    stringInterpolation = "i",
+    comment = "m",
+    lineComment = "l",
+    toplevel = "o",
+}
+
 const baseBlocks = {
-    "(": "round",
-    "[": "square",
-    "{": "curly",
-    '"': "string",
-    "'": "rawstring",
-    "##": "comment",
-    "# ": "lineComment",
+    "(": BlockHandler.round,
+    "[": BlockHandler.square,
+    "{": BlockHandler.curly,
+    '"': BlockHandler.string,
+    "'": BlockHandler.rawstring,
+    "##": BlockHandler.comment,
+    "# ": BlockHandler.lineComment,
 }
 
 function makeBlock(this: BlockRule, items: Thing[], start: string, end: string, loc: LocationTrace) {
@@ -19,40 +31,40 @@ function makeBlock(this: BlockRule, items: Thing[], start: string, end: string, 
 }
 
 function makeComment(items: Thing[], start: string, end: string, loc: LocationTrace) {
-    return new Thing(ThingType.sym_space, [], start, start + items.map(i => unparse(i)).join(""), end, "", loc);
+    return new Thing(ThingType.space, [], start, start + items.map(i => unparse(i)).join(""), end, "", loc);
 }
 
-const defaultBlockRules: Record<string, BlockRule> = {
-    toplevel: {
-        t: ThingType.blk_top,
+const defaultBlockRules: Record<BlockHandler, BlockRule> = {
+    [BlockHandler.toplevel]: {
+        t: ThingType.topblock,
         e: [null],
         x: [],
         i: baseBlocks,
         p: makeBlock,
     },
-    round: {
-        t: ThingType.blk_round,
+    [BlockHandler.round]: {
+        t: ThingType.roundblock,
         e: [")"],
         x: [],
         i: baseBlocks,
         p: makeBlock,
     },
-    square: {
-        t: ThingType.blk_square,
+    [BlockHandler.square]: {
+        t: ThingType.squareblock,
         e: ["]"],
         x: [],
         i: baseBlocks,
         p: makeBlock,
     },
-    curly: {
-        t: ThingType.blk_curly,
+    [BlockHandler.curly]: {
+        t: ThingType.curlyblock,
         e: ["}"],
         x: [],
         i: baseBlocks,
         p: makeBlock,
     },
-    rawstring: {
-        t: ThingType.blk_str,
+    [BlockHandler.rawstring]: {
+        t: ThingType.stringblock,
         e: ["'"],
         x: ["\\'", "\\\\"],
         i: {},
@@ -62,14 +74,14 @@ const defaultBlockRules: Record<string, BlockRule> = {
             return boxString(raw.replaceAll(/\\(['\\])/g, "$1"), loc, raw, start);
         },
     },
-    string: {
-        t: ThingType.blk_str,
+    [BlockHandler.string]: {
+        t: ThingType.stringblock,
         e: ['"'],
         x: ['\\"', "\\\\", "\\{"],
-        i: { "{": "stringInterpolation" },
+        i: { "{": BlockHandler.stringInterpolation, },
         p(items, start, end, loc) {
             var curString = "", curStringRaw = "", startLoc: LocationTrace | null = loc;
-            const bits: Thing[] = [];
+            const bits: Thing<ThingType.string | ThingType.roundblock>[] = [];
             const chuck = () => {
                 bits.push(boxString(curString, startLoc!, curStringRaw, ""));
                 curString = curStringRaw = "";
@@ -79,7 +91,7 @@ const defaultBlockRules: Record<string, BlockRule> = {
                 const item = items[i]!;
                 if (isBlock(item)) {
                     chuck();
-                    bits.push(item);
+                    bits.push(item as Thing<ThingType.roundblock>);
                     continue;
                 }
                 startLoc ??= item.loc;
@@ -115,23 +127,24 @@ const defaultBlockRules: Record<string, BlockRule> = {
             return bits.length === 1 ? bits[0]! : boxStringBlock(bits, loc, start);
         },
     },
-    stringInterpolation: {
-        t: ThingType.blk_round,
+    [BlockHandler.stringInterpolation]: {
+        t: ThingType.roundblock,
         e: ["}"],
         x: [],
         i: baseBlocks,
         p: makeBlock,
     },
-    comment: {
-        t: ThingType.blk_round,
+    [BlockHandler.comment]: {
+        t: ThingType.roundblock,
         e: ["##"],
         x: [],
         i: {},
         p: makeComment,
     },
-    lineComment: {
-        t: ThingType.blk_round,
+    [BlockHandler.lineComment]: {
+        t: ThingType.roundblock,
         e: ["\n", null],
+        g: false,
         x: [],
         i: {},
         p: makeComment,
@@ -174,5 +187,5 @@ function hexEsc(string: string, src: LocationTrace): string {
 }
 
 export function parse(string: string, filename: URL = UNKNOWN_LOCATION.file) {
-    return blockParse(tokenize(string, filename), defaultBlockRules, "toplevel");
+    return blockParse(tokenize(string, filename), defaultBlockRules, BlockHandler.toplevel);
 }

@@ -11,8 +11,8 @@ test("doesn't make assumptions about comments", () => {
     const y = tokenize("## foo ##", F);
     expect(getTokenContents(x)).toEqual(["#", " ", "foo", null]);
     expect(getTokenContents(y)).toEqual(["#", "#", " ", "foo", " ", "#", "#", null]);
-    expect(getTokenTypes(x)).toEqual([ThingType.sym_op, ThingType.sym_space, ThingType.sym_name, ThingType.end]);
-    expect(getTokenTypes(y)).toEqual([ThingType.sym_op, ThingType.sym_op, ThingType.sym_space, ThingType.sym_name, ThingType.sym_space, ThingType.sym_op, ThingType.sym_op, ThingType.end]);
+    expect(getTokenTypes(x)).toEqual([ThingType.operator, ThingType.space, ThingType.name, ThingType.end]);
+    expect(getTokenTypes(y)).toEqual([ThingType.operator, ThingType.operator, ThingType.space, ThingType.name, ThingType.space, ThingType.operator, ThingType.operator, ThingType.end]);
 });
 test("groups name tokens", () => {
     expect(getTokenContents(tokenize("a b coffee", F))).toEqual(["a", " ", "b", " ", "coffee", null]);

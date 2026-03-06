@@ -6,7 +6,7 @@ import { NFASubstate } from "./internals";
 
 export class MatchResult {
     constructor(
-        public bindings: [Thing<ThingType.sym_name>, Thing[] | Thing][],
+        public bindings: [Thing<ThingType.name>, Thing[] | Thing][],
         public span: [number, number]
     ) { }
 }
@@ -19,6 +19,7 @@ export class MatchResult {
  *
  * @param source Stream of tokens to be fed to the pattern matching.
  * @param patterns List of structured trees of `pattern`-type Things describing the patterns to be matched against.
+ * @param findAll Whether to find all matches, if true, or stop early when the leftmost match is found, if false. (Default true)
  */
 
 export function matchPattern(source: readonly Thing[], pattern: Thing, findAll = true): MatchResult[] {

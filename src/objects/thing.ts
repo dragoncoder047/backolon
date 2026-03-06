@@ -8,91 +8,92 @@ export enum ThingType {
     /** represents the end-of-file marker for tokenization, or the end of a read stream, or the end of an iterable */
     end,
     /** an alphanumeric symbol, such as x, hello, or _QWE_RTY_123 */
-    sym_name,
+    name,
     /** an operator character (only ever one character) */
-    sym_op,
+    operator,
     /** a symbol composed entirely of whitespace and/or comments. Newlines get their own Thing. */
-    sym_space,
+    space,
+    newline,
     number,
     string,
-    blk_round,
-    blk_square,
-    blk_curly,
-    blk_top,
-    blk_str,
+    roundblock,
+    squareblock,
+    curlyblock,
+    topblock,
+    stringblock,
     /** represents a function call, children[0] is the function, children[1:] are the arguments */
     apply,
     /** closed-over lambda function or macro, children[0] is the call signature, children[1] is the body */
-    fn,
+    func,
     /** javascript function or macro, children is empty, value is the native function details */
-    fn_native,
+    nativefunc,
     /** implicit block, value=env, children[0] is the body */
-    fn_implicit,
+    implicitfunc,
     /** name, type, default; value=lazy */
-    fn_param_descriptor,
+    paramdescriptor,
     continuation,
     /** children[0] is the bind target object (the "self" value), children[1] is the method */
-    fn_bound_method,
+    boundmethod,
     /** value=true means anchor to start, value=false means anchor to end */
-    pat_anchor,
+    anchor,
     /** value is string enum of ThingType */
-    pat_m_type,
+    matchtype,
     /** child[0] is compared to */
-    pat_m_val,
+    matchvalue,
+    matchany,
     /** children[0] is the symbol, children[1] is the thing to capture */
-    pat_group,
+    group,
     /** each child is an alternatives inside separately, leftmost takes precedence */
-    pat_alt,
+    alternatives,
     /** try each child in sequence */
-    pat_seq,
-    /** repeat children (as sequence) zero or one times, greedy or not */
-    pat_opt,
+    sequence,
     /** repeat children (as sequence) one or more times, greedy or not */
-    pat_rep,
+    repeat,
     list,
     map,
     pair,
     triple,
     env,
-    i_am_a_macro,
-    i_am_a_splat,
+    macroized,
+    splat,
 }
 
 type ThingInternalTypes<T extends ThingType> = {
     [ThingType.nil]: [null, []],
     [ThingType.end]: [null, []],
-    [ThingType.sym_name]: [string, []],
-    [ThingType.sym_op]: [string, []],
-    [ThingType.sym_space]: [string, []],
+    [ThingType.name]: [string, []],
+    [ThingType.operator]: [string, []],
+    [ThingType.space]: [string, []],
+    [ThingType.newline]: [string, []],
     [ThingType.number]: [number, []],
     [ThingType.string]: [string, []],
-    [ThingType.blk_round]: [null, Thing[]],
-    [ThingType.blk_square]: [null, Thing[]],
-    [ThingType.blk_curly]: [null, Thing[]],
-    [ThingType.blk_top]: [null, Thing[]],
-    [ThingType.blk_str]: [null, Thing<ThingType.string | ThingType.blk_round>[]],
+    [ThingType.roundblock]: [null, Thing[]],
+    [ThingType.squareblock]: [null, Thing[]],
+    [ThingType.curlyblock]: [null, Thing[]],
+    [ThingType.topblock]: [null, Thing[]],
+    [ThingType.stringblock]: [null, Thing<ThingType.string | ThingType.roundblock>[]],
     [ThingType.apply]: [null, Thing[]],
-    [ThingType.fn]: [null, [Thing<ThingType.blk_round>, Thing]],
-    [ThingType.fn_native]: [string, []],
-    [ThingType.fn_implicit]: [Thing<ThingType.env | ThingType.nil>, [Thing]],
-    [ThingType.fn_param_descriptor]: [boolean, [Thing<ThingType.sym_name>, Thing<ThingType.list>] | [Thing<ThingType.sym_name>, Thing<ThingType.list>, Thing]],
+    [ThingType.func]: [null, [Thing<ThingType.roundblock>, Thing]],
+    [ThingType.nativefunc]: [string, []],
+    [ThingType.implicitfunc]: [Thing<ThingType.env | ThingType.nil>, [Thing]],
+    [ThingType.paramdescriptor]: [boolean, [Thing<ThingType.name>, Thing<ThingType.list>] | [Thing<ThingType.name>, Thing<ThingType.list>, Thing]],
     [ThingType.continuation]: [readonly StackEntry[], []],
-    [ThingType.fn_bound_method]: [null, [Thing, Thing<ThingType.fn>]],
-    [ThingType.pat_anchor]: [boolean, []],
-    [ThingType.pat_m_type]: [ThingType, []],
-    [ThingType.pat_m_val]: [null, [Thing]],
-    [ThingType.pat_group]: [null, [Thing<ThingType.sym_name>, ...Thing[]]],
-    [ThingType.pat_alt]: [null, Thing[]],
-    [ThingType.pat_seq]: [null, Thing[]],
-    [ThingType.pat_opt]: [boolean, Thing[]],
-    [ThingType.pat_rep]: [boolean, Thing[]],
+    [ThingType.boundmethod]: [null, [Thing, Thing<ThingType.func>]],
+    [ThingType.anchor]: [boolean, []],
+    [ThingType.matchtype]: [ThingType, []],
+    [ThingType.matchvalue]: [null, [Thing]],
+    [ThingType.matchany]: [null, []],
+    [ThingType.group]: [null, [Thing<ThingType.name>, ...Thing[]]],
+    [ThingType.alternatives]: [null, Thing[]],
+    [ThingType.sequence]: [null, Thing[]],
+    [ThingType.repeat]: [boolean, Thing[]],
     [ThingType.list]: [null, Thing[]],
     [ThingType.map]: [null, Thing<ThingType.pair>[]],
     [ThingType.pair]: [null, [Thing, Thing]],
     [ThingType.triple]: [null, [Thing, Thing, Thing]],
     [ThingType.env]: [null, [Thing<ThingType.env | ThingType.nil>, Thing<ThingType.map>, Thing<ThingType.list>]]
-    [ThingType.i_am_a_macro]: [null, [Thing]],
-    [ThingType.i_am_a_splat]: [null, [Thing]],
+    [ThingType.macroized]: [null, [Thing]],
+    [ThingType.splat]: [null, [Thing]],
 }[T];
 
 const unhashable = [ThingType.list, ThingType.map];
@@ -133,30 +134,30 @@ export class Thing<T extends (ThingType | string) = ThingType | string> {
 
 export function boxNil(trace = UNKNOWN_LOCATION) { return new Thing(ThingType.nil, [], null, "", "", "", trace); }
 export function boxEnd(trace = UNKNOWN_LOCATION) { return new Thing(ThingType.end, [], null, "", "", "", trace); }
-export function boxSymbol<T extends ThingType.sym_name | ThingType.sym_op | ThingType.sym_space>(value: string, kind: T, trace = UNKNOWN_LOCATION): Thing<T> { return new Thing(kind, [] as any, value as any, value, "", "", trace); }
-export function boxNameSymbol(value: string, trace = UNKNOWN_LOCATION) { return boxSymbol(value, ThingType.sym_name, trace); }
-export function boxOperatorSymbol(value: string, trace = UNKNOWN_LOCATION) { return boxSymbol(value, ThingType.sym_op, trace); }
-export function boxSpaceSymbol(value: string, trace = UNKNOWN_LOCATION) { return boxSymbol(value, ThingType.sym_space, trace); }
+export function boxSymbol<T extends ThingType.name | ThingType.operator | ThingType.space>(value: string, kind: T, trace = UNKNOWN_LOCATION): Thing<T> { return new Thing(kind, [] as any, value as any, value, "", "", trace); }
+export function boxNameSymbol(value: string, trace = UNKNOWN_LOCATION) { return boxSymbol(value, ThingType.name, trace); }
+export function boxOperatorSymbol(value: string, trace = UNKNOWN_LOCATION) { return boxSymbol(value, ThingType.operator, trace); }
+export function boxSpaceSymbol(value: string, trace = UNKNOWN_LOCATION) { return boxSymbol(value, ThingType.space, trace); }
 export function boxNumber(value: number, trace = UNKNOWN_LOCATION, repr = value.toString()) { return new Thing(ThingType.number, [], value, repr, "", "", trace); }
 export function boxString(value: string, trace = UNKNOWN_LOCATION, raw: string, quote: string) { return new Thing(ThingType.string, [], value, quote + raw, quote, "", trace); }
-export function boxBlock<T extends ThingType.blk_round | ThingType.blk_square | ThingType.blk_curly | ThingType.blk_str | ThingType.blk_top>(children: Thing[], kind: T, trace = UNKNOWN_LOCATION, start: string, end: string): Thing<T> { return new Thing(kind, children as any, null as any, start, end, "", trace); }
-export function boxRoundBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.blk_round, trace, "(", ")"); }
-export function boxSquareBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.blk_square, trace, "[", "]"); }
-export function boxCurlyBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.blk_curly, trace, "{", "}"); }
-export function boxToplevelBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.blk_top, trace, "", ""); }
-export function boxStringBlock(children: Thing[], trace = UNKNOWN_LOCATION, quote: string) { return boxBlock(children, ThingType.blk_str, trace, quote, quote); }
+export function boxBlock<T extends ThingType.roundblock | ThingType.squareblock | ThingType.curlyblock | ThingType.stringblock | ThingType.topblock>(children: Thing<T>["c"], kind: T, trace = UNKNOWN_LOCATION, start: string, end: string): Thing<T> { return new Thing(kind, children, null as any, start, end, "", trace); }
+export function boxRoundBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.roundblock, trace, "(", ")"); }
+export function boxSquareBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.squareblock, trace, "[", "]"); }
+export function boxCurlyBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.curlyblock, trace, "{", "}"); }
+export function boxToplevelBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.topblock, trace, "", ""); }
+export function boxStringBlock(children: Thing<ThingType.string | ThingType.roundblock>[], trace = UNKNOWN_LOCATION, quote: string) { return boxBlock(children, ThingType.stringblock, trace, quote, quote); }
 export function boxList(items: Thing[], trace = UNKNOWN_LOCATION) { return new Thing(ThingType.list, items, null, "[", "]", ", ", trace, false); }
 
 export function typecheck<T extends ThingType>(...types: T[]) {
     return (thing: Thing<any>): thing is Thing<T> => types.includes(thing.t as T);
 }
 
-export const isBlock = typecheck(ThingType.blk_round, ThingType.blk_square, ThingType.blk_curly, ThingType.blk_str, ThingType.blk_top);
-export const isSymbol = typecheck(ThingType.sym_name, ThingType.sym_op, ThingType.sym_space);
-export const isCallable = typecheck(ThingType.fn, ThingType.fn_native, ThingType.fn_implicit, ThingType.continuation, ThingType.fn_bound_method);
-export const isPattern = typecheck(ThingType.pat_alt, ThingType.pat_anchor, ThingType.pat_group, ThingType.pat_m_type, ThingType.pat_m_val, ThingType.pat_opt, ThingType.pat_rep, ThingType.pat_seq);
-export const isValuePattern = typecheck(ThingType.pat_m_type, ThingType.pat_m_val);
-export const isAtom = typecheck(ThingType.nil, ThingType.end, ThingType.sym_name, ThingType.sym_op, ThingType.sym_space, ThingType.number, ThingType.string, ThingType.fn, ThingType.fn_bound_method, ThingType.fn_implicit, ThingType.fn_native, ThingType.continuation, ThingType.list, ThingType.map, ThingType.i_am_a_splat, ThingType.i_am_a_macro);
+export const isBlock = typecheck(ThingType.roundblock, ThingType.squareblock, ThingType.curlyblock, ThingType.stringblock, ThingType.topblock);
+export const isSymbol = typecheck(ThingType.name, ThingType.operator, ThingType.space);
+export const isCallable = typecheck(ThingType.func, ThingType.nativefunc, ThingType.implicitfunc, ThingType.continuation, ThingType.boundmethod);
+export const isPattern = typecheck(ThingType.alternatives, ThingType.anchor, ThingType.group, ThingType.matchtype, ThingType.matchvalue, ThingType.matchany, ThingType.repeat, ThingType.sequence);
+export const isValuePattern = typecheck(ThingType.matchtype, ThingType.matchvalue);
+export const isAtom = typecheck(ThingType.nil, ThingType.end, ThingType.name, ThingType.operator, ThingType.space, ThingType.number, ThingType.string, ThingType.func, ThingType.boundmethod, ThingType.implicitfunc, ThingType.nativefunc, ThingType.continuation, ThingType.list, ThingType.map, ThingType.splat, ThingType.macroized);
 
 export type CheckedType<T extends (thing: Thing<any>) => thing is Thing<any>> = T extends (thing: Thing<any>) => thing is Thing<infer U> ? U : never;
 

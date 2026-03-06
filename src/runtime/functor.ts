@@ -6,15 +6,15 @@ import { isSymbol, Thing, ThingType, typecheck } from "../objects/thing";
 import { Scheduler } from "./scheduler";
 
 
-function parameterInfo<T>(scheduler: Scheduler, fn: Thing, index: number, getter: (name: Thing<ThingType.sym_name> | undefined, lazy: boolean, default_?: Thing, type?: ThingType) => T): T {
-    var descriptor: Thing<ThingType.fn_param_descriptor> | Thing<ThingType.sym_name>;
-    if (typecheck(ThingType.fn)(fn)) {
-        descriptor = (fn.c[0].c as Thing<ThingType.fn_param_descriptor | ThingType.sym_name>[])[index]! as any;
+function parameterInfo<T>(scheduler: Scheduler, fn: Thing, index: number, getter: (name: Thing<ThingType.name> | undefined, lazy: boolean, default_?: Thing, type?: ThingType) => T): T {
+    var descriptor: Thing<ThingType.paramdescriptor> | Thing<ThingType.name>;
+    if (typecheck(ThingType.func)(fn)) {
+        descriptor = (fn.c[0].c as Thing<ThingType.paramdescriptor | ThingType.name>[])[index]! as any;
     }
-    else if (typecheck(ThingType.fn_native)(fn)) {
+    else if (typecheck(ThingType.nativefunc)(fn)) {
         descriptor = scheduler.getParamDescriptor(fn.v, index);
     }
-    else if (typecheck(ThingType.fn_bound_method)(fn)) {
+    else if (typecheck(ThingType.boundmethod)(fn)) {
         return parameterInfo(scheduler, fn.c[1], index, getter);
     }
     else {
@@ -28,12 +28,12 @@ export function isLazyParamIndex(scheduler: Scheduler, fn: Thing, index: number)
     return parameterInfo(scheduler, fn, index, (_, l) => l);
 }
 
-export function getParamName(scheduler: Scheduler, fn: Thing, index: number): Thing<ThingType.sym_name> {
+export function getParamName(scheduler: Scheduler, fn: Thing, index: number): Thing<ThingType.name> {
     return parameterInfo(scheduler, fn, index, id)!;
 }
 
 export function wrapImplicitBlock(obj: Thing, env: Thing<ThingType.env | ThingType.nil>) {
-    return new Thing(ThingType.fn_implicit, [obj], env, "", "", "", obj.loc);
+    return new Thing(ThingType.implicitfunc, [obj], env, "", "", "", obj.loc);
 }
 
 export function checkargs(min: number, max: number, argv: Thing[], f: Thing) {
@@ -46,13 +46,13 @@ export function checkargs(min: number, max: number, argv: Thing[], f: Thing) {
     }
 }
 
-export function parametersToVars(paramsDef: Thing<ThingType.blk_round>, realArgs: Thing[], callsite: Thing): Thing<ThingType.map> {
+export function parametersToVars(paramsDef: Thing<ThingType.roundblock>, realArgs: Thing[], callsite: Thing): Thing<ThingType.map> {
     const bits = paramsDef.c;
-    const firstOpt = bits.findIndex(e => typecheck(ThingType.fn_param_descriptor)(e) && e.c[2] !== undefined);
+    const firstOpt = bits.findIndex(e => typecheck(ThingType.paramdescriptor)(e) && e.c[2] !== undefined);
     checkargs(firstOpt, bits.length, realArgs, callsite);
     const map = newEmptyMap(callsite.loc);
     for (var i = 0; i < bits.length; i++) {
-        const item = bits[i]! as Thing<ThingType.sym_name> | Thing<ThingType.fn_param_descriptor>;
+        const item = bits[i]! as Thing<ThingType.name> | Thing<ThingType.paramdescriptor>;
         const { a: name, b: default_, c: type } =
             isSymbol(item) ? {
                 a: item,

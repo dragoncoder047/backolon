@@ -6,7 +6,7 @@ import { parse } from "../parser/parse";
 import { StackEntry, Task } from "./task";
 
 interface NativeFunctionDetails {
-    params: (Thing<ThingType.fn_param_descriptor> | Thing<ThingType.sym_name>)[],
+    params: (Thing<ThingType.paramdescriptor> | Thing<ThingType.name>)[],
 }
 
 export class Scheduler {
@@ -54,7 +54,7 @@ export class Scheduler {
             }
         } while (madeProgress);
     }
-    getParamDescriptor(name: string, index: number): Thing<ThingType.fn_param_descriptor>|Thing<ThingType.sym_name> {
+    getParamDescriptor(name: string, index: number): Thing<ThingType.paramdescriptor>|Thing<ThingType.name> {
         return this.apiFunctions[name]?.params[index]!;
     }
     callFunction(task: Task, name: string, args: Thing[]) {

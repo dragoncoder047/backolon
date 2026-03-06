@@ -49,6 +49,9 @@ export {
     MatchResult
 } from "./patterns/match";
 export {
+    parsePattern
+} from "./patterns/meta";
+export {
     newEnv
 } from "./runtime/env";
 export {

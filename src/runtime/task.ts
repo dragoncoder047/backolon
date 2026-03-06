@@ -6,7 +6,7 @@ import { boxList, boxNameSymbol, isAtom, isBlock, isSymbol, Thing, ThingType, ty
 import { matchPattern } from "../patterns/match";
 import { flatToVarMap, newEnv } from "./env";
 import { checkargs, isLazyParamIndex, parametersToVars, wrapImplicitBlock } from "./functor";
-import { Scheduler } from "./scheduler";
+import { type Scheduler } from "./scheduler";
 
 export class StackEntry {
     constructor(
@@ -100,7 +100,7 @@ export class Task {
                         if (res === null) throw new Error("Expected a result");
                         const start = top.d[0] as number;
                         const length = top.d[1] as number - start;
-                        const values = typecheck(ThingType.i_am_a_splat)(res) ? res.c : [res];
+                        const values = typecheck(ThingType.splat)(res) ? res.c : [res];
                         this.ua(top.a.toSpliced(start, length, ...values));
                         this.usd(0, BlockEvalState.matching_patterns, null);
                         return true;
@@ -112,7 +112,7 @@ export class Task {
             symbol:
                 look it up, error if not found
             */
-            if (typecheck(ThingType.sym_name)(val)) {
+            if (typecheck(ThingType.name)(val)) {
                 for (var env = top.e; !typecheck(ThingType.nil)(env); env = env.c[0]!) {
                     const vars = env.c[1]!;
                     const result = mapGetKey(vars, top.v, loc);
@@ -170,11 +170,11 @@ export class Task {
                         res = this.r!;
                         this.r = null;
                         if (res === null) throw new Error("Expected a result");
-                        if (typecheck(ThingType.i_am_a_macro)(res)) {
+                        if (typecheck(ThingType.macroized)(res)) {
                             this.e(res, top.e);
                             return true;
                         }
-                        const values = typecheck(ThingType.i_am_a_splat)(res) ? res.c : [res];
+                        const values = typecheck(ThingType.splat)(res) ? res.c : [res];
                         this.ua(top.a.toSpliced(Infinity, 0, ...values));
                         this.usd(top.i + 1, ApplyEvalState.evaluate_arguments, null);
                         return true;
@@ -215,22 +215,22 @@ export class Task {
     private a(callsite: Thing, args: readonly Thing[]) {
         const functor = args[0]!;
         const rest = args.slice(1);
-        if (typecheck(ThingType.fn)(functor)) {
+        if (typecheck(ThingType.func)(functor)) {
             this.a(callsite, [functor.c[1], this.i(callsite.loc, parametersToVars(functor.c[0], rest, callsite))]);
         }
-        else if (typecheck(ThingType.fn_native)(functor)) {
+        else if (typecheck(ThingType.nativefunc)(functor)) {
             this.scheduler.callFunction(this, functor.v, rest);
         }
-        else if (typecheck(ThingType.fn_bound_method)(functor)) {
+        else if (typecheck(ThingType.boundmethod)(functor)) {
             const realFunctor = functor.c[1];
-            this.a(callsite, [realFunctor.c[1], parametersToVars(realFunctor.c[0], [functor.c[0]].concat(rest), callsite)]);
+            this.a(callsite, [realFunctor.c[1], parametersToVars(realFunctor.c[0], [functor.c[0], ...rest], callsite)]);
         }
         else if (typecheck(ThingType.continuation)(functor)) {
             checkargs(1, 1, rest, callsite);
             this.stack = functor.v;
             this.r = rest[0]!;
         }
-        else if (typecheck(ThingType.fn_implicit)(functor)) {
+        else if (typecheck(ThingType.implicitfunc)(functor)) {
             checkargs(1, 1, rest, callsite);
             const map = rest[0]!;
             if (!typecheck(ThingType.map)(map)) {

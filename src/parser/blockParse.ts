@@ -6,6 +6,7 @@ import { CheckedType, isBlock, Thing, ThingType, typecheck } from "../objects/th
 export interface BlockRule {
     t: CheckedType<typeof isBlock>,
     e: (string | null)[],
+    g?: boolean,
     i: Record<string, string>,
     x: string[],
     p(items: Thing[], start: string, end: string, loc: LocationTrace): Thing;
@@ -68,9 +69,10 @@ export function blockParse<T extends Record<string, BlockRule>, U extends keyof 
                     innerBlockStart = start;
                 })
                 var done = false;
-                processCounters(txt, end, endCounters, [], _ => {
+                processCounters(txt, end, endCounters, [], (_, c) => {
                     done = true;
-                    endStr = txt || "";
+                    if (!(rule.g ?? true)) pos -= c[0], endStr = "";
+                    else endStr = txt || "";
                 });
                 if (done) break;
             }

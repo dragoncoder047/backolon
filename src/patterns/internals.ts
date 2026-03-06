@@ -22,21 +22,30 @@ export class NFASubstate {
         /** atomic binding names */
         public readonly ab: string[] = [],
         /** binding source symbols */
-        public readonly bs: Record<string, Thing<ThingType.sym_name>> = {},
+        public readonly bs: Record<string, Thing<ThingType.name>> = {},
     ) {
         var hash = p.map(p => p[0].h! ^ rotate32(p[1], 19)).reduce(x23, 0) ^ rotate32(s, 22);
         hash ^= map(b, (val, key) => rotate32(javaHash(key) + val[0] ^ (val[1] ?? 0x12345678), 29)).reduce(x23, 0);
         this._hash = hash;
     }
 
-    a(input: Thing | null, inputIndex: number, isAtEnd: boolean): NFASubstate[] {
+    a(input: Thing | null, inputIndex: number, isAtEnd: boolean, debug?: boolean): NFASubstate[] {
         // Handle atomic commands (no children)
         const { _thing: cmd, _index: pIndex } = this.c(1);
         const { _thing: cmd2, _index: pIndex2 } = this.c(2);
-        const nonPatternError = (src: Thing): never => {
-            throw new RuntimeError("Non-pattern in pattern!!", src.loc);
+        const enter = () => this.u(0, cmd, 0);
+        const exit = () => this.u(1, null, pIndex2 + 1);
+        const loop = () => this.u(0, null, 0);
+        const next = () => (
+            cmd2 !== null && typecheck(ThingType.alternatives)(cmd2)
+                ? exit() // Alternatives jump out always
+                : this.u(0, null, pIndex + 1) // otherwise just go to the next one
+        );
+        const nonPatternError = (src: Thing) => {
+            return new RuntimeError("Non-pattern in pattern!!", src.loc);
         }
         if (cmd === null) {
+            if (debug) console.log("cmd is null", "cmd2", ThingType[cmd2!.t]);
             // We fell off the end of the group. Go back up one.
             if (this.p.length === 1) {
                 // No parent = we're done.
@@ -44,14 +53,11 @@ export class NFASubstate {
                     this.d(),
                 ];
             }
-            const exit = () => this.u(1, null, pIndex2 + 1);
-            const loop = () => this.u(0, null, 0);
             switch (cmd2!.t) {
-                case ThingType.pat_opt:
-                case ThingType.pat_seq:
-                case ThingType.pat_alt:
+                case ThingType.sequence:
+                case ThingType.alternatives:
                     return [exit()];
-                case ThingType.pat_rep:
+                case ThingType.repeat:
                     return cmd2!.v ? [
                         // Greedy
                         loop(),
@@ -61,51 +67,45 @@ export class NFASubstate {
                         exit(),
                         loop(),
                     ];
-                case ThingType.pat_group:
+                case ThingType.group:
                     return [
                         this.u(1, null, pIndex2 + 1, cmd2!.c[0]! as any, inputIndex, true),
                     ]
-                case ThingType.pat_anchor:
-                case ThingType.pat_m_val:
-                case ThingType.pat_m_type:
+                case ThingType.anchor:
+                case ThingType.matchvalue:
+                case ThingType.matchtype:
                     throw new RuntimeError("Atomic command reached compound command exit code!!", cmd2!.loc);
                 default:
-                    nonPatternError(cmd2!);
-                    throw 1; // TS is stupid
+                    throw nonPatternError(cmd2!);
             }
         }
-        const next = () => (
-            cmd2 !== null && typecheck(ThingType.pat_alt)(cmd2)
-                ? this.u(1, null, pIndex2 + 1) // Alternatives jump out always
-                : this.u(0, null, pIndex + 1) // otherwise just go to the next one
-        );
-        const enter = () => this.u(0, cmd, 0);
+
         const firstChild = cmd.c[0]!;
         const secondChild = cmd.c[1]!;
+        if (debug) console.log("cmd", ThingType[cmd.t]);
         switch (cmd.t) {
-            case ThingType.pat_opt:
-                return cmd.v ? [enter(), next()] : [next(), enter()];
-            case ThingType.pat_seq:
-            case ThingType.pat_rep:
+            case ThingType.sequence:
+            case ThingType.repeat:
                 return [enter()];
-            case ThingType.pat_alt:
+            case ThingType.alternatives:
                 return cmd.c.map((_, i) =>
                     this.u(0, cmd, i));
-            case ThingType.pat_anchor:
+            case ThingType.anchor:
                 return (cmd.v ? (inputIndex === 0) : isAtEnd) ? [next()] : [];
-            case ThingType.pat_group:
+            case ThingType.group:
                 return [this.u(0, cmd, 1, firstChild as any, inputIndex, false, cmd.c.length === 2 && isValuePattern(secondChild))];
-            case ThingType.pat_m_val:
+            case ThingType.matchvalue:
                 if (input === null) return [this];
                 if (!typecheck(firstChild.t as ThingType)(input) || input.h !== firstChild.h) return [];
                 return [next()];
-            case ThingType.pat_m_type:
+            case ThingType.matchtype:
                 if (input === null) return [this];
                 if (!typecheck(cmd.v as ThingType)(input)) return [];
                 return [next()];
+            case ThingType.matchany:
+                return [input === null ? this : next()];
             default:
-                nonPatternError(cmd);
-                throw 1; // Typescript is stupid
+                throw nonPatternError(cmd);
         }
     }
     c(index: number): { _thing: Thing | null, _index: number } {
@@ -113,7 +113,7 @@ export class NFASubstate {
         return { _thing: cur?.[0].c[cur?.[1]] ?? null, _index: cur?.[1] };
     }
 
-    u(popElements: number, push: Thing | null, newIndex: number, binding: Thing<ThingType.sym_name> | null = null, bindingIndex = 0, bindingIsSecond = false, newAtomic = false): NFASubstate {
+    u(popElements: number, push: Thing | null, newIndex: number, binding: Thing<ThingType.name> | null = null, bindingIndex = 0, bindingIsSecond = false, newAtomic = false): NFASubstate {
         const newPath = this.p.slice();
         for (; popElements > 0; popElements--) newPath.pop();
         if (push) newPath.push([push, newIndex]);

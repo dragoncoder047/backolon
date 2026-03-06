@@ -11,10 +11,11 @@ type Rule = [
 const TOKENIZE_RULES: Rule[] = [
     [/^0x[a-f0-9]+|^-?0b[01]+/i, ThingType.number, Number],
     [/^(\.\d+|\d+\.?\d*)(e[+-]?\d+)?/i, ThingType.number, Number],
-    [/^\p{Punctuation}/u, ThingType.sym_op, id],
-    [/^\p{Alpha}[\p{Alpha}\p{Number}_]*/u, ThingType.sym_name, id],
-    [/^\n|^((?!\n)\s)+/, ThingType.sym_space, id],
-    [/^./, ThingType.sym_op, id]
+    [/^\p{Punctuation}/u, ThingType.operator, id],
+    [/^\p{Alpha}[\p{Alpha}\p{Number}_]*/u, ThingType.name, id],
+    [/^((?!\n)\s)+/, ThingType.space, id],
+    [/^\n+/, ThingType.newline, id],
+    [/^./, ThingType.operator, id]
 ];
 
 export function tokenize(source: string, filename: URL = UNKNOWN_LOCATION.file) {
