@@ -330,68 +330,110 @@ describe("full pattern match", () => {
     })
 });
 describe("metapattern", () => {
-    const pat = (src: string) => parsePattern(parse(src, F).c);
+    const pstring = (src: string) => parsePattern(parse(src, F).c);
 
-    test("a", () => {
-        const src = "a ...  \nb ...[+]";
-        try {
-            console.log("original: ", stringify(src));
-            console.log("unparsed:", stringify(unparse(pat(src))));
-        } catch (e) {
-            console.log("caught error!");
-            if (e instanceof BackolonError) {
-                console.log(e.displayOn({ [F.href]: src }));
-            }
-            throw e;
-        }
-    });
     test("simple wildcard", () => {
-        const p = pat("foo");
+        const p = pstring("foo");
         // foo should become a capture of any element named foo
         expect(p.c[0]!.v.t).toBe(PatternType.capture_group);
         expect((p.c[0]!.c[0] as Thing).v).toBe("foo");
     });
 
     test("repeat lazy and greedy", () => {
-        const lazy = pat("x...");
+        const lazy = pstring("x...");
         expect(lazy.c[0]!.v.t).toBe(PatternType.repeat);
         expect(lazy.c[0]!.v.gsv).toBe(false);
-        const greedy = pat("x ... [+]");
+        const greedy = pstring("x ... [+]");
         expect(greedy.c[0]!.v.t).toBe(PatternType.repeat);
         expect(greedy.c[0]!.v.gsv).toBe(true);
     });
 
     test("alternation", () => {
-        const a = pat("{a|b}");
+        const a = pstring("{a|b}");
         expect(a.c[0]!.v.t).toBe(PatternType.alternatives);
     });
 
     test("capture with parentheses", () => {
-        const g = pat("[foo (bar baz)]");
+        const g = pstring("[foo (bar baz)]");
         expect(g.c[0]!.v.t).toBe(PatternType.capture_group);
         expect(g.c[0]!.c[0]!.v).toBe("foo");
     });
 
     test("type capture", () => {
-        const t = pat("[foo: roundblock]");
+        const t = pstring("[foo: roundblock]");
         expect(t.c[0]!.v.t).toBe(PatternType.capture_group);
         expect(t.c[0]!.c[1]!.v.t).toBe(PatternType.match_type);
         expect(t.c[0]!.c[1]!.v.gsv).toBe(ThingType.roundblock);
     });
 
     test("literal match", () => {
-        const l = pat("[=+]");
+        const l = pstring("[=+]");
         expect(l.c[0]!.v.t).toBe(PatternType.match_value);
         expect(l.c[0]!.c[0]!.v).toBe("+");
     });
 
     test("spaces semantics", () => {
-        const s = pat("  "); // two spaces -> one or more
+        const s = pstring("  "); // two spaces -> one or more
         expect(s.c[0]!.v.t).toBe(PatternType.repeat);
         // single space should be optional (alternation with nothing)
-        const s1 = pat(" ");
+        const s1 = pstring(" ");
         expect(s1.c[0]!.v.t).toBe(PatternType.alternatives);
-        const nl = pat("\n"); // newline matches literally
+        const nl = pstring("\n"); // newline matches literally
         expect(nl.c[0]!.v.t).toBe(PatternType.match_value);
     });
+
+    // test("a", () => {
+    //     const src = "[x: number] (+ [y: number])...";
+    //     try {
+    //         const pat = pstring(src);
+    //         console.log("original: ", stringify(src));
+    //         console.log("unparsed:", stringify(unparse(pat)));
+    //         console.log("compiled:", compile(pat));
+    //     } catch (e) {
+    //         console.log("caught error!");
+    //         if (e instanceof BackolonError) {
+    //             console.log(e.displayOn({ [F.href]: src }));
+    //         }
+    //         throw e;
+    //     }
+    // });
+    describe("match tests", () => {
+        const pattern_test = (pat: string, input: string, match: boolean) => {
+            test(`pattern ${stringify(pat)} should ${match ? "" : "not "}match ${stringify(input)}`, () => {
+                var parsedPattern: Thing<ThingType.pattern>, parsedInput: Thing[];
+                try {
+                    parsedPattern = pstring(pat);
+                } catch (e) {
+                    if (e instanceof BackolonError) {
+                        console.log(e.displayOn({ [F.href]: pat }));
+                    }
+                    throw e;
+                }
+                try {
+                    parsedInput = parse(input, new URL("about:testinput")).c as any;
+                } catch (e) {
+                    if (e instanceof BackolonError) {
+                        console.log(e.displayOn({ [F.href]: input }));
+                    }
+                    throw e;
+                }
+                var result;
+                // try {
+                    result = matchPattern(parsedInput, parsedPattern);
+                // } catch (e) {
+                //     if (e instanceof BackolonError) {
+                //         console.log(e.displayOn({ [F.href]: pat, "about:testinput": input }));
+                //     }
+                //     throw e;
+                // }
+                if (match) expect(result.length).not.toBe(0);
+                else expect(result).toBeEmpty();
+            });
+        }
+
+        pattern_test("[x: number]", "1", true);
+        pattern_test("[x: number]", "a", false);
+        pattern_test("[x: number] + [y: number])...", "1 + 1", true);
+        pattern_test("{ 1}", " 1", true);
+    })
 });

@@ -41,9 +41,15 @@ export {
     parse
 } from "./parser/parse";
 export {
+    tokenize
+} from "./parser/tokenizer";
+export {
     unparse,
     type UnparseContext
 } from "./parser/unparse";
+export {
+    compile as compilePattern
+} from "./patterns/compile";
 export {
     matchPattern,
     MatchResult

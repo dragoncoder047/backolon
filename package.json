@@ -8,6 +8,8 @@
     "main": "src/index.ts",
     "scripts": {
         "build": "pnpm esbuild --bundle --sourcemap --platform=browser --target=esnext --format=esm src/index.ts --outfile=dist/backolon.js",
+        "build-for-fuzzer": "pnpm esbuild --bundle --sourcemap --platform=node --target=esnext --format=cjs src/index.ts --outfile=dist/backolon.cjs",
+        "fuzz": "pnpm build-for-fuzzer; ./fuzz.sh",
         "test": "pnpm bun test",
         "test:watch": "pnpm test --watch",
         "prepare": "pnpm build --minify"
@@ -27,6 +29,7 @@
         ]
     },
     "dependencies": {
+        "@gitlab-org/jsfuzz": "^1.2.4",
         "jsoncrush": "^1.1.8",
         "lib0": "^0.2.117",
         "resurrect-esm": "^2.0.3"

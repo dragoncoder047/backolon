@@ -61,7 +61,7 @@ export function parsePattern(block: readonly Thing[]): Thing<ThingType.pattern> 
             const name = inner[0] as Thing<ThingType.name>;
             const tok = inner[2]!;
             const ty = typeNameToThingType(tok.v, tok.loc);
-            return [grouped(name, [matchtype(ty, "", tok.loc)], "[", "]", name.loc)];
+            return [grouped(name, [matchtype(ty, "", tok.loc)], "[", b.c.slice(1).map(o => unparse(o)).join("") + "]", name.loc)];
         }
         if (test(square_capture_subpattern)) {
             const name = inner[0] as Thing<ThingType.name>;
@@ -113,18 +113,23 @@ export function parsePattern(block: readonly Thing[]): Thing<ThingType.pattern> 
         ];
     });
 
-    // 7. convert remaining names to single-element wildcards
+    // 7. convert operators to literals
+    block = nonoverlappingreplace(block, literal_operator, op => {
+        return [matchvalue(op[0]!)];
+    });
+
+    // 8. convert remaining names to single-element wildcards
     block = nonoverlappingreplace(block, single_wildcard, match => {
         const t = match[0]!;
         return [grouped(t as Thing<ThingType.name>, [dot()], "", "", t.loc)];
     });
 
-    // 8. bail on everything else
+    // 9. bail on everything else
     nonoverlappingreplace(block, other_invalid, tokens => {
         throw new RuntimeError("not valid here", tokens[0]!.loc);
     })
 
-    return sequence(block, "(", ")", block[0]!.loc);
+    return sequence(block, "(", ")", block[0]?.loc ?? UNKNOWN_LOCATION);
 }
 
 function nonoverlappingreplace(block: readonly Thing[], pattern: Thing<ThingType.pattern>, replace: (slice: Thing[]/*, bindings: [Thing, Thing | Thing[]][]*/) => Thing[]): readonly Thing[] {
@@ -190,9 +195,10 @@ const repeat_pattern = sequence([
     ])
 ]);
 
-// patterns for step 7: match individual raw tokens to convert them to patterns
-const single_wildcard = sequence([matchtype(ThingType.name)]);
-const other_invalid = alternatives([matchtype(ThingType.operator), matchtype(ThingType.number), matchtype(ThingType.string)]);
+// patterns for step 7-9: match individual raw tokens to convert them to patterns
+const single_wildcard = matchtype(ThingType.name);
+const literal_operator = matchtype(ThingType.operator);
+const other_invalid = alternatives([matchtype(ThingType.number), matchtype(ThingType.string)]);
 
 function typeNameToThingType(name: string, loc: LocationTrace): ThingType {
     const t = ThingType[name as any] as any as ThingType | undefined;

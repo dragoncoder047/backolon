@@ -137,4 +137,14 @@ describe("blocks", () => {
             expectParseError("##", "\"##\" was never closed");
         });
     });
+    test("unmatched", () => {
+        expectParseError("(", "\"(\" was never closed");
+        expectParseError("[", "\"[\" was never closed");
+        expectParseError("{", "\"{\" was never closed");
+        expectParseError("\"", "\"\\\"\" was never closed");
+        expectParseError("'", "\"'\" was never closed");
+        expectParseError(")", "unexpected \")\"");
+        expectParseError("]", "unexpected \"]\"");
+        expectParseError("}", "unexpected \"}\"");
+    });
 });
