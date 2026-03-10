@@ -1,9 +1,12 @@
 import { last } from "lib0/array";
-import { id } from "lib0/function";
+import { stringify } from "lib0/json";
 import { RuntimeError } from "../errors";
 import { mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
-import { isSymbol, Thing, ThingType, typecheck } from "../objects/thing";
-import { Scheduler } from "./scheduler";
+import { boxNil, boxNumber, isSymbol, Thing, ThingType, typecheck } from "../objects/thing";
+import { parse } from "../parser/parse";
+import { unparse } from "../parser/unparse";
+import { metapattern_location, nonoverlappingreplace, parsePattern, removed_whitespace, typeNameToThingType } from "../patterns/meta";
+import { type Scheduler } from "./scheduler";
 
 
 function parameterInfo<T>(scheduler: Scheduler, fn: Thing, index: number, getter: (name: Thing<ThingType.name> | undefined, lazy: boolean, default_?: Thing, type?: ThingType) => T): T {
@@ -29,7 +32,7 @@ export function isLazyParamIndex(scheduler: Scheduler, fn: Thing, index: number)
 }
 
 export function getParamName(scheduler: Scheduler, fn: Thing, index: number): Thing<ThingType.name> {
-    return parameterInfo(scheduler, fn, index, id)!;
+    return parameterInfo(scheduler, fn, index, x => x)!;
 }
 
 export function wrapImplicitBlock(obj: Thing, env: Thing<ThingType.env | ThingType.nil>) {
@@ -69,9 +72,51 @@ export function parametersToVars(paramsDef: Thing<ThingType.roundblock>, realArg
             continue;
         }
         if (type.length > 0 && !typecheck(...type)(arg)) {
-            throw new RuntimeError(`Wrong type to function call`, arg.loc);
+            throw new RuntimeError(`Wrong type to argument ${i} of function call`, arg.loc);
         }
         mapUpdateKeyMutating(map, name, arg);
     }
     return map;
 }
+
+export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> | Thing<ThingType.paramdescriptor>)[] {
+    const result: any[] = [];
+    for (var item of nonoverlappingreplace(block, signaturePattern, match => {
+        var items = removed_whitespace(match) as any[];
+        var lazy = false, lazystr = "";
+        if (typecheck(ThingType.operator)(items[0]!)) {
+            lazy = true;
+            lazystr = "@";
+            items = items.toSpliced(0, 1);
+        }
+        const loc = items[0].loc;
+        const to_type = (item: Thing) => boxNumber(typeNameToThingType(item.v, item.loc), item.loc, item.v);
+        const nil = boxNil(loc);
+        switch (items.length) {
+            case 1:
+                result.push(lazy
+                    ? new Thing(ThingType.paramdescriptor, [items[0], nil, nil], lazy, lazystr, "", "", loc)
+                    : items[0]);
+                break;
+            case 5:
+                result.push(new Thing(ThingType.paramdescriptor, [items[0], to_type(items[2]), items[4]], lazy, lazystr, "", [":", "="] as any, loc));
+                break;
+            case 3:
+                const isType = items[1].v === ":";
+                result.push(
+                    isType
+                        ? new Thing(ThingType.paramdescriptor, [items[0], to_type(items[2]), nil], lazy, lazystr, "", ":", loc)
+                        : new Thing(ThingType.paramdescriptor, [items[0], nil, items[2]], lazy, lazystr, "", "=", loc)
+                )
+                break;
+            default:
+                throw "unreachable";
+        }
+        return [];
+    })) {
+        throw new RuntimeError(`unexpected ${stringify(unparse(item).slice(0, 20))}`, item.loc);
+    }
+    return result;
+}
+
+const signaturePattern = parsePattern(parse("{[=@]|}[p:name]{ [=:] [t:name]|}{ [==] d|} ", metapattern_location.file).c);

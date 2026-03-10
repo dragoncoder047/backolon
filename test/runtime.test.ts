@@ -1,10 +1,11 @@
-import { test } from "bun:test";
-import { boxList, newEmptyMap, newEnv, Scheduler } from "../src";
-import { F, L } from "./astCheck";
+import { expect, test } from "bun:test";
+import { BUILTIN_ENV, BUILTIN_FUNCTIONS, Scheduler } from "../src";
+import { F } from "./astCheck";
 
-test("a", () => {
-    const s = new Scheduler({}, newEnv(newEmptyMap(), boxList([]), L));
-    const t = s.startTask(1, "a + 1", null, F);
-    s.stepUntilSuspended();
-
+test("roundtrip", () => {
+    const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
+    s.startTask(1, "a + 1", null, F);
+    const s2 = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
+    s2.loadFromSerialized(s.serializeTasks());
+    // expect(s2).toEqual(s);
 });

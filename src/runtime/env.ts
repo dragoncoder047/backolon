@@ -1,8 +1,3 @@
-// Env = tuple/pair (parent, vars, patterns)
-// vars = map
-// patterns = list of tuples (pattern, when, implementation)
-// when = list of numbers (types)
-
 import { isArray } from "lib0/array";
 import { LocationTrace } from "../errors";
 import { mapUpdateKeyMutating, newEmptyMap } from "../objects/map";

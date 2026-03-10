@@ -90,7 +90,7 @@ foreach = [@var list @body] => (
   * don't use `pnpm build-for-fuzzer`; that builds it as a CommonJS module which is only used by the fuzzer and not exported/uploaded to npm
   * don't use `pnpm tsc`; that will only lint and not build (tsc is set to `noEmit: true` since esbuild handles building)
 
-* to run the unit tests: `pnpm test`, or start a background terminal and `pnpm test:watch` (which reruns automatically on file changes)
+* to run the unit tests: `pnpm test`, or start a background terminal and `pnpm test:watch` (which reruns automatically on file changes). Do `AGENT=1 pnpm test` to remove all of the passing-test noise and only show the failures.
 
 * to fuzz test: `pnpm fuzz {entrypoint}`
   * this runs the fuzzer on `test/fuzz/{entrypoint}.fuzz.cjs`

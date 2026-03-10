@@ -67,4 +67,8 @@ export {
 export {
     Task
 } from "./runtime/task";
+export {
+    BUILTIN_ENV,
+    BUILTIN_FUNCTIONS,
+} from "./stdlib";
 

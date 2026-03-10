@@ -1,3 +1,4 @@
+import { isArray } from "lib0/array";
 import { Thing, ThingType, typecheck } from "../objects/thing";
 
 export interface UnparseContext {
@@ -9,6 +10,7 @@ export interface UnparseContext {
 const DEFAULT_UNPARSE_CONTEXT: UnparseContext = {
     pre: thing => thing.s0,
     join(thing, parts) {
+        if (typecheck(ThingType.paramdescriptor)(thing) && isArray(thing.sj)) return parts.map((e, i) => e + (thing.sj[i] ?? "")).join("");
         if (typecheck(ThingType.map)(thing) && parts.length === 0) return ":"; // empty map = [:], vs empty list = []
         return parts.join(thing.sj);
     },

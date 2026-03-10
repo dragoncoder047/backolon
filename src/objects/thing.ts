@@ -41,6 +41,7 @@ export enum ThingType {
     map,
     pair,
     triple,
+    /** triple (parent or nil, vars, patterns); patterns is list of (pattern, when, implementation) */
     env,
     macroized,
     splat,
@@ -64,13 +65,13 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.func]: [null, readonly [Thing<ThingType.roundblock>, Thing]],
     [ThingType.nativefunc]: [string, []],
     [ThingType.implicitfunc]: [Thing<ThingType.env | ThingType.nil>, readonly [Thing]],
-    [ThingType.paramdescriptor]: [boolean, readonly [Thing<ThingType.name>, Thing<ThingType.list>] | readonly [Thing<ThingType.name>, Thing<ThingType.list>, Thing]],
+    [ThingType.paramdescriptor]: [boolean, readonly [Thing<ThingType.name>, Thing<ThingType.number | ThingType.nil>] | readonly [Thing<ThingType.name>, Thing<ThingType.number | ThingType.nil>, Thing]],
     [ThingType.continuation]: [readonly StackEntry[], []],
     [ThingType.boundmethod]: [null, readonly [Thing, Thing<ThingType.func>]],
     [ThingType.pattern]: [Pattern, readonly Thing[]],
     [ThingType.list]: [null, Thing[]],
     [ThingType.map]: [null, Thing<ThingType.pair>[]],
-    [ThingType.pair]: [null, readonly [Thing, Thing]],
+    [ThingType.pair]: [null, [Thing, Thing]],
     [ThingType.triple]: [null, readonly [Thing, Thing, Thing]],
     [ThingType.env]: [null, readonly [Thing<ThingType.env | ThingType.nil>, Thing<ThingType.map>, Thing<ThingType.list>]]
     [ThingType.macroized]: [null, readonly [Thing]],

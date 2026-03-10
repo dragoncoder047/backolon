@@ -1,5 +1,5 @@
 #! /bin/zsh
-set -euo pipefail
+set -exuo pipefail
 pnpm build-for-fuzzer
 prog=$1
 input=$2

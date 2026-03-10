@@ -5,8 +5,9 @@ import { Thing, ThingType } from "../objects/thing";
 import { parse } from "../parser/parse";
 import { StackEntry, Task } from "./task";
 
-interface NativeFunctionDetails {
+export interface NativeFunctionDetails {
     params: (Thing<ThingType.paramdescriptor> | Thing<ThingType.name>)[],
+    impl(scheduler: Scheduler, ): void;
 }
 
 export class Scheduler {
@@ -41,7 +42,7 @@ export class Scheduler {
         this.tasks.sort((t1, t2) => t1.priority - t2.priority);
     }
     serializeTasks(): string {
-        return encodeURIComponent(JSONCrush.crush(this.s.stringify(this.tasks, (k, v) => k === "scheduler" ? undefined : v)));
+        return encodeURIComponent(JSONCrush.crush(this.s.stringify(this.tasks, (k, v) => k === "scheduler" && (v instanceof Scheduler) ? undefined : v)));
     }
     loadFromSerialized(str: string): void {
         this.tasks.push(...this.s.resurrect(JSONCrush.uncrush(decodeURIComponent(str))));

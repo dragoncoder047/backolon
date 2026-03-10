@@ -5,6 +5,7 @@ import { BackolonError, boxNameSymbol, boxNumber, matchPattern, MatchResult, par
 import { compile } from "../src/patterns/compile";
 import { NFASubstate, PatternType } from "../src/patterns/internals";
 import { F, L } from "./astCheck";
+import { parseSignature } from "../src/runtime/functor";
 
 describe("step pattern NFA substates", () => {
     test("detects done", () => {
@@ -398,42 +399,66 @@ describe("metapattern", () => {
     //     }
     // });
     describe("match tests", () => {
-        const pattern_test = (pat: string, input: string, match: boolean) => {
-            test(`pattern ${stringify(pat)} should ${match ? "" : "not "}match ${stringify(input)}`, () => {
-                var parsedPattern: Thing<ThingType.pattern>, parsedInput: Thing[];
-                try {
-                    parsedPattern = pstring(pat);
-                } catch (e) {
-                    if (e instanceof BackolonError) {
-                        console.log(e.displayOn({ [F.href]: pat }));
-                    }
-                    throw e;
+        const pattern_test = (pat: string, ...cases: [input: string, match: boolean][]) => {
+            describe(`pattern ${stringify(pat)}`, () => {
+                for (const [input, match] of cases) {
+                    test(`should ${match ? "" : "not "}match ${stringify(input)}`, () => {
+                        var parsedPattern: Thing<ThingType.pattern>, parsedInput: Thing[];
+                        try {
+                            parsedPattern = pstring(pat);
+                        } catch (e) {
+                            if (e instanceof BackolonError) {
+                                console.log(e.displayOn({ [F.href]: pat }));
+                            }
+                            throw e;
+                        }
+                        try {
+                            parsedInput = parse(input, new URL("about:testinput")).c as any;
+                        } catch (e) {
+                            if (e instanceof BackolonError) {
+                                console.log(e.displayOn({ "about:testinput": input }));
+                            }
+                            throw e;
+                        }
+                        var result;
+                        try {
+                            result = matchPattern(parsedInput, parsedPattern, false);
+                        } catch (e) {
+                            if (e instanceof BackolonError) {
+                                console.log(e.displayOn({ [F.href]: pat, "about:testinput": input }));
+                            }
+                            throw e;
+                        }
+                        if (match) expect(result.length).toBeGreaterThan(0);
+                        else expect(result).toBeEmpty();
+                    });
                 }
-                try {
-                    parsedInput = parse(input, new URL("about:testinput")).c as any;
-                } catch (e) {
-                    if (e instanceof BackolonError) {
-                        console.log(e.displayOn({ [F.href]: input }));
-                    }
-                    throw e;
-                }
-                var result;
-                try {
-                    result = matchPattern(parsedInput, parsedPattern, false);
-                } catch (e) {
-                    if (e instanceof BackolonError) {
-                        console.log(e.displayOn({ [F.href]: pat, "about:testinput": input }));
-                    }
-                    throw e;
-                }
-                if (match) expect(result.length).not.toBe(0);
-                else expect(result).toBeEmpty();
             });
-        }
+        };
 
-        pattern_test("[x: number]", "1", true);
-        pattern_test("[x: number]", "a", false);
-        pattern_test("[x: number] + [y: number]", "1 + 1", true);
-        pattern_test("[x: number] + [y: number]", "1+1", true);
+        pattern_test("[x: number]",
+            ["1", true],
+            ["a", false]);
+        pattern_test("[x: number] + [y: number]",
+            ["1 + 1", true],
+            ["1\n+\n1", false],
+            ["1+1", true],
+            ["a+b", false],
+            ["1+a", false]);
+        pattern_test("[^]x... {\n|;} y...[$]",
+            ["1; 2; 3", true],
+            ["1", false]);
+        pattern_test("[^][p:name]{[=:] [t:name]| }{ [==] d|} [$]",
+            ["x", true],
+            ["x number", false],
+            ["x: number", true],
+            ["x : number", false],
+            ["x = 1", true],
+            ["x: number = nil", true]);
+
+        test("parse signature", () => {
+            const x = parseSignature(parse("x y : number = 1 @z", F).c);
+            console.log(x.map(c => unparse(c)).join(" "));
+        });
     });
 });
