@@ -8,6 +8,7 @@ import { NativeFunctionDetails } from "../runtime/scheduler";
 const x = boxNameSymbol("x"), y = boxNameSymbol("y");
 
 export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<string, NativeFunctionDetails>) {
+    // TODO: these are wrong, instead of implementing the pattern directly, they should just rewrite it as an apply
     define_pattern(env, functions, "[^]x... {\n|;} {y...|}[$]", [ThingType.roundblock, ThingType.topblock], "__builtin_sequence", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
         const first = mapGetKey(groups, x)!;
