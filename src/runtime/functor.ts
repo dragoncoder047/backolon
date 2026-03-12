@@ -31,7 +31,7 @@ export function getParamDescriptors(fn: Thing, scheduler: Scheduler, callsite: T
     else if (typecheck(ThingType.continuation)(fn)) {
         return CONTINUATION_SIGNATURE;
     }
-    throw new RuntimeError("cannot call", callsite.loc);
+    throw new RuntimeError(`cannot call ${ThingType[fn.t as any] ?? fn.t}`, callsite.loc);
 }
 
 export function getNthDescriptor(descriptors: ParamDescriptor[], index: number): ParamDescriptor {
@@ -133,8 +133,8 @@ export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> 
                 const isType = items[1].v === ":";
                 if (!isType) checkSplat();
                 return isType
-                        ? new Thing(ThingType.paramdescriptor, [items[0], boxList(to_type(items[2]), items[2].loc), nil], [lazy, isSplat], lazystr, "", ":", loc)
-                        : new Thing(ThingType.paramdescriptor, [items[0], empty, items[2]], [lazy, isSplat], lazystr, "", "=", loc);
+                    ? new Thing(ThingType.paramdescriptor, [items[0], boxList(to_type(items[2]), items[2].loc), nil], [lazy, isSplat], lazystr, "", ":", loc)
+                    : new Thing(ThingType.paramdescriptor, [items[0], empty, items[2]], [lazy, isSplat], lazystr, "", "=", loc);
             default:
                 throw "unreachable";
         }

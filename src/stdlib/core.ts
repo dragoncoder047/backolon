@@ -10,17 +10,21 @@ const x = boxNameSymbol("x"), y = boxNameSymbol("y");
 export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<string, NativeFunctionDetails>) {
     const STANDARD_BLOCKS = [ThingType.roundblock, ThingType.topblock] as any;
     // MARK: blocks and logical lines
-    define_pattern(env, functions, "[^]x... {\n|;} {y...|}[$]", STANDARD_BLOCKS, "__builtin_rewrite_sequence", (task, state) => {
+    define_pattern(env, functions, "[^]{x...|} {\n|;} {y...|}[$]", STANDARD_BLOCKS, "__builtin_rewrite_sequence", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
         var first = mapGetKey(groups, x)!;
         var second = mapGetKey(groups, y);
-        first = boxRoundBlock(first.c!, first.loc);
-        if (second) {
-            second = boxRoundBlock(second.c!, second.loc);
-            task.out(boxApply(boxNativeFunc("__builtin_sequence", first.loc), second ? [first, second] : [first], first.loc));
+        if (first) {
+            first = boxRoundBlock(first.c!, first.loc);
+            if (second) {
+                second = boxRoundBlock(second.c!, second.loc);
+                task.out(boxApply(boxNativeFunc("__builtin_sequence", first.loc), second ? [first, second] : [first], first.loc));
+            } else {
+                // effectively just strip the trailing line terminator
+                task.out(first);
+            }
         } else {
-            // effectively just strip the trailing line terminator
-            task.out(first);
+            task.out(boxNil(groups.loc));
         }
     });
     define_builtin_function(env, functions, "__builtin_sequence", "@_ @_", (task, state) => {
@@ -42,7 +46,7 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
     });
     // MARK: variable management
     // define_pattern(env, functions, "[=let] [x:name]", STANDARD_BLOCKS, "__builtin_rewrite_declarartion", (task, arg) => {
-        
+
     // });
     // MARK: builtin function names
     define_builtin_function(env, functions, "print", "_...", (task, state) => {

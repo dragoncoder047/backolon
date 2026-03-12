@@ -1,11 +1,18 @@
 import { afterEach, expect, jest, spyOn, test } from "bun:test";
-import { boxNumber, BUILTIN_ENV, BUILTIN_FUNCTIONS, Scheduler } from "../src";
+import { boxNumber, BUILTIN_ENV, BUILTIN_FUNCTIONS, Scheduler, ThingType } from "../src";
 import { F, L } from "./astCheck";
 
 afterEach(() => {
     jest.clearAllMocks();
 });
-
+test("empty result", () => {
+    const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
+    const t = s.startTask(1, "\n", null, F);
+    s.stepUntilSuspended();
+    expect(t.stack).toBeEmpty();
+    expect(t.result).not.toBeNull();
+    expect(t.result!.t).toBe(ThingType.nil);
+});
 test("roundtrip", () => {
     const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
     s.startTask(1, "a + 1", null, F);
