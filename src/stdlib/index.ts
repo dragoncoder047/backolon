@@ -1,6 +1,6 @@
 import { LocationTrace } from "../errors";
 import { mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
-import { boxList, boxNameSymbol, boxNumber, CheckedType, isBlock, Thing, ThingType } from "../objects/thing";
+import { boxList, boxNameSymbol, boxNativeFunc, boxNumber, CheckedType, isBlock, Thing, ThingType } from "../objects/thing";
 import { parse } from "../parser/parse";
 import { unparse } from "../parser/unparse";
 import { parsePattern } from "../patterns/meta";
@@ -22,7 +22,7 @@ export function define_builtin_function(
         impl: body,
     };
     if (inEnv) {
-        mapUpdateKeyMutating(inEnv.c[1], boxNameSymbol(name), new Thing(ThingType.nativefunc, [], name, `<builtin ${name}>`, "", "", loc));
+        mapUpdateKeyMutating(inEnv.c[1], boxNameSymbol(name), boxNativeFunc(name, loc));
     }
 }
 
@@ -41,7 +41,7 @@ export function define_pattern(
     const pat = parsePattern(parse(pattern, loc.file).c);
     inEnv.c[2].c.push(new Thing(ThingType.triple, [
         pat,
-        new Thing(ThingType.nativefunc, [], handlerName, `<builtin ${handlerName}>`, "", "", loc),
+        boxNativeFunc(handlerName, loc),
         boxList(when.map(m => boxNumber(m, loc)), loc),
     ], null, "", "", "", loc))
 }

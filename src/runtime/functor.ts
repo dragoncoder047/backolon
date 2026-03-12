@@ -1,6 +1,6 @@
 import { last } from "lib0/array";
 import { stringify } from "lib0/json";
-import { RuntimeError } from "../errors";
+import { LocationTrace, RuntimeError } from "../errors";
 import { mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
 import { boxNil, boxNumber, isSymbol, Thing, ThingType, typecheck } from "../objects/thing";
 import { parse } from "../parser/parse";
@@ -9,30 +9,31 @@ import { metapattern_location, nonoverlappingreplace, parsePattern, removed_whit
 import { type Scheduler } from "./scheduler";
 
 
-function parameterInfo<T>(scheduler: Scheduler, fn: Thing, index: number, getter: (name: Thing<ThingType.name> | undefined, lazy: boolean, default_?: Thing, type?: ThingType) => T): T {
+function parameterInfo<T>(loc: LocationTrace, scheduler: Scheduler, fn: Thing, index: number, getter: (name: Thing<ThingType.name> | undefined, lazy: boolean, default_?: Thing, type?: ThingType) => T): T {
     var descriptor: Thing<ThingType.paramdescriptor> | Thing<ThingType.name>;
     if (typecheck(ThingType.func)(fn)) {
-        descriptor = (fn.c[0].c as Thing<ThingType.paramdescriptor | ThingType.name>[])[index]! as any;
+        descriptor = (fn.c[0].c as Thing<ThingType.paramdescriptor | ThingType.name>[])[index] as any;
     }
     else if (typecheck(ThingType.nativefunc)(fn)) {
         descriptor = scheduler.getParamDescriptor(fn.v, index);
     }
     else if (typecheck(ThingType.boundmethod)(fn)) {
-        return parameterInfo(scheduler, fn.c[1], index, getter);
+        return parameterInfo(loc, scheduler, fn.c[1], index, getter);
     }
     else {
         return getter(undefined, true);
     }
+    if (!descriptor) throw new RuntimeError(`too many arguments in function call`, loc);
     if (isSymbol(descriptor)) return getter(descriptor as any, false);
     return getter(descriptor.c[0] as any, descriptor.v as boolean, descriptor.c[2], descriptor.c[1].v ?? undefined);
 }
 
-export function isLazyParamIndex(scheduler: Scheduler, fn: Thing, index: number): boolean {
-    return parameterInfo(scheduler, fn, index, (_, l) => l);
+export function isLazyParamIndex(loc: LocationTrace, scheduler: Scheduler, fn: Thing, index: number): boolean {
+    return parameterInfo(loc, scheduler, fn, index, (_, l) => l);
 }
 
-export function getParamName(scheduler: Scheduler, fn: Thing, index: number): Thing<ThingType.name> {
-    return parameterInfo(scheduler, fn, index, x => x)!;
+export function getParamName(loc: LocationTrace, scheduler: Scheduler, fn: Thing, index: number): Thing<ThingType.name> {
+    return parameterInfo(loc, scheduler, fn, index, x => x)!;
 }
 
 export function wrapImplicitBlock(obj: Thing, env: Thing<ThingType.env | ThingType.nil>) {
@@ -91,7 +92,7 @@ export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> 
         }
         const loc = items[0].loc;
         const to_type = (item: Thing) => boxNumber(typeNameToThingType(item.v, item.loc), item.loc, item.v);
-        const nil = boxNil(loc);
+        const nil = boxNil(loc, "");
         switch (items.length) {
             case 1:
                 result.push(lazy

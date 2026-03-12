@@ -114,7 +114,7 @@ export class Thing<T extends (ThingType | string) = ThingType | string> {
     }
 }
 
-export function boxNil(trace = UNKNOWN_LOCATION) { return new Thing(ThingType.nil, [], null, "", "", "", trace); }
+export function boxNil(trace = UNKNOWN_LOCATION, str = "nil") { return new Thing(ThingType.nil, [], null, str, "", "", trace); }
 export function boxEnd(trace = UNKNOWN_LOCATION) { return new Thing(ThingType.end, [], null, "", "", "", trace); }
 export function boxSymbol<T extends ThingType.name | ThingType.operator | ThingType.space>(value: string, kind: T, trace = UNKNOWN_LOCATION): Thing<T> { return new Thing(kind, [] as any, value as any, value, "", "", trace); }
 export function boxNameSymbol(value: string, trace = UNKNOWN_LOCATION) { return boxSymbol(value, ThingType.name, trace); }
@@ -123,12 +123,14 @@ export function boxSpaceSymbol(value: string, trace = UNKNOWN_LOCATION) { return
 export function boxNumber(value: number, trace = UNKNOWN_LOCATION, repr = value.toString()) { return new Thing(ThingType.number, [], value, repr, "", "", trace); }
 export function boxString(value: string, trace = UNKNOWN_LOCATION, raw: string, quote: string) { return new Thing(ThingType.string, [], value, quote + raw, quote, "", trace); }
 export function boxBlock<T extends ThingType.roundblock | ThingType.squareblock | ThingType.curlyblock | ThingType.stringblock | ThingType.topblock>(children: Thing<T>["c"], kind: T, trace = UNKNOWN_LOCATION, start: string, end: string): Thing<T> { return new Thing(kind, children, null as any, start, end, "", trace); }
-export function boxRoundBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.roundblock, trace, "(", ")"); }
-export function boxSquareBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.squareblock, trace, "[", "]"); }
-export function boxCurlyBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.curlyblock, trace, "{", "}"); }
-export function boxToplevelBlock(children: Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.topblock, trace, "", ""); }
+export function boxRoundBlock(children: readonly Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.roundblock, trace, "(", ")"); }
+export function boxSquareBlock(children: readonly Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.squareblock, trace, "[", "]"); }
+export function boxCurlyBlock(children: readonly Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.curlyblock, trace, "{", "}"); }
+export function boxToplevelBlock(children: readonly Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.topblock, trace, "", ""); }
 export function boxStringBlock(children: Thing<ThingType.string | ThingType.roundblock>[], trace = UNKNOWN_LOCATION, quote: string) { return boxBlock(children, ThingType.stringblock, trace, quote, quote); }
 export function boxList(items: Thing[], trace = UNKNOWN_LOCATION) { return new Thing(ThingType.list, items, null, "[", "]", ", ", trace, false); }
+export function boxNativeFunc(name: string, trace = UNKNOWN_LOCATION) { return new Thing(ThingType.nativefunc, [], name, `<built-in ${name}>`, "", "", trace); }
+export function boxApply(func: Thing, args: readonly Thing[], trace = UNKNOWN_LOCATION) { return new Thing(ThingType.apply, [func, ...args], null, "", "", " ", trace); }
 
 export function typecheck<T extends ThingType>(...types: T[]) {
     return (thing: Thing<any>): thing is Thing<T> => types.includes(thing.t as T);

@@ -1,7 +1,7 @@
 import { stringify } from "lib0/json";
 import { forEach } from "lib0/object";
 import { LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
-import { mapGetKey, mapUpdateKeyMutating } from "../objects/map";
+import { mapGetKey, mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
 import { boxList, boxNameSymbol, boxNil, isAtom, isBlock, isSymbol, Thing, ThingType, typecheck } from "../objects/thing";
 import { matchPattern } from "../patterns/match";
 import { flatToVarMap, newEnv } from "./env";
@@ -162,12 +162,14 @@ export class Task {
                     // @ts-expect-error
                     case ApplyEvalState.evaluate_arguments:
                         if (top.index >= children.length) {
+                            this.out(); // Result will be the result of the application
                             this.a(val, top.argv, top.env);
                             return true;
                         }
                         const arg = children[top.index]!;
+                        // console.log("args are", top.index, children, top.argv);
                         this.updateCookie(top.index, ApplyEvalState.waiting_for_arg_result, null);
-                        if (isLazyParamIndex(this.scheduler, top.argv[0]! as any, top.index - 1)) { // -1 to account for offset of functor
+                        if (isLazyParamIndex(val.c[0]!.loc, this.scheduler, top.argv[0]! as any, top.index - 1)) { // -1 to account for offset of functor
                             this.r = wrapImplicitBlock(arg, top.env);
                         } else {
                             this.enter(arg, top.env);
@@ -181,8 +183,8 @@ export class Task {
                             this.enter(res, top.env);
                             return true;
                         }
-                        const values = typecheck(ThingType.splat)(res) ? res.c : [res];
-                        this.updateArgs(top.argv.toSpliced(Infinity, 0, ...values));
+                        // console.log("got arg result", res);
+                        this.updateArgs(top.argv.toSpliced(Infinity, 0, ...(typecheck(ThingType.splat)(res) ? res.c : [res])));
                         this.updateCookie(top.index + 1, ApplyEvalState.evaluate_arguments, null);
                         return true;
                     default:
@@ -194,6 +196,7 @@ export class Task {
             native function:
                 call into, update state
             */
+            // TODO: use something else for this, cause native functions when "evaluated" should evaluate to themselves
             if (typecheck(ThingType.nativefunc)(val)) {
                 this.scheduler.callFunction(this, val.v, top);
                 return true;
@@ -248,8 +251,8 @@ export class Task {
             this.r = rest[0]!;
         }
         else if (typecheck(ThingType.implicitfunc)(functor)) {
-            checkargs(1, 1, rest, callsite);
-            const map = rest[0]!;
+            checkargs(0, 1, rest, callsite);
+            const map = rest[0] ?? newEmptyMap(functor.loc);
             if (!typecheck(ThingType.map)(map)) {
                 throw new RuntimeError("Expected a map to inject", callsite.loc);
             }

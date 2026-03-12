@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test, spyOn } from "bun:test";
 import { BUILTIN_ENV, BUILTIN_FUNCTIONS, Scheduler } from "../src";
 import { F } from "./astCheck";
 
@@ -11,7 +11,11 @@ test("roundtrip", () => {
 });
 test("print", () => {
     const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
-    s.startTask(1, "print 'PASS'", null, F);
-    s.startTask(1, "print 1", null, F);
+    s.startTask(1, "print 'PASSED 1'; print (print 'PASSED 2')", null, F);
+    const stdout = spyOn(console, "log");
     s.stepUntilSuspended();
+    expect(stdout).toHaveBeenCalledTimes(3);
+    expect(stdout).toHaveBeenNthCalledWith(1, "PASSED 1");
+    expect(stdout).toHaveBeenNthCalledWith(2, "PASSED 2");
+    expect(stdout).toHaveBeenNthCalledWith(3, "nil");
 });
