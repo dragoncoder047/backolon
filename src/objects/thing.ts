@@ -100,11 +100,11 @@ export class Thing<T extends (ThingType | string) = ThingType | string> {
         public readonly sj: string,
         /** source location */
         public readonly loc: LocationTrace,
-        hashable: boolean = !unhashable.includes(t as ThingType),
+        hashable: boolean = typeof t === "number" && !unhashable.includes(t as ThingType),
         valueInHash: boolean = true,
     ) {
         if (!hashable) return;
-        var hash = javaHash(t + "");
+        var hash = javaHash((t as number).toString(16));
         for (var child of c) {
             if (child.h === null) return;
             hash ^= rotate32(hash ^ 0xabcdef01, 30) + child.h;
