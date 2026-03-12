@@ -1,11 +1,9 @@
-import { LocationTrace } from "../errors";
 import { mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
-import { boxList, boxNameSymbol, boxNativeFunc, boxNumber, CheckedType, isBlock, Thing, ThingType } from "../objects/thing";
+import { boxList, boxNameSymbol, boxNativeFunc, boxNumber, Thing, ThingType } from "../objects/thing";
 import { parse } from "../parser/parse";
-import { unparse } from "../parser/unparse";
 import { parsePattern } from "../patterns/meta";
 import { newEnv } from "../runtime/env";
-import { parseSignature } from "../runtime/functor";
+import { BUILTINS_LOC, parseSignature } from "../runtime/functor";
 import { NativeFunctionDetails } from "../runtime/scheduler";
 import { initCoreSyntax } from "./core";
 
@@ -54,5 +52,4 @@ function createBuiltins(): { b: Thing<ThingType.env>, f: Record<string, NativeFu
 }
 
 
-export const BUILTINS_LOC = new LocationTrace(0, 0, new URL("backolon:builtins"));
 export const { b: BUILTIN_ENV, f: BUILTIN_FUNCTIONS } = createBuiltins();

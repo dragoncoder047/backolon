@@ -1,6 +1,6 @@
-import { LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
-import { Pattern } from "../patterns/internals";
-import { StackEntry } from "../runtime/task";
+import { type LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
+import { type Pattern } from "../patterns/internals";
+import { type StackEntry } from "../runtime/task";
 import { javaHash, rotate32 } from "../utils";
 
 export enum ThingType {
@@ -64,8 +64,8 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.apply]: [null, readonly Thing[]],
     [ThingType.func]: [null, readonly [Thing<ThingType.roundblock>, Thing]],
     [ThingType.nativefunc]: [string, []],
-    [ThingType.implicitfunc]: [Thing<ThingType.env | ThingType.nil>, readonly [Thing]],
-    [ThingType.paramdescriptor]: [boolean, readonly [Thing<ThingType.name>, Thing<ThingType.number | ThingType.nil>] | readonly [Thing<ThingType.name>, Thing<ThingType.number | ThingType.nil>, Thing]],
+    [ThingType.implicitfunc]: [[env: Thing<ThingType.env | ThingType.nil>, name: string | null], readonly [Thing]],
+    [ThingType.paramdescriptor]: [[isLazy: boolean, isSplat: boolean], readonly [Thing<ThingType.name>] | readonly [Thing<ThingType.name>, Thing<ThingType.list>] | readonly [Thing<ThingType.name>, Thing<ThingType.list>, Thing]],
     [ThingType.continuation]: [readonly StackEntry[], []],
     [ThingType.boundmethod]: [null, readonly [Thing, Thing<ThingType.func>]],
     [ThingType.pattern]: [Pattern, readonly Thing[]],

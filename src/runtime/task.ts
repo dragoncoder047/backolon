@@ -2,10 +2,10 @@ import { stringify } from "lib0/json";
 import { forEach } from "lib0/object";
 import { LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
-import { boxList, boxNameSymbol, isAtom, isBlock, isSymbol, Thing, ThingType, typecheck } from "../objects/thing";
+import { boxApply, boxList, boxNameSymbol, isAtom, isBlock, isSymbol, Thing, ThingType, typecheck } from "../objects/thing";
 import { matchPattern } from "../patterns/match";
 import { flatToVarMap, newEnv } from "./env";
-import { checkargs, isLazyParamIndex, parametersToVars, wrapImplicitBlock } from "./functor";
+import { getNthDescriptor, getParamDescriptors, isLazy, parametersToVars, wrapImplicitBlock } from "./functor";
 import { type Scheduler } from "./scheduler";
 
 export enum StackFlag {
@@ -20,6 +20,7 @@ export class StackEntry {
         public readonly argv: readonly Thing[],
         /** current environment */
         public readonly env: Thing<ThingType.env | ThingType.nil>,
+        public readonly name: string | null,
         /** current index in evaluating args */
         public readonly index = 0,
         /** internal state for evaluation */
@@ -30,14 +31,28 @@ export class StackEntry {
         public readonly flags = 0,
     ) { }
     sd(index: number, state: number, data: any) {
-        return new StackEntry(this.value, this.argv, this.env, index, state, data, this.flags);
+        return new StackEntry(this.value, this.argv, this.env, this.name, index, state, data, this.flags);
     }
     g(args: Thing[]) {
-        return new StackEntry(this.value, args, this.env, this.index, this.cookie, this.data, this.flags);
+        return new StackEntry(this.value, args, this.env, this.name, this.index, this.cookie, this.data, this.flags);
     }
     f(toSet: number, toClear: number) {
-        return new StackEntry(this.value, this.argv, this.env, this.index, this.cookie, this.data, (this.flags & (~toClear)) | toSet);
+        return new StackEntry(this.value, this.argv, this.env, this.name, this.index, this.cookie, this.data, (this.flags & (~toClear)) | toSet);
     }
+}
+
+enum BlockEvalState {
+    initial = 0,
+    matching_patterns,
+    evaluating_body_after_no_matches_found,
+    waiting_for_pattern_result,
+}
+
+enum ApplyEvalState {
+    initial = 0,
+    waiting_for_functor_result,
+    evaluate_arguments,
+    waiting_for_arg_result,
 }
 
 export class Task {
@@ -72,12 +87,6 @@ export class Task {
                 index >= 1 => evaluate the elements in order
             */
             if (isBlock(val)) {
-                enum BlockEvalState {
-                    initial = 0,
-                    matching_patterns,
-                    evaluating_body_after_no_matches_found,
-                    waiting_for_pattern_result,
-                }
                 switch (state as BlockEvalState) {
                     // @ts-expect-error
                     case BlockEvalState.initial:
@@ -95,9 +104,9 @@ export class Task {
                                 const result = matchPattern(top.argv, pat, false)[0];
                                 if (result) {
                                     this.updateCookie(0, BlockEvalState.waiting_for_pattern_result, result.span);
-                                    this.a(top.argv[result.span[0]!]!, [impl, this.i(loc, flatToVarMap(result, loc), {
+                                    this.enter(boxApply(impl, [this.i(loc, flatToVarMap(result, loc), {
                                         // TODO: inject block type variable
-                                    })], top.env);
+                                    })], top.argv[result.span[0]!]!.loc), top.env);
                                     return true;
                                 }
                             }
@@ -150,12 +159,6 @@ export class Task {
                 deal with result
             */
             if (typecheck(ThingType.apply)(val)) {
-                enum ApplyEvalState {
-                    initial = 0,
-                    waiting_for_functor_result,
-                    evaluate_arguments,
-                    waiting_for_arg_result,
-                }
                 var res: Thing;
                 switch (state as ApplyEvalState) {
                     case ApplyEvalState.initial:
@@ -171,12 +174,13 @@ export class Task {
                     case ApplyEvalState.evaluate_arguments:
                         if (top.index >= children.length) {
                             this.out(); // Result will be the result of the application
-                            this.a(val, top.argv, top.env);
+                            this.a(val, top.argv[0]!, top.argv.slice(1), top.env);
                             return true;
                         }
+                        const desc = getNthDescriptor(getParamDescriptors(top.argv[0]!, this.scheduler, val), top.argv.length - 1);  // -1 to account for offset of functor
                         const arg = children[top.index]!;
                         this.updateCookie(top.index, ApplyEvalState.waiting_for_arg_result, null);
-                        if (isLazyParamIndex(val.c[0]!.loc, this.scheduler, top.argv[0]! as any, top.index - 1)) { // -1 to account for offset of functor
+                        if (isLazy(desc)) {
                             this.result = wrapImplicitBlock(arg, top.env);
                         } else {
                             this.enter(arg, top.env);
@@ -199,7 +203,7 @@ export class Task {
             }
 
             /*
-            native function:
+            native function in-progress:
                 call into, update state
             */
             if (typecheck(ThingType.nativefunc)(val) && (top.flags & StackFlag.native_func_being_evaluated)) {
@@ -235,34 +239,41 @@ export class Task {
         if (injectReturn) mapUpdateKeyMutating(vars, boxNameSymbol("return"), this.continuation(opTrace));
         return vars;
     }
-    /** apply */
-    private a(callsite: Thing, args: readonly Thing[], env: Thing<ThingType.env | ThingType.nil>) {
-        const functor = args[0]!;
-        const rest = args.slice(1);
+    /** apply - for functions the parameters will need to have been evaluated / typechecked*/
+    private a(callsite: Thing, functor: Thing, argv: readonly Thing[], env: Thing<ThingType.env | ThingType.nil>) {
         if (typecheck(ThingType.func)(functor)) {
-            // TODO: move the parametersToVars stuff to the main evaluation loop so that defaults can be dynamically computed and splats work
-            this.a(callsite, [functor.c[1], this.i(callsite.loc, parametersToVars(functor.c[0], rest, callsite))], env);
+            // do type checks
+            // if optional params have defaults, go back to evaluate them in the new scope
+            const { e: vars, p: pendingDefaults } = parametersToVars(functor.c[0], argv, callsite);
+            if (pendingDefaults.length > 0) {
+                // We haven't evaluated the defaults yet...
+                // Make the new parent env for evaluating the arguments include the caller's scope, to allow dynamic bindings.
+                this.enter(boxApply(functor, pendingDefaults, callsite.loc), newEnv(vars, boxList([]), callsite.loc, env), argv);
+                this.updateCookie(0, ApplyEvalState.evaluate_arguments, callsite);
+                return;
+            }
+            this.a(callsite, functor.c[1], [this.i(callsite.loc, vars)], env);
         }
         else if (typecheck(ThingType.nativefunc)(functor)) {
-            this.enter(functor, env, rest);
+            this.enter(functor, env, argv);
             this.updateFlags(StackFlag.native_func_being_evaluated, 0);
         }
         else if (typecheck(ThingType.boundmethod)(functor)) {
             const realFunctor = functor.c[1];
-            this.a(callsite, [realFunctor.c[1], functor.c[0], ...rest], env);
+            this.a(callsite, realFunctor.c[1], [functor.c[0], ...argv], env);
         }
         else if (typecheck(ThingType.continuation)(functor)) {
-            checkargs(1, 1, rest, callsite);
+            if (argv.length !== 1) throw new RuntimeError("expected an argument to continuation", callsite.loc);
             this.stack = functor.v;
-            this.result = rest[0]!;
+            this.result = argv[0]!;
         }
         else if (typecheck(ThingType.implicitfunc)(functor)) {
-            checkargs(0, 1, rest, callsite);
-            const map = rest[0] ?? newEmptyMap(functor.loc);
+            if (argv.length > 1) throw new RuntimeError("too many arguments to implicit block");
+            const map = argv[0] ?? newEmptyMap(functor.loc);
             if (!typecheck(ThingType.map)(map)) {
                 throw new RuntimeError("Expected a map to inject", callsite.loc);
             }
-            this.enter(functor.c[0], newEnv(map, boxList([]), callsite.loc, functor.v));
+            this.enter(functor.c[0], newEnv(map, boxList([]), callsite.loc, functor.v[0]), [], functor.v[1]);
         }
         else throw new RuntimeError(`can't call ${ThingType[functor.t as any] ?? functor.t}`, callsite.loc);
     }
@@ -284,8 +295,8 @@ export class Task {
         return updated;
     }
     /** enter/call, with no injected block */
-    enter(code: Thing, env: Thing<ThingType.env | ThingType.nil>, args: Thing[] = []) {
-        this.stack = this.stack.toSpliced(Infinity, 0, new StackEntry(code, args, env));
+    enter(code: Thing, env: Thing<ThingType.env | ThingType.nil>, args: readonly Thing[] = [], name?: string | null) {
+        this.stack = this.stack.toSpliced(Infinity, 0, new StackEntry(code, args, env, name ?? null));
     }
     out(result?: Thing) {
         this.result = result ?? this.result;

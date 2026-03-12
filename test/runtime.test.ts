@@ -1,6 +1,10 @@
-import { expect, spyOn, test } from "bun:test";
+import { afterEach, expect, jest, spyOn, test } from "bun:test";
 import { boxNumber, BUILTIN_ENV, BUILTIN_FUNCTIONS, Scheduler } from "../src";
 import { F, L } from "./astCheck";
+
+afterEach(() => {
+    jest.clearAllMocks();
+});
 
 test("roundtrip", () => {
     const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
@@ -9,20 +13,30 @@ test("roundtrip", () => {
     s2.loadFromSerialized(s.serializeTasks());
     expect(s2).toEqual(s);
 });
-test("print", () => {
-    const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
-    s.startTask(1, "print 'PASSED 1'; print (print 'PASSED 2')", null, F);
-    const stdout = spyOn(console, "log");
-    s.stepUntilSuspended();
-    expect(stdout).toHaveBeenCalledTimes(3);
-    expect(stdout).toHaveBeenNthCalledWith(1, "PASSED 1");
-    expect(stdout).toHaveBeenNthCalledWith(2, "PASSED 2");
-    expect(stdout).toHaveBeenNthCalledWith(3, "nil");
-});
 test("trivial return value", () => {
     const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
     const t = s.startTask(1, "123\n", null, F);
     s.stepUntilSuspended();
     expect(t.stack).toBeEmpty();
     expect(t.result).toEqual(boxNumber(123, L));
+});
+test("print", () => {
+    const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
+    s.startTask(1, "print 1; print (print 2)", null, F);
+    const stdout = spyOn(console, "log");
+    s.stepUntilSuspended();
+    expect(stdout).toHaveBeenCalledTimes(3);
+    expect(stdout).toHaveBeenNthCalledWith(1, "1");
+    expect(stdout).toHaveBeenNthCalledWith(2, "2");
+    expect(stdout).toHaveBeenNthCalledWith(3, "nil");
+});
+test("print with varargs", () => {
+    const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
+    s.startTask(1, "print 1; print 2 3; print 4 5 6", null, F);
+    const stdout = spyOn(console, "log");
+    s.stepUntilSuspended();
+    expect(stdout).toHaveBeenCalledTimes(3);
+    expect(stdout).toHaveBeenNthCalledWith(1, "1");
+    expect(stdout).toHaveBeenNthCalledWith(2, "2 3");
+    expect(stdout).toHaveBeenNthCalledWith(3, "4 5 6");
 });

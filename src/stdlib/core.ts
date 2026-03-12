@@ -45,7 +45,7 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
         
     // });
     // MARK: builtin function names
-    define_builtin_function(env, functions, "print", "_", (task, state) => {
+    define_builtin_function(env, functions, "print", "_...", (task, state) => {
         console.log(state.argv.map(arg => typecheck(ThingType.string)(arg) ? arg.v : unparse(arg)).join(" "));
         task.out(boxNil());
     });

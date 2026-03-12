@@ -55,8 +55,8 @@ export class Scheduler {
             }
         } while (madeProgress);
     }
-    getParamDescriptor(name: string, index: number): Thing<ThingType.paramdescriptor> | Thing<ThingType.name> {
-        return this.apiFunctions[name]?.params[index]!;
+    getParamDescriptors(name: string): (Thing<ThingType.paramdescriptor> | Thing<ThingType.name>)[] {
+        return this.apiFunctions[name]?.params ?? [];
     }
     callFunction(task: Task, name: string, entry: StackEntry) {
         return this.apiFunctions[name]!.impl(task, entry);

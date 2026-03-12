@@ -1,88 +1,110 @@
 import { last } from "lib0/array";
 import { stringify } from "lib0/json";
 import { LocationTrace, RuntimeError } from "../errors";
-import { mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
-import { boxNil, boxNumber, isSymbol, Thing, ThingType, typecheck } from "../objects/thing";
+import { mapGetKey, mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
+import { boxList, boxNameSymbol, boxNil, boxNumber, isSymbol, Thing, ThingType, typecheck } from "../objects/thing";
 import { parse } from "../parser/parse";
-import { unparse } from "../parser/unparse";
 import { metapattern_location, nonoverlappingreplace, parsePattern, removed_whitespace, typeNameToThingType } from "../patterns/meta";
 import { type Scheduler } from "./scheduler";
 
 
-function parameterInfo<T>(loc: LocationTrace, scheduler: Scheduler, fn: Thing, index: number, getter: (name: Thing<ThingType.name> | undefined, lazy: boolean, default_?: Thing, type?: ThingType) => T): T {
-    var descriptor: Thing<ThingType.paramdescriptor> | Thing<ThingType.name>;
+export const BUILTINS_LOC = new LocationTrace(0, 0, new URL("backolon:builtins"));
+
+type ParamDescriptor = Thing<ThingType.paramdescriptor> | Thing<ThingType.name>;
+
+const CONTINUATION_SIGNATURE = [boxNameSymbol("value", BUILTINS_LOC)];
+const IMPLICIT_SIGNATURE = [new Thing(ThingType.paramdescriptor, [boxNameSymbol("env", BUILTINS_LOC), boxList([boxNumber(ThingType.map, BUILTINS_LOC)], BUILTINS_LOC)], [false, false], "", "", ":", BUILTINS_LOC)];
+const NOT_A_PARAM = new Thing(ThingType.paramdescriptor, [boxNameSymbol("invalid", BUILTINS_LOC)], [true, false], "", "", "", BUILTINS_LOC);
+export function getParamDescriptors(fn: Thing, scheduler: Scheduler, callsite: Thing): ParamDescriptor[] {
     if (typecheck(ThingType.func)(fn)) {
-        descriptor = (fn.c[0].c as Thing<ThingType.paramdescriptor | ThingType.name>[])[index] as any;
+        return fn.c[0].c as any;
     }
     else if (typecheck(ThingType.nativefunc)(fn)) {
-        descriptor = scheduler.getParamDescriptor(fn.v, index);
+        return scheduler.getParamDescriptors(fn.v);
     }
     else if (typecheck(ThingType.boundmethod)(fn)) {
-        return parameterInfo(loc, scheduler, fn.c[1], index, getter);
+        return getParamDescriptors(fn.c[1], scheduler, callsite);
     }
-    else {
-        return getter(undefined, true);
+    else if (typecheck(ThingType.implicitfunc)(fn)) {
+        return IMPLICIT_SIGNATURE;
     }
-    if (!descriptor) throw new RuntimeError(`too many arguments in function call`, loc);
-    if (isSymbol(descriptor)) return getter(descriptor as any, false);
-    return getter(descriptor.c[0] as any, descriptor.v as boolean, descriptor.c[2], descriptor.c[1].v ?? undefined);
+    else if (typecheck(ThingType.continuation)(fn)) {
+        return CONTINUATION_SIGNATURE;
+    }
+    throw new RuntimeError("cannot call", callsite.loc);
 }
 
-export function isLazyParamIndex(loc: LocationTrace, scheduler: Scheduler, fn: Thing, index: number): boolean {
-    return parameterInfo(loc, scheduler, fn, index, (_, l) => l);
+export function getNthDescriptor(descriptors: ParamDescriptor[], index: number): ParamDescriptor {
+    const atIndex = descriptors[index];
+    if (atIndex) return atIndex;
+    const final = last(descriptors);
+    if (final && typecheck(ThingType.paramdescriptor)(final) && final.v[1]) return final;
+    return NOT_A_PARAM;
 }
 
-export function getParamName(loc: LocationTrace, scheduler: Scheduler, fn: Thing, index: number): Thing<ThingType.name> {
-    return parameterInfo(loc, scheduler, fn, index, x => x)!;
+export function isLazy(descriptor: ParamDescriptor): boolean {
+    if (isSymbol(descriptor)) return false;
+    return descriptor.v[0];
+}
+export function isSplat(descriptor: ParamDescriptor): boolean {
+    if (isSymbol(descriptor)) return false;
+    return descriptor.v[1];
+}
+
+export function getExpectedTypes(descriptor: ParamDescriptor): ThingType[] | undefined {
+    if (isSymbol(descriptor)) return [];
+    return descriptor.c[1]?.c.map(c => c.v);
+}
+
+export function getDefaultValue(descriptor: ParamDescriptor, callsite: Thing): Thing {
+    if (!isSymbol(descriptor)) {
+        if (isSplat(descriptor)) return boxList([], callsite.loc);
+        const def = descriptor.c[2];
+        if (def) return def;
+    }
+    throw new RuntimeError("too many arguments to function call", callsite.loc);
+}
+
+function getParamName(descriptor: ParamDescriptor): Thing<ThingType.name> {
+    if (isSymbol(descriptor)) return descriptor;
+    return descriptor.c[0]!;
+}
+
+export function parametersToVars(paramsDef: Thing<ThingType.roundblock>, realArgs: readonly Thing[], callsite: Thing): { e: Thing<ThingType.map>, p: Thing[] } {
+    const bits = paramsDef.c as ParamDescriptor[];
+    const map = newEmptyMap(callsite.loc);
+    const pendingDefaults: Thing[] = [];
+    var i = 0;
+    for (i = 0; i < realArgs.length; i++) {
+        const p = getNthDescriptor(bits, i);
+        const name = getParamName(p), t = getExpectedTypes(p);
+        const arg = realArgs[i]!;
+        if (!t || typecheck(...t)(arg)) {
+            if (isSplat(p)) {
+                const existingList = mapGetKey(map, name) ?? boxList([], arg.loc);
+                mapUpdateKeyMutating(map, name, boxList([...existingList.c, arg], existingList.loc));
+            } else {
+                mapUpdateKeyMutating(map, name, arg);
+            }
+            continue;
+        }
+        throw new RuntimeError(`Wrong type to argument ${stringify(name.v)} of function call`, arg.loc);
+    }
+    for (; i < bits.length; i++) {
+        // Remaining are the defaults yet to be evaluated
+        pendingDefaults.push(getDefaultValue(getNthDescriptor(bits, i), callsite));
+    }
+    return { e: map, p: pendingDefaults };
 }
 
 export function wrapImplicitBlock(obj: Thing, env: Thing<ThingType.env | ThingType.nil>) {
-    return new Thing(ThingType.implicitfunc, [obj], env, "", "", "", obj.loc);
-}
-
-export function checkargs(min: number, max: number, argv: Thing[], f: Thing) {
-    const len = argv.length;
-    if (len < min) {
-        throw new RuntimeError(`not enough arguments to function call (minimum is ${min})`, (last(argv) ?? f).loc);
-    }
-    if (len > max) {
-        throw new RuntimeError(`too many arguments to function call (max is ${max})`, argv[max]!.loc);
-    }
-}
-
-export function parametersToVars(paramsDef: Thing<ThingType.roundblock>, realArgs: Thing[], callsite: Thing): Thing<ThingType.map> {
-    const bits = paramsDef.c;
-    const firstOpt = bits.findIndex(e => typecheck(ThingType.paramdescriptor)(e) && e.c[2] !== undefined);
-    checkargs(firstOpt, bits.length, realArgs, callsite);
-    const map = newEmptyMap(callsite.loc);
-    for (var i = 0; i < bits.length; i++) {
-        const item = bits[i]! as Thing<ThingType.name> | Thing<ThingType.paramdescriptor>;
-        const { a: name, b: default_, c: type } =
-            isSymbol(item) ? {
-                a: item,
-                b: null,
-                c: [],
-            } : {
-                a: item.c[0]!,
-                b: item.c[2]!,
-                c: item.c[1]!.c.map(c => (c as Thing<ThingType.number>).v),
-            };
-        const arg = realArgs[i]!;
-        if (arg === undefined && default_ !== null) {
-            mapUpdateKeyMutating(map, name, default_);
-            continue;
-        }
-        if (type.length > 0 && !typecheck(...type)(arg)) {
-            throw new RuntimeError(`Wrong type to argument ${i} of function call`, arg.loc);
-        }
-        mapUpdateKeyMutating(map, name, arg);
-    }
-    return map;
+    return new Thing(ThingType.implicitfunc, [obj], [env, null], "", "", "", obj.loc);
 }
 
 export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> | Thing<ThingType.paramdescriptor>)[] {
     const result: any[] = [];
-    for (var item of nonoverlappingreplace(block, signaturePattern, match => {
+    var end: any[] = [];
+    const tod = (match: Thing[], isSplat: boolean): Thing => {
         var items = removed_whitespace(match) as any[];
         var lazy = false, lazystr = "";
         if (typecheck(ThingType.operator)(items[0]!)) {
@@ -91,33 +113,46 @@ export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> 
             items = items.toSpliced(0, 1);
         }
         const loc = items[0].loc;
-        const to_type = (item: Thing) => boxNumber(typeNameToThingType(item.v, item.loc), item.loc, item.v);
+        const to_type = (item: Thing): Thing[] => typecheck(ThingType.list)(item) ? item.c.flatMap(c => to_type(c)) : isSymbol(item) ? [boxNumber(typeNameToThingType(item.v, item.loc), item.loc, item.v)] : [];
         const nil = boxNil(loc, "");
+        const empty = boxList([], loc);
+        const checkSplat = () => {
+            if (isSplat) {
+                throw new RuntimeError("a rest parameter cannot have a default", loc);
+            }
+        };
         switch (items.length) {
             case 1:
-                result.push(lazy
-                    ? new Thing(ThingType.paramdescriptor, [items[0], nil, nil], lazy, lazystr, "", "", loc)
-                    : items[0]);
-                break;
+                return lazy || isSplat
+                    ? new Thing(ThingType.paramdescriptor, [items[0], empty, nil], [lazy, isSplat], lazystr, "", "", loc)
+                    : items[0];
             case 5:
-                result.push(new Thing(ThingType.paramdescriptor, [items[0], to_type(items[2]), items[4]], lazy, lazystr, "", [":", "="] as any, loc));
-                break;
+                checkSplat();
+                return new Thing(ThingType.paramdescriptor, [items[0], boxList(to_type(items[2]), items[2].loc), items[4]], [lazy, isSplat], lazystr, "", [":", "="] as any, loc);
             case 3:
                 const isType = items[1].v === ":";
-                result.push(
-                    isType
-                        ? new Thing(ThingType.paramdescriptor, [items[0], to_type(items[2]), nil], lazy, lazystr, "", ":", loc)
-                        : new Thing(ThingType.paramdescriptor, [items[0], nil, items[2]], lazy, lazystr, "", "=", loc)
-                )
-                break;
+                if (!isType) checkSplat();
+                return isType
+                        ? new Thing(ThingType.paramdescriptor, [items[0], boxList(to_type(items[2]), items[2].loc), nil], [lazy, isSplat], lazystr, "", ":", loc)
+                        : new Thing(ThingType.paramdescriptor, [items[0], empty, items[2]], [lazy, isSplat], lazystr, "", "=", loc);
             default:
                 throw "unreachable";
         }
-        return [];
-    })) {
-        throw new RuntimeError(`unexpected ${stringify(unparse(item).slice(0, 20))}`, item.loc);
     }
-    return result;
+    block = nonoverlappingreplace(block, splatEndPattern, match => {
+        if (end.length > 0) {
+            throw new RuntimeError("can only have 1 rest parameter", match[0]!.loc);
+        }
+        end.push(tod(match.slice(0, -3), true));
+        return [];
+    });
+    for (var item of nonoverlappingreplace(block, signaturePattern, match => (result.push(tod(match, false)), []))) {
+        throw new RuntimeError(`unexpected ${ThingType[item.t as any] ?? item.t}`, item.loc);
+    }
+    return [...result, ...end];
 }
 
-const signaturePattern = parsePattern(parse("{[=@]|}[p:name]{ [=:] [t:name]|}{ [==] d|} ", metapattern_location.file).c);
+const base = "{[=@]|}[p:name]{ [=:] {[t:name]|[t:list]}|}{ [==] d|} ";
+const signaturePattern = parsePattern(parse(base, metapattern_location.file).c);
+const splatEndPattern = parsePattern(parse(`${base}[=.][=.][=.] [$]`, metapattern_location.file).c);
+
