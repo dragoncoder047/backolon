@@ -40,7 +40,7 @@ export enum ThingType {
     list,
     map,
     pair,
-    triple,
+    pattern_entry,
     /** triple (parent or nil, vars, patterns); patterns is list of (pattern, when, implementation) */
     env,
     macroized,
@@ -72,7 +72,7 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.list]: [null, Thing[]],
     [ThingType.map]: [null, Thing<ThingType.pair>[]],
     [ThingType.pair]: [null, [Thing, Thing]],
-    [ThingType.triple]: [null, readonly [Thing, Thing, Thing]],
+    [ThingType.pattern_entry]: [null, readonly [Thing<ThingType.pattern>, Thing, Thing<ThingType.list>, Thing<ThingType.number>]],
     [ThingType.env]: [null, readonly [Thing<ThingType.env | ThingType.nil>, Thing<ThingType.map>, Thing<ThingType.list>]]
     [ThingType.macroized]: [null, readonly [Thing]],
     [ThingType.splat]: [null, readonly [Thing]],

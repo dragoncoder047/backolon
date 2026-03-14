@@ -60,7 +60,7 @@ describe("variables", () => {
             v: 1
         });
     });
-    test("assignment and retrieval", () => {
+    test("initialization and retrieval", () => {
         const stdout = spyOn(console, "log");
         expectEval("let a = __declare; a b print; b 'test'; b", {
             t: ThingType.nativefunc,
@@ -72,10 +72,26 @@ describe("variables", () => {
     test("redeclaration throws", () => {
         expectEvalError("let a; let a", "variable a already exists in this scope");
     });
-    test("declarartion override globals", () => {
+    test("declarations override globals", () => {
         expectEvalError("let print = 1; print 'hi'", "can't call number");
     });
     test("declaration syntax requires literal '='", () => {
-        expectEvalError("let a 1", "undefined: \"let\"");
+        expectEvalError("let a 1", "can't call nil");
     });
+    test("reassignment", () => {
+        const stdout = spyOn(console, "log");
+        expectEval("let a = 1; print a; a = 2; print a = 3; a", {
+            t: ThingType.number,
+            v: 3
+        });
+        expect(stdout).toHaveBeenCalledTimes(2);
+        expect(stdout).toHaveBeenNthCalledWith(1, "1");
+        expect(stdout).toHaveBeenNthCalledWith(2, "3");
+    });
+    test("assignment is right associative", () => {
+        expectEval("let a; let b; a = b = 1", {
+            t: ThingType.number,
+            v: 1
+        });
+    })
 });

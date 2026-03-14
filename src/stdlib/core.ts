@@ -1,5 +1,6 @@
+import { stringify } from "lib0/json";
 import { define_builtin_function, define_builtin_variable, define_pattern } from ".";
-import { RuntimeError } from "../errors";
+import { ErrorNote, RuntimeError } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating } from "../objects/map";
 import { boxApply, boxNameSymbol, boxNativeFunc, boxNil, boxNumber, boxRoundBlock, Thing, ThingType, typecheck } from "../objects/thing";
 import { unparse } from "../parser/unparse";
@@ -14,9 +15,9 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
     define_builtin_variable(env, "true", boxNumber(1, undefined, "true"));
     const STANDARD_BLOCKS = [ThingType.roundblock, ThingType.topblock] as any;
     // MARK: blocks and logical lines
-    define_pattern(env, functions, "[^]{x...|} {\n|;} {y...|}[$]", STANDARD_BLOCKS, "__rewrite_sequence", (task, state) => {
+    define_pattern(env, functions, "[^]{x...|} {\n|;} {y...|}[$]", -Infinity, STANDARD_BLOCKS, "__rewrite_sequence", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
-        var first = mapGetKey(groups, x)!;
+        var first = mapGetKey(groups, x);
         var second = mapGetKey(groups, y);
         if (first) {
             first = boxRoundBlock(first.c!, first.loc);
@@ -43,8 +44,16 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
             task.enter(boxApply(second, [], second.loc), state.env);
         }
     });
+    // MARK: Apply
+    // This MUST be lowest (last) precedence otherwise it will override everything else!
+    define_pattern(env, functions, "[^]x y...[$]", Infinity, STANDARD_BLOCKS, "__rewrite_apply", (task, state) => {
+        const groups: Thing<ThingType.map> = state.argv[0]! as any;
+        const fun = mapGetKey(groups, x)!;
+        const args = removed_whitespace(mapGetKey(groups, y)!.c);
+        task.out(boxApply(fun, args, fun.loc));
+    });
     // MARK: variable management
-    define_pattern(env, functions, "[^][=let] [x:name] {= y|}[$]", STANDARD_BLOCKS, "__rewrite_declaration", (task, state) => {
+    define_pattern(env, functions, "[=let] [x:name] {= y|}", -1000, STANDARD_BLOCKS, "__rewrite_declaration", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
         const name = mapGetKey(groups, x)!;
         const value = mapGetKey(groups, y);
@@ -62,14 +71,27 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
             mapUpdateKeyMutating(state.env.c[1]!, name, initialValue);
         });
     });
-    // MARK: Apply
-    // This MUST be last otherwise it will override everything else!
-    // TODO: need to give patterns a precedence value, and give this one Infinity, so it won't also override user patterns
-    define_pattern(env, functions, "[^]x y...[$]", STANDARD_BLOCKS, "__create_apply", (task, state) => {
+    define_pattern(env, functions, "[x:name] = y", -1000, STANDARD_BLOCKS, "__rewrite_assign", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
-        const fun = mapGetKey(groups, x)!;
-        const args = removed_whitespace(mapGetKey(groups, y)!.c);
-        task.out(boxApply(fun, args, fun.loc));
+        const name = mapGetKey(groups, x)!;
+        const value = mapGetKey(groups, y)!;
+        task.out(boxApply(boxNativeFunc("__assign", state.value.loc), [name, value], state.value.loc));
+    });
+    define_builtin_function(env, functions, "__assign", "@name:name value", (task, state) => {
+        const name = state.argv[0]! as Thing<ThingType.name>;
+        const value = state.argv[1]!;
+        const loc = name.loc;
+        task.out(value);
+        task.dip(1, state => {
+            for (var env = state.env; env && typecheck(ThingType.env)(env); env = env.c[0]) {
+                const vars = env.c[1];
+                if (mapGetKey(vars, name, loc) !== undefined) {
+                    mapUpdateKeyMutating(vars, name, value, loc);
+                    return;
+                }
+            }
+            throw new RuntimeError(`undefined: ${stringify(name.v)}`, loc, [new ErrorNote("note: add 'let' to declare the variable to be in this scope", loc)]);
+        });
     });
     // MARK: builtin function names
     define_builtin_function(env, functions, "print", "values...", (task, state) => {

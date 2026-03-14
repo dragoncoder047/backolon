@@ -80,6 +80,14 @@ export class Task {
             typestr = typeNameOf(type),
             children = val.c,
             loc = val.loc;
+        const tryMacro = () => {
+            if (this.result && typecheck(ThingType.macroized)(this.result)) {
+                console.log("checking macro", this.result);
+                this.enter(this.result.c[0], top!.env);
+                return true;
+            }
+            return false;
+        };
         corrupted: {
 
             /*
@@ -97,13 +105,13 @@ export class Task {
                     // @ts-expect-error
                     case BlockEvalState.matching_patterns:
                         for (var env = top.env; !typecheck(ThingType.nil)(env); env = env.c[0]!) {
-                            const patterns = env.c[2]?.c ?? [];
+                            const patterns: Thing<ThingType.pattern_entry>[] = env.c[2]?.c ?? [] as any;
                             for (var i = 0; i < patterns.length; i++) {
                                 const pair = patterns[i]!,
-                                    pat = pair.c[0]! as Thing<ThingType.pattern>,
+                                    pat = pair.c[0]!,
                                     impl = pair.c[1]!,
                                     when = pair.c[2]?.c;
-                                if (when && !typecheck(...when.map(v => v.v))(val)) continue;
+                                if (when.length > 0 && !typecheck(...when.map(v => v.v))(val)) continue;
                                 const result = matchPattern(top.argv, pat, false)[0];
                                 if (result) {
                                     this.updateCookie(0, BlockEvalState.waiting_for_pattern_result, result.span);
@@ -116,6 +124,7 @@ export class Task {
                         }
                         this.result = boxNil(val.loc);
                     case BlockEvalState.evaluating_body_after_no_matches_found:
+                        if (tryMacro()) return true;
                         if (top.index >= top.argv.length) {
                             this.out();
                         } else {
@@ -124,12 +133,13 @@ export class Task {
                         }
                         return true;
                     case BlockEvalState.waiting_for_pattern_result:
+                        if (tryMacro()) return true;
                         const res = this.result!;
                         this.result = null;
                         if (res === null) throw new Error("Expected a result");
                         const start = top.data[0] as number;
                         const length = top.data[1] as number - start;
-                        const values = typecheck(ThingType.splat)(res) ? res.c : [res];
+                        const values = typecheck(ThingType.splat)(res) ? res.c[0].c : [res];
                         this.updateArgs(top.argv.toSpliced(start, length, ...values));
                         this.updateCookie(0, BlockEvalState.matching_patterns, null);
                         return true;
@@ -185,6 +195,7 @@ export class Task {
                         const arg = children[top.index]!;
                         this.updateCookie(top.index, ApplyEvalState.waiting_for_arg_result, null);
                         if (isLazy(desc)) {
+                            // TODO: have some way to force-override lazy parameters?
                             this.result = wrapImplicitBlock(arg, top.env);
                         } else {
                             this.enter(arg, top.env);
@@ -194,11 +205,8 @@ export class Task {
                         res = this.result!;
                         this.result = null;
                         if (res === null) throw new Error("Expected a result");
-                        if (typecheck(ThingType.macroized)(res)) {
-                            this.enter(res, top.env);
-                            return true;
-                        }
-                        this.updateArgs(top.argv.toSpliced(Infinity, 0, ...(typecheck(ThingType.splat)(res) ? res.c : [res])));
+                        if (tryMacro()) return true;
+                        this.updateArgs(top.argv.toSpliced(Infinity, 0, ...(typecheck(ThingType.splat)(res) ? res.c[0].c : [res])));
                         this.updateCookie(top.index + 1, ApplyEvalState.evaluate_arguments, null);
                         return true;
                     default:

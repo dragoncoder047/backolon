@@ -1,6 +1,5 @@
-import { RuntimeError } from "../errors";
 import { mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
-import { boxList, boxNameSymbol, boxNativeFunc, boxNumber, Thing, ThingType, typecheck } from "../objects/thing";
+import { boxList, boxNameSymbol, boxNativeFunc, boxNumber, Thing, ThingType } from "../objects/thing";
 import { parse } from "../parser/parse";
 import { parsePattern } from "../patterns/meta";
 import { newEnv } from "../runtime/env";
@@ -37,6 +36,7 @@ export function define_pattern(
     inEnv: Thing<ThingType.env>,
     inFuncs: Record<string, NativeFunctionDetails>,
     pattern: string,
+    precedence: number,
     when: ThingType[],
     handlerName: string,
     handlerBody?: NativeFunctionDetails["impl"],
@@ -46,11 +46,13 @@ export function define_pattern(
         define_builtin_function(inEnv, inFuncs, handlerName, "_:map", handlerBody, loc);
     }
     const pat = parsePattern(parse(pattern, loc.file).c);
-    inEnv.c[2].c.push(new Thing(ThingType.triple, [
+    inEnv.c[2].c.push(new Thing(ThingType.pattern_entry, [
         pat,
         boxNativeFunc(handlerName, loc),
         boxList(when.map(m => boxNumber(m, loc)), loc),
-    ], null, "", "", "", loc))
+        boxNumber(precedence, loc),
+    ], null, "", "", "", loc));
+    inEnv.c[2].c.sort(((a: Thing<ThingType.pattern_entry>, b: Thing<ThingType.pattern_entry>) => a.c[3].v - b.c[3].v) as any);
 }
 
 function createBuiltins(): { b: Thing<ThingType.env>, f: Record<string, NativeFunctionDetails> } {

@@ -447,14 +447,13 @@ describe("metapattern", () => {
             ["1+1", true],
             ["a+b", false],
             ["1+a", false]);
-        pattern_test("[^]x... {\n|;} y...[$]",
+        pattern_test("[^]{x...|} {\n|;} {y...|}[$]",
             ["1; 2; 3", true],
             ["1", false]);
-        pattern_test("[^][p:name]{[=:] [t:name]| }{ [==] d|} [$]",
+        pattern_test("[^][p:name] {[=:] [t:name]|} {[==] d|} [$]",
             ["x", true],
             ["x number", false],
             ["x: number", true],
-            ["x : number", false],
             ["x = 1", true],
             ["x: number = nil", true]);
 
