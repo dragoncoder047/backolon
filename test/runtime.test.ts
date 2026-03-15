@@ -93,5 +93,8 @@ describe("variables", () => {
             t: ThingType.number,
             v: 1
         });
-    })
+    });
+    test("assignment requires the variable to exist", () => {
+        expectEvalError("a = 1", "undefined: \"a\"", "note: add \"let\" to declare \"a\" to be in this scope");
+    });
 });

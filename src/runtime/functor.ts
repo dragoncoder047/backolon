@@ -13,8 +13,8 @@ export const BUILTINS_LOC = new LocationTrace(0, 0, new URL("backolon:builtins")
 type ParamDescriptor = Thing<ThingType.paramdescriptor> | Thing<ThingType.name>;
 
 const CONTINUATION_SIGNATURE = [boxNameSymbol("value", BUILTINS_LOC)];
-const IMPLICIT_SIGNATURE = [new Thing(ThingType.paramdescriptor, [boxNameSymbol("env", BUILTINS_LOC), boxList([boxNumber(ThingType.map, BUILTINS_LOC)], BUILTINS_LOC)], [false, false], "", "", ":", BUILTINS_LOC)];
-const NOT_A_PARAM = new Thing(ThingType.paramdescriptor, [boxNameSymbol("invalid", BUILTINS_LOC)], [true, false], "", "", "", BUILTINS_LOC);
+const IMPLICIT_SIGNATURE = [new Thing(ThingType.paramdescriptor, [boxNameSymbol("env", BUILTINS_LOC), boxList([boxNumber(ThingType.map, BUILTINS_LOC)], BUILTINS_LOC)], [false, false, false], "", "", ":", BUILTINS_LOC)];
+const NOT_A_PARAM = new Thing(ThingType.paramdescriptor, [boxNameSymbol("invalid", BUILTINS_LOC)], [true, false, false], "", "", "", BUILTINS_LOC);
 export function getParamDescriptors(fn: Thing, scheduler: Scheduler, callsite: Thing): ParamDescriptor[] {
     if (typecheck(ThingType.func)(fn)) {
         return fn.c[0].c as any;
@@ -42,14 +42,18 @@ export function getNthDescriptor(descriptors: ParamDescriptor[], index: number):
     return NOT_A_PARAM;
 }
 
-export function isLazy(descriptor: ParamDescriptor): boolean {
-    if (isSymbol(descriptor)) return false;
-    return descriptor.v[0];
+function isField(index: keyof Thing<ThingType.paramdescriptor>["v"]): (descriptor: ParamDescriptor) => boolean {
+    return descriptor => {
+        if (isSymbol(descriptor)) return false;
+        return descriptor.v[index] as boolean;
+    }
 }
-export function isSplat(descriptor: ParamDescriptor): boolean {
-    if (isSymbol(descriptor)) return false;
-    return descriptor.v[1];
-}
+
+export const isLazy = isField(0);
+
+export const isSplat = isField(1);
+
+const isUnwrap = isField(2);
 
 function getExpectedTypes(descriptor: ParamDescriptor): ThingType[] {
     if (isSymbol(descriptor)) return [];
@@ -83,7 +87,7 @@ export function parametersToVars(functionName: string, paramsDef: ParamDescripto
         const p = getNthDescriptor(paramsDef, i);
         if (p === NOT_A_PARAM) throw new RuntimeError(`too many arguments to ${functionName}`, arg.loc);
         const name = getParamName(p), t = getExpectedTypes(p);
-        if (isLazy(p) && t.length > 0 && pendingDefaults.length === 0) {
+        if (isLazy(p) && (t.length > 0 || isUnwrap(p)) && pendingDefaults.length === 0) {
             if (!typecheck(ThingType.implicitfunc)(arg)) {
                 throw new Error("lazy param didn't get wrapped!");
             }
@@ -118,10 +122,22 @@ export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> 
         if (typecheck(ThingType.operator)(items[0]!)) {
             lazy = true;
             lazystr = "@";
-            items = items.toSpliced(0, 1);
+            items = items.slice(1);
+        }
+        var unwrap = false, unwrapstr = "";
+        if (typecheck(ThingType.operator)(items.at(-1)!)) {
+            unwrap = true;
+            unwrapstr = "!";
+            items = items.slice(0, -1);
         }
         const loc = items[0].loc;
-        const to_type = (item: Thing): Thing[] => typecheck(ThingType.list)(item) ? item.c.flatMap(c => to_type(c)) : isSymbol(item) ? [boxNumber(typeNameToThingType(item.v, item.loc), item.loc, item.v)] : [];
+        const to_type = (item: Thing): Thing[] => {
+            if (typecheck(ThingType.list)(item))
+                return item.c.flatMap(c => to_type(c));
+            if (isSymbol(item))
+                return [boxNumber(typeNameToThingType(item.v, item.loc), item.loc, item.v)];
+            return [];
+        }
         const nil = boxNil(loc, "");
         const empty = boxList([], loc);
         const checkSplat = () => {
@@ -131,18 +147,18 @@ export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> 
         };
         switch (items.length) {
             case 1:
-                return lazy || isSplat
-                    ? new Thing(ThingType.paramdescriptor, [items[0], empty, nil], [lazy, isSplat], lazystr, "", "", loc)
+                return lazy || isSplat || unwrap
+                    ? new Thing(ThingType.paramdescriptor, [items[0], empty, nil], [lazy, isSplat, unwrap], lazystr, unwrapstr, "", loc)
                     : items[0];
             case 5:
                 checkSplat();
-                return new Thing(ThingType.paramdescriptor, [items[0], boxList(to_type(items[2]), items[2].loc), items[4]], [lazy, isSplat], lazystr, "", [":", "="] as any, loc);
+                return new Thing(ThingType.paramdescriptor, [items[0], boxList(to_type(items[2]), items[2].loc), items[4]], [lazy, isSplat, unwrap], lazystr, unwrapstr, [":", "="] as any, loc);
             case 3:
                 const isType = items[1].v === ":";
                 if (!isType) checkSplat();
                 return isType
-                    ? new Thing(ThingType.paramdescriptor, [items[0], boxList(to_type(items[2]), items[2].loc), nil], [lazy, isSplat], lazystr, "", ":", loc)
-                    : new Thing(ThingType.paramdescriptor, [items[0], empty, items[2]], [lazy, isSplat], lazystr, "", "=", loc);
+                    ? new Thing(ThingType.paramdescriptor, [items[0], boxList(to_type(items[2]), items[2].loc), nil], [lazy, isSplat, unwrap], lazystr, unwrapstr, ":", loc)
+                    : new Thing(ThingType.paramdescriptor, [items[0], empty, items[2]], [lazy, isSplat, unwrap], lazystr, unwrapstr, "=", loc);
             default:
                 throw "unreachable";
         }
@@ -160,7 +176,7 @@ export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> 
     return [...result, ...end];
 }
 
-const base = "{[=@]|}[p:name]{ [=:] {[t:name]|[t:list]}|}{ [==] d|} ";
+const base = "{@|}[p:name]{ : {[t:name]|[t:list]}|}{ = d|} {!|} ";
 const signaturePattern = parsePattern(parse(base, metapattern_location.file).c);
-const splatEndPattern = parsePattern(parse(`${base}[=.][=.][=.] [$]`, metapattern_location.file).c);
+const splatEndPattern = parsePattern(parse(`${base}[=.].. [$]`, metapattern_location.file).c);
 
