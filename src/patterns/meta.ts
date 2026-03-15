@@ -125,20 +125,33 @@ export function parsePattern(block: readonly Thing[]): Thing<ThingType.pattern> 
         throw new RuntimeError("expected a repeat before greedy indicator");
     });
 
-    // 6. spaces/newlines represent any amount of space;
+    // 6. spaces/newlines represent any amount of space:
+    //    * one space optional space, and allow newlines in between
+    //    * two spaces is the same as one but disallows newlines
+    //    * three spaces is the same as two except some space is required.
     //    newlines match themselves literally.
     block = nonoverlappingreplace(block, required_space, spaces => {
         const s = spaces.map(p => p.v).join("");
         if (s === "\n") return [matchvalue(spaces[0]!)];
         const loc = spaces[0]!.loc;
-        return s.length > 1 ? [
+        return s.length > 2 ? [
             repeat(true, [
                 matchtype(ThingType.space, s, loc)
             ])
-        ] : [
+        ] : s.length > 1 ? [
             alternatives([
                 repeat(true, [
                     matchtype(ThingType.space, s, loc)
+                ], ""),
+                nothing,
+            ], "", "", "", loc)
+        ] : [
+            alternatives([
+                repeat(true, [
+                    alternatives([
+                        matchtype(ThingType.space, s, loc),
+                        matchtype(ThingType.newline, "", loc),
+                    ], "", "", "", loc),
                 ], ""),
                 nothing,
             ], "", "", "", loc)

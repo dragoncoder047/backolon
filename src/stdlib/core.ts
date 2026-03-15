@@ -15,7 +15,7 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
     define_builtin_variable(env, "true", boxNumber(1, undefined, "true"));
     const STANDARD_BLOCKS = [ThingType.roundblock, ThingType.topblock] as any;
     // MARK: blocks and logical lines
-    define_pattern(env, functions, "[^]{x...|} {\n|;} {y...|}[$]", Infinity, STANDARD_BLOCKS, "__rewrite_sequence", (task, state) => {
+    define_pattern(env, functions, "[^]{x...|}  {\n|;}  {y...|}[$]", Infinity, STANDARD_BLOCKS, "__rewrite_sequence", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
         var first = mapGetKey(groups, x);
         var second = mapGetKey(groups, y);
@@ -46,7 +46,7 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
     });
     // MARK: Apply
     // This MUST be lowest (last) precedence otherwise it will override everything else!
-    define_pattern(env, functions, "[^]x y...[$]", Infinity, STANDARD_BLOCKS, "__rewrite_apply", (task, state) => {
+    define_pattern(env, functions, "[^]x  y...[$]", Infinity, STANDARD_BLOCKS, "__rewrite_apply", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
         const fun = mapGetKey(groups, x)!;
         const args = removed_whitespace(mapGetKey(groups, y)!.c);

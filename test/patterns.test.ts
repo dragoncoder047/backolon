@@ -376,7 +376,7 @@ describe("metapattern", () => {
     });
 
     test("spaces semantics", () => {
-        const s = pstring("  "); // two spaces -> one or more
+        const s = pstring("   "); // three spaces -> one or more
         expect(s.c[0]!.v.t).toBe(PatternType.repeat);
         // single space should be optional (alternation with nothing)
         const s1 = pstring(" ");
@@ -443,7 +443,7 @@ describe("metapattern", () => {
             ["a", false]);
         pattern_test("[x: number] + [y: number]",
             ["1 + 1", true],
-            ["1\n+\n1", false],
+            ["1\n+\n1", true],
             ["1+1", true],
             ["a+b", false],
             ["1+a", false]);
