@@ -37,6 +37,7 @@ export function define_pattern(
     inFuncs: Record<string, NativeFunctionDetails>,
     pattern: string,
     precedence: number,
+    rightAssociative: boolean,
     when: ThingType[],
     handlerName: string,
     handlerBody?: NativeFunctionDetails["impl"],
@@ -51,7 +52,7 @@ export function define_pattern(
         boxNativeFunc(handlerName, loc),
         boxList(when.map(m => boxNumber(m, loc)), loc),
         boxNumber(precedence, loc),
-    ], null, "", "", "", loc));
+    ], rightAssociative, "", "", "", loc));
     inEnv.c[2].c.sort(((a: Thing<ThingType.pattern_entry>, b: Thing<ThingType.pattern_entry>) => a.c[3].v - b.c[3].v) as any);
 }
 

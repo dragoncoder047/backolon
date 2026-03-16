@@ -1,6 +1,6 @@
 import { stringify } from "lib0/json";
 import { forEach } from "lib0/object";
-import { LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
+import { ErrorNote, LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
 import { boxApply, boxList, boxNameSymbol, boxNil, isAtom, isBlock, isSymbol, Thing, ThingType, typecheck, typeNameOf } from "../objects/thing";
 import { matchPattern } from "../patterns/match";
@@ -107,12 +107,24 @@ export class Task {
                         for (var env = top.env; !typecheck(ThingType.nil)(env); env = env.c[0]!) {
                             const patterns: Thing<ThingType.pattern_entry>[] = env.c[2]?.c ?? [] as any;
                             for (var i = 0; i < patterns.length; i++) {
-                                const pair = patterns[i]!,
-                                    pat = pair.c[0]!,
-                                    impl = pair.c[1]!,
-                                    when = pair.c[2]?.c;
+                                const entry = patterns[i]!,
+                                    rightAssociative = entry.v,
+                                    pat = entry.c[0]!,
+                                    impl = entry.c[1]!,
+                                    when = entry.c[2]?.c;
                                 if (when.length > 0 && !typecheck(...when.map(v => v.v))(val)) continue;
-                                const result = matchPattern(top.argv, pat, false)[0];
+                                const results = matchPattern(top.argv, pat, rightAssociative);
+                                var result = results[0];
+                                if (rightAssociative && results.length > 0) {
+                                    for (var i = 1; i < results.length; i++) {
+                                        const nextResult = results[i]!;
+                                        if (nextResult.span[0] < result!.span[1]) {
+                                            result = nextResult;
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                }
                                 if (result) {
                                     this.updateCookie(0, BlockEvalState.waiting_for_pattern_result, result.span);
                                     this.enter(boxApply(impl, [this.i(loc, flatToVarMap(result, loc), {

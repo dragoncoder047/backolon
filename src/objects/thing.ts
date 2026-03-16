@@ -72,7 +72,7 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.list]: [null, Thing[]],
     [ThingType.map]: [null, Thing<ThingType.pair>[]],
     [ThingType.pair]: [null, [Thing, Thing]],
-    [ThingType.pattern_entry]: [null, readonly [Thing<ThingType.pattern>, Thing, Thing<ThingType.list>, Thing<ThingType.number>]],
+    [ThingType.pattern_entry]: [isRightAssociative: boolean, readonly [Thing<ThingType.pattern>, Thing, Thing<ThingType.list>, Thing<ThingType.number>]],
     [ThingType.env]: [null, readonly [Thing<ThingType.env | ThingType.nil>, Thing<ThingType.map>, Thing<ThingType.list>]]
     [ThingType.macroized]: [null, readonly [Thing]],
     [ThingType.splat]: [null, readonly [Thing]],
@@ -140,7 +140,7 @@ export const isBlock = typecheck(ThingType.roundblock, ThingType.squareblock, Th
 export const isSymbol = typecheck(ThingType.name, ThingType.operator, ThingType.space);
 export const isCallable = typecheck(ThingType.func, ThingType.nativefunc, ThingType.implicitfunc, ThingType.continuation, ThingType.boundmethod);
 export const isPattern = typecheck(ThingType.pattern);
-export const isAtom = typecheck(ThingType.nil, ThingType.end, ThingType.name, ThingType.operator, ThingType.space, ThingType.number, ThingType.string, ThingType.func, ThingType.boundmethod, ThingType.implicitfunc, ThingType.nativefunc, ThingType.continuation, ThingType.list, ThingType.map, ThingType.splat, ThingType.macroized);
+export const isAtom = typecheck(ThingType.nil, ThingType.end, ThingType.name, ThingType.operator, ThingType.number, ThingType.string, ThingType.func, ThingType.boundmethod, ThingType.implicitfunc, ThingType.nativefunc, ThingType.continuation, ThingType.list, ThingType.map, ThingType.splat, ThingType.macroized);
 
 export type CheckedType<T extends (thing: Thing<any>) => thing is Thing<any>> = T extends (thing: Thing<any>) => thing is Thing<infer U> ? U : never;
 

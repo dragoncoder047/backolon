@@ -72,6 +72,9 @@ describe("variables", () => {
     test("redeclaration throws", () => {
         expectEvalError("let a; let a", "variable a already exists in this scope");
     });
+    test("can only declare a name", () => {
+        expectEvalError("let 1 = 2", "cannot assign to number");
+    });
     test("declarations override globals", () => {
         expectEvalError("let print = 1; print 'hi'", "can't call number");
     });
