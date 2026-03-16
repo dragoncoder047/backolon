@@ -38,6 +38,14 @@ test("print", () => {
     expect(stdout).toHaveBeenNthCalledWith(2, "2");
     expect(stdout).toHaveBeenNthCalledWith(3, "nil");
 });
+test("call with 0 arguments", () => {
+    const stdout = spyOn(console, "log");
+    expectEval("print!", {
+        t: ThingType.nil,
+    });
+    expect(stdout).toHaveBeenCalledTimes(1);
+    expect(stdout).toHaveBeenNthCalledWith(1, "");
+});
 test("print with varargs", () => {
     const stdout = spyOn(console, "log");
     expectEval("print 1; print 2 3; print 4 5 6", {
@@ -70,7 +78,7 @@ describe("variables", () => {
         expect(stdout).toHaveBeenNthCalledWith(1, "test");
     });
     test("redeclaration throws", () => {
-        expectEvalError("let a; let a", "variable a already exists in this scope");
+        expectEvalError("let a; let a", "variable \"a\" already exists in this scope");
     });
     test("can only declare a name", () => {
         expectEvalError("let 1 = 2", "cannot assign to number");
@@ -99,5 +107,19 @@ describe("variables", () => {
     });
     test("assignment requires the variable to exist", () => {
         expectEvalError("a = 1", "undefined: \"a\"", "note: add \"let\" to declare \"a\" to be in this scope");
+    });
+});
+describe("lambdas", () => {
+    test("create lambdas", () => {
+        expectEval("[] => 1", {
+            t: ThingType.func,
+            v: null,
+        });
+    });
+    test("function naming", () => {
+        expectEval("let spy = [x] => (print x; x); spy (spy spy)", {
+            t: ThingType.func,
+            v: "spy",
+        });
     });
 });

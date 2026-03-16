@@ -58,10 +58,17 @@ export class Scheduler {
             }
         } while (madeProgress);
     }
+    _getFunction(name: string): NativeFunctionDetails {
+        const func = this.apiFunctions[name];
+        if (!func) {
+            throw new Error(`api function ${name} requested but not implemented!`);
+        }
+        return func;
+    }
     getParamDescriptors(name: string): (Thing<ThingType.paramdescriptor> | Thing<ThingType.name>)[] {
-        return this.apiFunctions[name]?.params ?? [];
+        return this._getFunction(name).params ?? [];
     }
     callFunction(task: Task, name: string, entry: StackEntry) {
-        return this.apiFunctions[name]!.impl(task, entry);
+        return this._getFunction(name).impl(task, entry);
     }
 }

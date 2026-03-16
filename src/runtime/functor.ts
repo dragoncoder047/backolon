@@ -60,9 +60,9 @@ function getExpectedTypes(descriptor: ParamDescriptor): ThingType[] {
     return descriptor.c[1]?.c.map(c => c.v) ?? [];
 }
 
-function getDefaultValue(descriptor: ParamDescriptor, callsite: Thing): Thing {
+function getDefaultValue(descriptor: ParamDescriptor, callsite: Thing): Thing | undefined {
     if (!isSymbol(descriptor)) {
-        if (isSplat(descriptor)) return boxList([], callsite.loc);
+        if (isSplat(descriptor)) return undefined;
         const def = descriptor.c[2];
         if (def) return def;
     }
@@ -80,7 +80,8 @@ export function parametersToVars(functionName: string, paramsDef: ParamDescripto
     var i = 0;
     for (i = realArgs.length; i < paramsDef.length; i++) {
         // Remaining are the defaults yet to be evaluated
-        pendingDefaults.push(getDefaultValue(getNthDescriptor(paramsDef, i), callsite));
+        const def = getDefaultValue(getNthDescriptor(paramsDef, i), callsite);
+        if (def) pendingDefaults.push(def);
     }
     for (i = 0; i < realArgs.length; i++) {
         var arg = realArgs[i]!;
@@ -105,6 +106,13 @@ export function parametersToVars(functionName: string, paramsDef: ParamDescripto
         const names = t.map(typeNameOf);
         const expected = names.join(names.length < 3 ? " or " : ", or ");
         throw new RuntimeError(`Wrong type to argument ${stringify(name.v)} of function call (expected ${expected}, got ${typeNameOf(arg.t)})`, arg.loc);
+    }
+    for (; pendingDefaults.length == 0 && i < paramsDef.length; i++) {
+        const p = getNthDescriptor(paramsDef, i);
+        const name = getParamName(p);
+        if (isSplat(p)) {
+            mapUpdateKeyMutating(map, name, boxList([]));
+        }
     }
     return { e: map, p: pendingDefaults };
 }

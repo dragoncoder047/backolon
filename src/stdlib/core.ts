@@ -2,9 +2,10 @@ import { stringify } from "lib0/json";
 import { define_builtin_function, define_builtin_variable, define_pattern } from ".";
 import { ErrorNote, LocationTrace, RuntimeError } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating } from "../objects/map";
-import { boxApply, boxNameSymbol, boxNativeFunc, boxNil, boxNumber, boxRoundBlock, Thing, ThingType, typecheck, typeNameOf } from "../objects/thing";
+import { boxApply, boxNameSymbol, boxNativeFunc, boxNil, boxNumber, boxRoundBlock, boxSquareBlock, Thing, ThingType, typecheck, typeNameOf } from "../objects/thing";
 import { unparse } from "../parser/unparse";
 import { removed_whitespace } from "../patterns/meta";
+import { parseSignature } from "../runtime/functor";
 import { NativeFunctionDetails } from "../runtime/scheduler";
 import type { StackEntry, Task } from "../runtime/task";
 
@@ -47,12 +48,16 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
     });
     // MARK: Apply
     // This MUST be lowest (last) precedence otherwise it will override everything else!
-    define_pattern(env, functions, "[^]x  y...[$]", Infinity, false, STANDARD_BLOCKS, "__rewrite_apply", (task, state) => {
+    // First one is no arguments
+    define_pattern(env, functions, "[^]x ![$]", Infinity, false, STANDARD_BLOCKS, "__rewrite_apply", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
         const fun = mapGetKey(groups, x)!;
-        const args = removed_whitespace(mapGetKey(groups, y)!.c);
+        const argv = mapGetKey(groups, y);
+        const args = argv ? removed_whitespace(argv.c) : [];
         task.out(boxApply(fun, args, fun.loc));
     });
+    // Second one is with arguments
+    define_pattern(env, functions, "[^]x  y...[$]", Infinity, false, STANDARD_BLOCKS, "__rewrite_apply");
     // MARK: variable management
     define_pattern(env, functions, "[=let] x {= y|}", -1000, false, STANDARD_BLOCKS, "__rewrite_declaration", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
@@ -74,9 +79,12 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
     }
     define_builtin_function(env, functions, "__declare", "@name! value=nil", binding_helper((state, name, initialValue, loc) => {
         if (mapGetKey(state.env.c[1]!, name) !== undefined) {
-            throw new RuntimeError(`variable ${name.v} already exists in this scope`, loc);
+            throw new RuntimeError(`variable ${stringify(name.v)} already exists in this scope`, loc);
         }
         mapUpdateKeyMutating(state.env.c[1]!, name, initialValue);
+        if (typecheck(ThingType.func)(initialValue)) {
+            initialValue.v ??= name.v;
+        }
     }));
     define_pattern(env, functions, "x = y", -1000, true, STANDARD_BLOCKS, "__rewrite_assign", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
@@ -89,11 +97,29 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
             const vars = env.c[1];
             if (mapGetKey(vars, name, loc) !== undefined) {
                 mapUpdateKeyMutating(vars, name, value, loc);
+                if (typecheck(ThingType.func)(value)) {
+                    value.v ??= name.v;
+                }
                 return;
             }
         }
         throw new RuntimeError(`undefined: ${stringify(name.v)}`, loc, [new ErrorNote(`note: add "let" to declare ${stringify(name.v)} to be in this scope`, loc)]);
     }));
+    // MARK: lambdas
+    define_pattern(env, functions, "[x:squareblock] => y...[+]  {\n|;|[$]}", -10000, true, STANDARD_BLOCKS, "__rewrite_build_lambda", (task, state) => {
+        const groups: Thing<ThingType.map> = state.argv[0]! as any;
+        const name = mapGetKey(groups, x)!;
+        const values = mapGetKey(groups, y)!;
+        const value = boxRoundBlock(values.c, values.c[0]!.loc);
+        task.out(boxApply(boxNativeFunc("__build_lambda", state.value.loc), [name, value], state.value.loc));
+    });
+    define_builtin_function(env, functions, "__build_lambda", "@params! @body", (task, state) => {
+        const params = state.argv[0]!;
+        if (!typecheck(ThingType.squareblock)(params)) throw new RuntimeError(`wrong object type for lambda signature`, params.loc);
+        const signature = boxSquareBlock(parseSignature(params.c), params.loc);
+        const body = state.argv[1]!;
+        task.out(new Thing(ThingType.func, [signature, body], null, "", "", " => ", params.loc));
+    });
     // MARK: builtin function names
     define_builtin_function(env, functions, "print", "values...", (task, state) => {
         console.log(state.argv.map(arg => typecheck(ThingType.string)(arg) ? arg.v : unparse(arg)).join(" "));

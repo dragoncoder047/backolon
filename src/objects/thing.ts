@@ -62,7 +62,7 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.topblock]: [null, readonly Thing[]],
     [ThingType.stringblock]: [null, readonly Thing<ThingType.string | ThingType.roundblock>[]],
     [ThingType.apply]: [null, readonly Thing[]],
-    [ThingType.func]: [name: string, readonly [Thing<ThingType.roundblock>, Thing]],
+    [ThingType.func]: [name: string | null, readonly [Thing<ThingType.squareblock>, Thing]],
     [ThingType.nativefunc]: [string, []],
     [ThingType.implicitfunc]: [Thing<ThingType.env | ThingType.nil>, readonly [Thing]],
     [ThingType.paramdescriptor]: [[isLazy: boolean, isSplat: boolean, mustUnpack: boolean], readonly [Thing<ThingType.name>] | readonly [Thing<ThingType.name>, Thing<ThingType.list>] | readonly [Thing<ThingType.name>, Thing<ThingType.list>, Thing]],

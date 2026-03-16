@@ -16,7 +16,7 @@ After that, everything is controlled by pattern-matching.
 
 All of the operator-based syntaxes are based on rewriting it as a function or macro call.
 
-For example, `a + b` gets rewritten into `__add a b`. `let a = 1` gets rewritten into `__declare a 1`. `[a b] => {body}` gets rewritten into `__toLambda [a b] {body}`.
+For example, `a + b` gets rewritten into `__add a b`. `let a = 1` gets rewritten into `__declare a 1`. `[a b] => {body}` gets rewritten into `__build_lambda [a b] {body}`.
 
 ### Lambdas
 
