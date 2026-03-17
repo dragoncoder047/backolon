@@ -117,9 +117,11 @@ describe("lambdas", () => {
         });
     });
     test("function naming", () => {
+        const stdout = spyOn(console, "log");
         expectEval("let spy = [x] => (print x; x); spy (spy spy)", {
             t: ThingType.func,
             v: "spy",
         });
+        expect(stdout).toHaveBeenCalledTimes(2);
     });
 });

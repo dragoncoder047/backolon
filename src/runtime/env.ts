@@ -11,7 +11,7 @@ export function newEnv(newVars: Thing<ThingType.map>, newPatterns: Thing<ThingTy
 export function flatToVarMap(result: MatchResult, location: LocationTrace): Thing<ThingType.map> {
     const map = newEmptyMap(location);
     for (var [name, value] of result.bindings) {
-        if (isArray(value)) value = boxList(value, value[0]!.loc);
+        if (isArray(value)) value = boxList(value, value[0]?.loc);
         mapUpdateKeyMutating(map, name, value)
     }
     return map;

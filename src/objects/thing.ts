@@ -75,7 +75,7 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.pattern_entry]: [isRightAssociative: boolean, readonly [Thing<ThingType.pattern>, Thing, Thing<ThingType.list>, Thing<ThingType.number>]],
     [ThingType.env]: [null, readonly [Thing<ThingType.env | ThingType.nil>, Thing<ThingType.map>, Thing<ThingType.list>]]
     [ThingType.macroized]: [null, readonly [Thing]],
-    [ThingType.splat]: [null, readonly [Thing]],
+    [ThingType.splat]: [null, readonly Thing[]],
 }[T];
 
 const unhashable = [ThingType.list, ThingType.map, ThingType.env];
@@ -130,7 +130,7 @@ export function boxToplevelBlock(children: readonly Thing[], trace = UNKNOWN_LOC
 export function boxStringBlock(children: Thing<ThingType.string | ThingType.roundblock>[], trace = UNKNOWN_LOCATION, quote: string) { return boxBlock(children, ThingType.stringblock, trace, quote, quote); }
 export function boxList(items: Thing[], trace = UNKNOWN_LOCATION) { return new Thing(ThingType.list, items, null, "[", "]", ", ", trace, false); }
 export function boxNativeFunc(name: string, trace = UNKNOWN_LOCATION) { return new Thing(ThingType.nativefunc, [], name, `<built-in ${name}>`, "", "", trace); }
-export function boxApply(func: Thing, args: readonly Thing[], trace = UNKNOWN_LOCATION) { return new Thing(ThingType.apply, [func, ...args], null, "", "", " ", trace); }
+export function boxApply(func: Thing, args: readonly Thing[], trace = UNKNOWN_LOCATION) { return new Thing(ThingType.apply, [func, ...args], null, "(", ")", " ", trace); }
 
 export function typecheck<T extends ThingType>(...types: T[]) {
     return (thing: Thing<any>): thing is Thing<T> => types.includes(thing.t as T);

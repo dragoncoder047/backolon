@@ -7,6 +7,7 @@ import { matchPattern } from "../patterns/match";
 import { flatToVarMap, newEnv } from "./env";
 import { getNthDescriptor, getParamDescriptors, isLazy, parametersToVars, wrapImplicitBlock } from "./functor";
 import { type Scheduler } from "./scheduler";
+import { unparse } from "../parser/unparse";
 
 export enum StackFlag {
     native_func_being_evaluated = 1,
@@ -151,8 +152,9 @@ export class Task {
                         if (res === null) throw new Error("Expected a result");
                         const start = top.data[0] as number;
                         const length = top.data[1] as number - start;
-                        const values = typecheck(ThingType.splat)(res) ? res.c[0].c : [res];
-                        this.updateArgs(top.argv.toSpliced(start, length, ...values));
+                        const values = typecheck(ThingType.splat)(res) ? res.c : [res];
+                        const tt = this.updateArgs(top.argv.toSpliced(start, length, ...values));
+                        // console.log("parse splice", stringify(tt.argv.map(t => unparse(t)).join("")));
                         this.updateCookie(0, BlockEvalState.matching_patterns, null);
                         return true;
                     default:
@@ -218,7 +220,7 @@ export class Task {
                         this.result = null;
                         if (res === null) throw new Error("Expected a result");
                         if (tryMacro()) return true;
-                        this.updateArgs(top.argv.toSpliced(Infinity, 0, ...(typecheck(ThingType.splat)(res) ? res.c[0].c : [res])));
+                        this.updateArgs(top.argv.toSpliced(Infinity, 0, ...(typecheck(ThingType.splat)(res) ? res.c : [res])));
                         this.updateCookie(top.index + 1, ApplyEvalState.evaluate_arguments, null);
                         return true;
                     default:
@@ -273,12 +275,12 @@ export class Task {
         if (typecheck(ThingType.func)(functor)) {
             // do type checks
             // if optional params have defaults, go back to evaluate them in the new scope
-            const { e: vars, p: pendingDefaults } = parametersToVars(functor.v, functor.c[0]!.c as any, argv, callsite);
+            const { e: vars, p: pendingDefaults } = parametersToVars(name ?? functor.v ?? "<lambda>", functor.c[0]!.c as any, argv, callsite);
             if (pendingDefaults.length > 0) {
                 // We haven't evaluated the defaults yet...
                 return goDefaults(pendingDefaults, vars);
             }
-            this.a(callsite, functor.c[1], [this.i(callsite.loc, vars)], env, functor.v);
+            this.a(callsite, functor.c[1], [this.i(callsite.loc, vars)], env, name ?? functor.v ?? "<lambda>");
         }
         else if (typecheck(ThingType.nativefunc)(functor)) {
             const { e: vars, p: pendingDefaults } = parametersToVars(functor.v, this.scheduler.getParamDescriptors(functor.v), argv, callsite);
