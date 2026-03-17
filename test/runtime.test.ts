@@ -129,10 +129,10 @@ describe("lambdas", () => {
             t: ThingType.continuation,
         });
     });
-    test("call/cc", () => {
-        expectEval("let callcc = [x] => x return; let y; callcc [k] => y = k; y", {
-            t: ThingType.continuation,
-            v: "spy",
+    test("closed-over scopes can be accessed", () => {
+        expectEval("let f = [x] => x 3; let y; f [k] => y = k; y", {
+            t: ThingType.number,
+            v: 3
         });
     });
 });

@@ -65,7 +65,7 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
         const value = mapGetKey(groups, y);
         task.out(boxApply(boxNativeFunc("__declare", state.value.loc), value ? [name, value] : [name], state.value.loc));
     });
-    const binding_helper = (cb: (state: StackEntry, name: Thing<ThingType.name>, initialValue: Thing, loc: LocationTrace) => void): ((task: Task, state: StackEntry) => void) => {
+    const binding_helper = (dipAmount: number, cb: (state: StackEntry, name: Thing<ThingType.name>, initialValue: Thing, loc: LocationTrace) => void): ((task: Task, state: StackEntry) => void) => {
         return (task, state) => {
             const name = state.argv[0]!;
             const value = state.argv[1]!;
@@ -74,10 +74,10 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
                 throw new RuntimeError(`cannot assign to ${typeNameOf(name.t)}`, loc);
             }
             task.out(value);
-            task.dip(1, state => cb(state, name, value, loc));
+            task.dip(dipAmount, state => cb(state, name, value, loc));
         }
     }
-    define_builtin_function(env, functions, "__declare", "@name! value=nil", binding_helper((state, name, value, loc) => {
+    define_builtin_function(env, functions, "__declare", "@name! value=nil", binding_helper(1, (state, name, value, loc) => {
         const vars = state.env;
         if (mapGetKey(vars.c[1]!, name) !== undefined) {
             throw new RuntimeError(`variable ${stringify(name.v)} already exists in this scope`, loc);
@@ -93,7 +93,7 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
         const value = mapGetKey(groups, y)!;
         task.out(boxApply(boxNativeFunc("__assign", state.value.loc), [name, value], state.value.loc));
     });
-    define_builtin_function(env, functions, "__assign", "@name! value", binding_helper((state, name, value, loc) => {
+    define_builtin_function(env, functions, "__assign", "@name! value", binding_helper(2, (state, name, value, loc) => {
         for (var env = state.env; env && typecheck(ThingType.env)(env); env = env.c[0]) {
             const vars = env.c[1];
             if (mapGetKey(vars, name, loc) !== undefined) {
