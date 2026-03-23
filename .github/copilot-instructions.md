@@ -39,13 +39,13 @@ Internally, Backolon uses Thompson's NFA construction for handling arbitrary pat
 Backolon's control flow model leans on first-class functions and continuations very heavily. Every lambda that gets created (except for auto-wrapped syntax blocks passed to macros) has a variable named `return` automatically injected into its scope, which is initialized with a continuation jumping back to its invocation. Because of this property, the definition of a Scheme-like call/cc is trivial:
 
 ```backolon
-callcc = [f] => f return
+let callcc = [f] => f return
 ```
 
 Because `return` is just another variable, and not a keyword, it can be assigned to and passed around. For example, here's how control flow macros are implemented:
 
 ```backolon
-while = [@cond @body] => callcc [break] => (
+let while = [@cond @body] => callcc [break] => (
     let continue = nil
     callcc [k] => continue = k
     if (cond [:]) (
@@ -53,7 +53,7 @@ while = [@cond @body] => callcc [break] => (
         continue!
     )
 )
-generator = [@body] => (
+let generator = [@body] => (
     let cont = nil
     let resume = [] => body [`yield:]
     let yield = [value] => callcc [k] => (
@@ -65,7 +65,7 @@ generator = [@body] => (
         resume sent
     )
 )
-foreach = [@varname:name list @body] => (
+let foreach = [@varname:name list @body] => (
     let i = 0
     while i < #list (
         callcc [k] => body [varname: list->i, `break:, `continue: k]

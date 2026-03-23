@@ -132,7 +132,10 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
     });
     // MARK: builtin function names
     define_builtin_function(env, functions, "print", "values...", (task, state) => {
-        console.log(state.argv.map(arg => typecheck(ThingType.string)(arg) ? arg.v : unparse(arg)).join(" "));
+        if (!task.scheduler.printHook) {
+            throw new Error("Can't use print without a print hook defined");
+        }
+        task.scheduler.printHook(state.argv.map(arg => typecheck(ThingType.string)(arg) ? arg.v : unparse(arg)).join(" "));
         task.out(boxNil());
     });
 }

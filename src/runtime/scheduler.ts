@@ -18,6 +18,7 @@ export class Scheduler {
     constructor(
         public apiFunctions: Record<string, NativeFunctionDetails>,
         public baseEnv: Thing<ThingType.env | ThingType.nil>,
+        public printHook?: (x: string) => void,
         customNames: ConstructorParameters<typeof NamespaceResolver>[0] = {}
     ) {
         this.s = new Resurrect({

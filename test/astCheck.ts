@@ -59,7 +59,8 @@ export function expectParseError(p: string, error: string, note?: string) {
 }
 
 export function expectEval(p: string, spec: ASTSpec) {
-    const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
+    const stdout: string[] = [];
+    const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV, stdout.push.bind(stdout));
     try {
         const t = s.startTask(1, p, null, F);
         s.stepUntilSuspended();
@@ -71,12 +72,13 @@ export function expectEval(p: string, spec: ASTSpec) {
         }
         else throw e;
     }
+    return stdout;
 }
 
 export function expectEvalError(p: string, error: string, note?: string) {
     const s = new Scheduler(BUILTIN_FUNCTIONS, BUILTIN_ENV);
     try {
-        const t = s.startTask(1, p, null, F);
+        s.startTask(1, p, null, F);
         s.stepUntilSuspended();
         expect.unreachable("Did not throw an error!");
     } catch (e: any) {

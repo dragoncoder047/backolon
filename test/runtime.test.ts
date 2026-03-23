@@ -1,10 +1,7 @@
-import { afterEach, describe, expect, jest, spyOn, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { BUILTIN_ENV, BUILTIN_FUNCTIONS, Scheduler, ThingType } from "../src";
 import { expectEval, expectEvalError, F } from "./astCheck";
 
-afterEach(() => {
-    jest.clearAllMocks();
-});
 test("empty result", () => {
     expectEval("", {
         t: ThingType.nil,
@@ -30,41 +27,24 @@ test("double semicolon suppresses return value", () => {
 });
 describe("calling functions", () => {
     test("'print' prints and returns nil", () => {
-        const stdout = spyOn(console, "log");
-        expectEval("print 1; print (print 2)", {
+        expect(expectEval("print 1; print (print 2)", {
             t: ThingType.nil,
-        });
-        expect(stdout).toHaveBeenCalledTimes(3);
-        expect(stdout).toHaveBeenNthCalledWith(1, "1");
-        expect(stdout).toHaveBeenNthCalledWith(2, "2");
-        expect(stdout).toHaveBeenNthCalledWith(3, "nil");
+        })).toEqual(["1", "2", "nil"]);
     });
     test("sequencing works with newline also instead of semicolons", () => {
-        const stdout = spyOn(console, "log");
-        expectEval("print 1\nprint 2\n", {
+        expect(expectEval("print 1\nprint 2\n", {
             t: ThingType.nil,
-        });
-        expect(stdout).toHaveBeenCalledTimes(2);
-        expect(stdout).toHaveBeenNthCalledWith(1, "1");
-        expect(stdout).toHaveBeenNthCalledWith(2, "2");
+        })).toEqual(["1", "2"]);
     });
     test("call 'print' with 0 arguments prints newline", () => {
-        const stdout = spyOn(console, "log");
-        expectEval("print!", {
+        expect(expectEval("print!", {
             t: ThingType.nil,
-        });
-        expect(stdout).toHaveBeenCalledTimes(1);
-        expect(stdout).toHaveBeenNthCalledWith(1, "");
+        })).toEqual([""]);
     });
     test("'print' with varargs", () => {
-        const stdout = spyOn(console, "log");
-        expectEval("print 1; print 2 3; print 4 5 6", {
+        expect(expectEval("print 1; print 2 3; print 4 5 6", {
             t: ThingType.nil,
-        });
-        expect(stdout).toHaveBeenCalledTimes(3);
-        expect(stdout).toHaveBeenNthCalledWith(1, "1");
-        expect(stdout).toHaveBeenNthCalledWith(2, "2 3");
-        expect(stdout).toHaveBeenNthCalledWith(3, "4 5 6");
+        })).toEqual(["1", "2 3", "4 5 6"]);
     });
 });
 describe("variables", () => {
@@ -80,13 +60,10 @@ describe("variables", () => {
         });
     });
     test("initialization and retrieval", () => {
-        const stdout = spyOn(console, "log");
-        expectEval("let a = __declare; a b print; b 'test'; b", {
+        expect(expectEval("let a = __declare; a b print; b 'test'; b", {
             t: ThingType.nativefunc,
             v: "print"
-        });
-        expect(stdout).toHaveBeenCalledTimes(1);
-        expect(stdout).toHaveBeenNthCalledWith(1, "test");
+        })).toEqual(["test"]);
     });
     test("redeclaration throws", () => {
         expectEvalError("let a; let a", "variable \"a\" already exists in this scope");
@@ -104,14 +81,10 @@ describe("variables", () => {
         expectEvalError("let a 1", "can't call nil");
     });
     test("reassignment", () => {
-        const stdout = spyOn(console, "log");
-        expectEval("let a = 1; print a; a = 2; print a = 3; a", {
+        expect(expectEval("let a = 1; print a; a = 2; print a = 3; a", {
             t: ThingType.number,
             v: 3
-        });
-        expect(stdout).toHaveBeenCalledTimes(2);
-        expect(stdout).toHaveBeenNthCalledWith(1, "1");
-        expect(stdout).toHaveBeenNthCalledWith(2, "3");
+        })).toEqual(["1", "3"]);
     });
     test("assignment can span multiple lines", () => {
         expectEval("let a; a =\n3; a", {
@@ -160,10 +133,8 @@ describe("lambdas", () => {
         });
     });
     test("lambdas are terminated by a newline like everything else", () => {
-        const stdout = spyOn(console, "log");
-        expectEval("let f = [x] => print x\nf 1\nf 2", {
+        expect(expectEval("let f = [x] => print x\nf 1\nf 2", {
             t: ThingType.nil,
-        });
-        expect(stdout).toHaveBeenCalledTimes(2);
+        })).toEqual(["1", "2"]);
     });
 });
