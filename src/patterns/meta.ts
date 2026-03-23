@@ -118,7 +118,7 @@ export function parsePattern(block: readonly Thing[]): Thing<ThingType.pattern> 
         if (patitem.v.t === PatternType.capture_group) {
             var inner = patitem.c.slice(1), inner0 = inner[0]!;
             if (inner.length === 1 && inner0.v.t === PatternType.dot) {
-                inner = [alternatives([inner0, required_space_no_newline], inner0.s0, inner0.sj, inner0.s1, inner0.loc)];
+                inner = [alternatives([inner0, greedy ? required_space : required_space_no_newline], inner0.s0, inner0.sj, inner0.s1, inner0.loc)];
             }
             return [grouped(patitem.c[0] as Thing<ThingType.name>, [repeat(greedy, inner, "", ending, item.loc)], patitem.s0, patitem.s1, patitem.loc)]
         }
@@ -134,7 +134,7 @@ export function parsePattern(block: readonly Thing[]): Thing<ThingType.pattern> 
     //    * one space optional space, and allow newlines in between
     //    * two spaces is the same as one but disallows newlines
     //    * three spaces is the same as two except some space is required.
-    //    newlines match themselves literally.
+    //    * newlines match themselves literally.
     block = nonoverlappingreplace(block, required_space, spaces => {
         // TODO: handle newlines separately (pluck them out)
         if (spaces.length === 1 && typecheck(ThingType.newline)(spaces[0]!)) return [matchtype(ThingType.newline, spaces[0].s0)];
