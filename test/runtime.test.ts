@@ -138,3 +138,23 @@ describe("lambdas", () => {
         })).toEqual(["1", "2"]);
     });
 });
+describe("conditionals", () => {
+    test("if true", () => {
+        expectEval("if true 'foo' 'bar'", {
+            t: ThingType.string,
+            v: "foo"
+        });
+        expectEval("if false 'foo' 'bar'", {
+            t: ThingType.string,
+            v: "bar"
+        });
+    });
+    test("if side effects", () => {
+        expect(expectEval("if true (print 1) (print 2)", {
+            t: ThingType.nil,
+        })).toEqual(["1"]);
+        expect(expectEval("if false (print 1) (print 2)", {
+            t: ThingType.nil,
+        })).toEqual(["2"]);
+    });
+});

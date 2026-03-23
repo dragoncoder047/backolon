@@ -138,4 +138,11 @@ export function initCoreSyntax(env: Thing<ThingType.env>, functions: Record<stri
         task.scheduler.printHook(state.argv.map(arg => typecheck(ThingType.string)(arg) ? arg.v : unparse(arg)).join(" "));
         task.out(boxNil());
     });
+    define_builtin_function(env, functions, "if", "cond @true @false", (task, state) => {
+        const condition = state.argv[0]!;
+        const ifTrue = state.argv[1]!;
+        const ifFalse = state.argv[2]!;
+        task.out();
+        task.enter(boxApply(!!condition.v ? ifTrue : ifFalse, [], condition.loc), state.env);
+    });
 }
