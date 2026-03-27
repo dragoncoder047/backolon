@@ -120,6 +120,12 @@ describe("lambdas", () => {
             t: ThingType.continuation,
         });
     });
+    test("'return' correctly stops execution and returns the value", () => {
+        expect(expectEval("([] => (return 3; print 1))!", {
+            t: ThingType.number,
+            v: 3
+        })).toEqual([]);
+    });
     test("closed-over scopes can be accessed and mutated", () => {
         expectEval("let callWithThree = [function] => function 3; let outerVariable; callWithThree [three] => outerVariable = three; outerVariable", {
             t: ThingType.number,
