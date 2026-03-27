@@ -186,7 +186,7 @@ export class Task {
                 throw new RuntimeError(`undefined: ${stringify(val.v)}`, loc);
             }
             if (isSymbol(val)) {
-                throw new RuntimeError(`invalid name: ${stringify(val.v)}`);
+                throw new RuntimeError(`invalid name: ${stringify(val.v)}`, loc);
             }
             /*
             apply:

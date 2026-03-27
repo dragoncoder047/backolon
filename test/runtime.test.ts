@@ -165,7 +165,7 @@ describe("conditionals", () => {
     });
 });
 describe("operators", () => {
-    test("plus", () => {
+    test("add", () => {
         expectEval("1 + 2", {
             t: ThingType.number,
             v: 3
@@ -174,9 +174,9 @@ describe("operators", () => {
             t: ThingType.number,
             v: 1000000000000000000001n
         });
-        expectEval("1000000000000000000000 + 1000000000000000000000", {
+        expectEval("100000000000000000000000000 + 100000000000000000000000000", {
             t: ThingType.number,
-            v: 2000000000000000000000n
+            v: 200000000000000000000000000n
         });
         expectEval("'hello' + 'world'", {
             t: ThingType.string,
@@ -186,6 +186,16 @@ describe("operators", () => {
             t: ThingType.string,
             v: "hello, world!",
         });
-        expectEvalError("'hello' + 1", "No overload exists for operator \"plus\" with arguments types \"string\", \"number\"");
+        expectEvalError("'hello' + 1", "No overload exists for operator \"add\" with arguments types \"string\", \"number\"");
+    });
+    test("sub", () => {
+        expectEval("1 - 2", {
+            t: ThingType.number,
+            v: -1
+        });
+        expectEval("-0.8-8", {
+            t: ThingType.number,
+            v: -8.8
+        });
     });
 });

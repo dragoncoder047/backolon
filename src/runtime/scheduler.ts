@@ -77,7 +77,7 @@ export class Scheduler {
     operator(name: string, state: StackEntry): Thing {
         const argv = state.argv;
         const argc = argv.length;
-        const loc = state.value.loc;
+        const loc = argv[0]!.loc;
         for (var module of this.builtins) {
             const overloads = module.ops[name]?.[argc];
             if (overloads) for (var overload of overloads) {

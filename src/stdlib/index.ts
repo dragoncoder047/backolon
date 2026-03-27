@@ -19,7 +19,7 @@ export class NativeModule {
     env: Thing<ThingType.env>;
     funcs: Record<string, NativeFunctionDetails> = {};
     ops: Record<string, Partial<Record<number, OperatorOverload[]>>> = {};
-    constructor(public loc: LocationTrace) {
+    constructor(public name: string, public loc: LocationTrace) {
         this.env = newEnv(newEmptyMap(loc), boxList([], loc), loc);
     }
     defvar(name: string, value: Thing) {
@@ -71,7 +71,7 @@ type MapValues<T extends readonly (ThingType | string)[]> = { [K in keyof T]: Th
 let x: MapValues<[ThingType.number]>;
 
 function createBuiltins(): NativeModule {
-    const mod = new NativeModule(BUILTINS_LOC);
+    const mod = new NativeModule("backolon_core", BUILTINS_LOC);
     initCoreSyntax(mod);
     return mod;
 }

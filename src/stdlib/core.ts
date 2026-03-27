@@ -4,13 +4,13 @@ import { NativeModule, rewriteAsApply, symbol_x, symbol_y } from ".";
 import { ErrorNote, LocationTrace, RuntimeError } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating } from "../objects/map";
 import { boxApply, boxNativeFunc, boxNil, boxNumber, boxRoundBlock, boxSquareBlock, Thing, ThingType, typecheck, typeNameOf } from "../objects/thing";
-import { unparse } from "../parser/unparse";
 import { removed_whitespace } from "../patterns/meta";
 import { walkEnvTree } from "../runtime/env";
 import { parseSignature } from "../runtime/functor";
 import type { StackEntry, Task } from "../runtime/task";
 import { control_flow } from "./control_flow";
 import { math } from "./math";
+import { misc } from "./misc";
 
 export function initCoreSyntax(mod: NativeModule) {
     mod.defvar("nil", boxNil(mod.loc));
@@ -121,14 +121,8 @@ export function initCoreSyntax(mod: NativeModule) {
         const body = state.argv[1]!;
         task.out(new Thing(ThingType.func, [signature, body], null, "", "", " => ", params.loc));
     });
-    // MARK: builtin function names
-    mod.defun("print", "values...", (task, state) => {
-        if (!task.scheduler.printHook) {
-            throw new Error("Can't use print without a print hook defined");
-        }
-        task.scheduler.printHook(state.argv.map(arg => typecheck(ThingType.string)(arg) ? arg.v : unparse(arg)).join(" "));
-        task.out(boxNil());
-    });
+    // initialize everything else
     control_flow(mod);
     math(mod);
+    misc(mod);
 }

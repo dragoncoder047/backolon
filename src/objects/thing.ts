@@ -45,6 +45,7 @@ export enum ThingType {
     env,
     macroized,
     splat,
+    // js_object,
 }
 
 type ThingInternalTypes<T extends ThingType> = {
@@ -76,6 +77,7 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.env]: [null, readonly [parents: Thing<ThingType.list>, vars: Thing<ThingType.map>, patterns: Thing<ThingType.list>]]
     [ThingType.macroized]: [null, readonly [Thing]],
     [ThingType.splat]: [null, readonly Thing[]],
+    // [ThingType.js_object]: [any, []],
 }[T];
 
 const unhashable = [ThingType.list, ThingType.map, ThingType.env];
@@ -131,6 +133,7 @@ export function boxStringBlock(children: Thing<ThingType.string | ThingType.roun
 export function boxList(items: Thing[], trace = UNKNOWN_LOCATION, start = "[", end = "]", join = ", ") { return new Thing(ThingType.list, items, null, start, end, join, trace, false); }
 export function boxNativeFunc(name: string, trace = UNKNOWN_LOCATION) { return new Thing(ThingType.nativefunc, [], name, `<built-in ${name}>`, "", "", trace); }
 export function boxApply(func: Thing, args: readonly Thing[], trace = UNKNOWN_LOCATION, start = "(", end = ")") { return new Thing(ThingType.apply, [func, ...args], null, start, end, " ", trace); }
+// export function box(thing: any, trace = UNKNOWN_LOCATION) { return new Thing(ThingType.js_object, [], thing, "", "", "", trace, false); }
 
 // hack to make it one per Thing
 type OneTypeThing<T extends ThingType> = T extends any ? Thing<T> : never;

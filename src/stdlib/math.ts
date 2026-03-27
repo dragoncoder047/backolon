@@ -1,19 +1,86 @@
 import { NativeModule, rewriteAsApply, symbol_x, symbol_y } from ".";
-import { boxNumber, boxString, ThingType } from "../objects/thing";
+import { LocationTrace } from "../errors";
+import { boxNumber, boxString, Thing, ThingType } from "../objects/thing";
+
+const b = BigInt, n = Number, i = (x: number) => n.isInteger(x) && n.isSafeInteger(x);
+
+type BinaryFun = (x: any, y: any) => any;
+
+const number_op = (cb: BinaryFun) => (loc: LocationTrace, argv: [Thing<ThingType.number>, Thing<ThingType.number>]) => {
+    // Why is doing math on two bigints / numbers so complicated
+    const x = argv[0].v, y = argv[1].v;
+    const bigX = typeof x === "bigint", bigY = typeof y === "bigint";
+    var result: number | bigint = 0;
+    if (bigX && bigY) {
+        const nResult = n(result = cb(x, y));
+        if (b(nResult) === result) result = nResult;
+    }
+    else if (!bigX && !bigY) {
+        const naive = cb(x, y)
+        result = !n.isInteger(naive) || n.isSafeInteger(naive) ? naive : cb(b(x), b(y));
+    }
+    else if (bigX && !bigY) {
+        // x is big, y is not
+        result = i(y) ? cb(x, b(y)) : cb(n(x), y);
+    }
+    else if (!bigX && bigY) {
+        // y is big, x is not
+        result = i(x) ? cb(b(x), y) : cb(x, n(y));
+    }
+    return boxNumber(result, loc);
+}
 
 export function math(mod: NativeModule) {
-    mod.defop("__builtin_plus", "plus");
-    mod.defsyntax("x + y", 4, false, null, "__rewrite_plus", rewriteAsApply([symbol_x, symbol_y], "__builtin_plus"));
-    mod.defoverload("plus", [ThingType.number, ThingType.number], (loc, argv) => {
-        const x = argv[0].v, y = argv[1].v;
-        const naiveSum = Number(x) + Number(y);
-        const bestSum = naiveSum > Number.MAX_SAFE_INTEGER || naiveSum < Number.MIN_SAFE_INTEGER ? BigInt(x) + BigInt(y) : naiveSum;
-        return boxNumber(bestSum, loc);
-    });
-    mod.defoverload("plus", [ThingType.string, ThingType.string], (loc, argv) => {
-        const x = argv[0].v +  argv[1].v;
+    const xy = [symbol_x, symbol_y];
+    const x = [symbol_x];
+
+    const operation = (name: string, operator?: string, precedence?: number, right?: boolean, implementation?: BinaryFun) => {
+        mod.defop(`__builtin_${name}`, name);
+        if (implementation) {
+            mod.defsyntax(`x ${operator} y`, precedence!, right!, null, `__rewrite_${name}`, rewriteAsApply(xy, `__builtin_${name}`));
+            mod.defoverload(name, [ThingType.number, ThingType.number], number_op(implementation));
+        }
+    };
+    const unary = (name: string, operator: string, precedence: number, right: boolean, impl: (x: number) => number) => {
+        mod.defsyntax(`[^] ${operator} x`, precedence, right, null, `__rewrite_unary_${name}`, rewriteAsApply(x, `__builtin_${name}`));
+        mod.defoverload(name, [ThingType.number], (loc, argv) => boxNumber(impl(argv[0].v as number), loc));
+    };
+
+    operation("not");
+    unary("not", "!", 0, true, x => x ? 0 : 1);
+
+    operation("pow", "**", 1, true, (x, y) => x ** y);
+    operation("mul", "*", 3, false, (x, y) => x * y);
+    operation("div", "/", 3, false, (x, y) => x / y);
+    operation("mod", "%", 3, false, (x, y) => x % y);
+
+    operation("add", "+", 4, false, (x, y) => x + y);
+    mod.defoverload("add", [ThingType.string, ThingType.string], (loc, argv) => {
+        const x = argv[0].v + argv[1].v;
         return boxString(x, loc, JSON.stringify(x), "");
     });
+
+    operation("sub", "-", 4, false, (x, y) => x - y);
+    unary("sub", "-", 2, true, x => -x);
+
+    // TODO: make these short-circuit
+    operation("bool_or", "||", 5, false, (x, y) => x || y);
+    operation("bool_and", "&&", 5, false, (x, y) => x && y);
+
+    operation("shl", "<<", 5.9, false, (x, y) => x << y);
+    operation("shr", ">>", 5.9, false, (x, y) => x >> y);
+
+    operation("bit_or", "|", 6, false, (x, y) => x | y);
+    operation("bit_and", "&", 6, false, (x, y) => x & y);
+    operation("bit_xor", "^", 6, false, (x, y) => x ^ y);
+
+    // TODO: generalize equality operators
+    operation("eqeq", "==", 7, false, (x, y) => x == y);
+    operation("noteq", "!=", 7, false, (x, y) => x != y);
+    operation("gt", ">", 7, false, (x, y) => x > y);
+    operation("lt", "<", 7, false, (x, y) => x < y);
+    operation("gte", ">=", 6.9, false, (x, y) => x >= y);
+    operation("lte", "<=", 6.9, false, (x, y) => x <= y);
 }
 
 /*
