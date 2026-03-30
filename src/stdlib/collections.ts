@@ -103,7 +103,7 @@ export function collections(mod: NativeModule) {
         }
         return value;
     });
-    mod.defsyntax("x -> y", 8, false, null, "__rewrite_index", rewriteAsApply([symbol_x, symbol_y], "__builtin_index"));
+    mod.defsyntax("x -> y", -1, false, null, "__rewrite_index", rewriteAsApply([symbol_x, symbol_y], "__builtin_index"));
 }
 
 const empty_list_pattern = p("[^] [$]");
