@@ -18,8 +18,7 @@ type Rule = [
     process: (x: string) => any
 ];
 const TOKENIZE_RULES: Rule[] = [
-    [/^0x[a-f0-9]+|^-?0b[01]+/i, ThingType.number, pNumber],
-    [/^(\.\d+|\d+\.?\d*)(e[+-]?\d+)?/i, ThingType.number, pNumber],
+    [/^0x[a-f0-9]+|^-?0b[01]+|^(\.\d+|\d+\.?\d*)(e[+-]?\d+)?/i, ThingType.number, pNumber],
     [/^[\p{Alpha}_][\p{Alpha}\p{Number}_]*/u, ThingType.name, id],
     [/^\p{Punctuation}/u, ThingType.operator, id],
     [/^((?!\n)\s)+/, ThingType.space, id],

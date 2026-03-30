@@ -8,6 +8,7 @@ import { removed_whitespace } from "../patterns/meta";
 import { walkEnvTree } from "../runtime/env";
 import { parseSignature } from "../runtime/functor";
 import type { StackEntry, Task } from "../runtime/task";
+import { collections } from "./collections";
 import { control_flow } from "./control_flow";
 import { math } from "./math";
 import { misc } from "./misc";
@@ -125,4 +126,5 @@ export function initCoreSyntax(mod: NativeModule) {
     control_flow(mod);
     math(mod);
     misc(mod);
+    collections(mod);
 }

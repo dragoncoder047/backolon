@@ -452,5 +452,7 @@ describe("metapattern", () => {
             ["x: number", true],
             ["x = 1", true],
             ["x: number = nil", true]);
+        pattern_test("[^][$]",
+            ["", true])
     });
 });

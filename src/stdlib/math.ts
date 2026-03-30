@@ -12,6 +12,7 @@ const number_op = (cb: BinaryFun) => (loc: LocationTrace, argv: [Thing<ThingType
     const bigX = typeof x === "bigint", bigY = typeof y === "bigint";
     var result: number | bigint = 0;
     if (bigX && bigY) {
+        // TODO: this will still perform integer division, we need to downcast *first* if it's division...
         const nResult = n(result = cb(x, y));
         if (b(nResult) === result) result = nResult;
     }

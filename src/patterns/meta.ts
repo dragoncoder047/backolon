@@ -1,6 +1,7 @@
 import { last } from "lib0/array";
 import { LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
 import { boxOperatorSymbol, Thing, ThingType, typecheck } from "../objects/thing";
+import { parse } from "../parser/parse";
 import { unparse } from "../parser/unparse";
 import { PatternType } from "./internals";
 import { matchPattern } from "./match";
@@ -263,6 +264,8 @@ const repeat_pattern = sequence([
 const single_wildcard = matchtype(ThingType.name);
 const literal_operator = matchtype(ThingType.operator);
 const other_invalid = alternatives([matchtype(ThingType.number), matchtype(ThingType.string), matchtype(ThingType.stringblock)]);
+
+export const p = (s: string) => parsePattern(parse(s, metapattern_location.file).c);
 
 export function typeNameToThingType(name: string, loc: LocationTrace): ThingType {
     const t = ThingType[name as any] as any as ThingType | undefined;

@@ -199,3 +199,88 @@ describe("operators", () => {
         });
     });
 });
+describe("collections", () => {
+    test("empty collections", () => {
+        expectEval("[]", {
+            t: ThingType.list,
+            c: []
+        });
+        expectEval("[:]", {
+            t: ThingType.map,
+            c: []
+        });
+    });
+    test("one element collections", () => {
+        expectEval("[1]", {
+            t: ThingType.list,
+            c: [{
+                t: ThingType.number,
+                v: 1
+            }]
+        });
+        expectEval("[1:2]", {
+            t: ThingType.map,
+            c: [{
+                t: ThingType.pair,
+                c: [
+                    {
+                        t: ThingType.number,
+                        v: 1,
+                    },
+                    {
+                        t: ThingType.number,
+                        v: 2
+                    }
+                ]
+            }]
+        });
+    });
+    test("multiple element collections", () => {
+        expectEval("[1, 2]", {
+            t: ThingType.list,
+            c: [
+                {
+                    t: ThingType.number,
+                    v: 1,
+                },
+                {
+                    t: ThingType.number,
+                    v: 2,
+                }
+            ]
+        });
+        // TODO: this fails if the hashes change, because maps are unpredictable order
+        expectEval("[1: 2, 3: 4]", {
+            t: ThingType.map,
+            c: [
+                {
+                    t: ThingType.pair,
+                    c: [
+                        {
+                            t: ThingType.number,
+                            v: 3,
+                        },
+                        {
+                            t: ThingType.number,
+                            v: 4,
+                        }
+                    ]
+                },
+                {
+                    t: ThingType.pair,
+                    c: [
+                        {
+                            t: ThingType.number,
+                            v: 1,
+                        },
+                        {
+                            t: ThingType.number,
+                            v: 2,
+                        }
+                    ]
+                }
+            ]
+        });
+        expectEvalError("[1, 2, 3: 4]", "can only concatenate list+list or map+map, but got list+map");
+    })
+});

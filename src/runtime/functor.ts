@@ -4,7 +4,7 @@ import { LocationTrace, RuntimeError } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
 import { boxList, boxNameSymbol, boxNil, boxNumber, isSymbol, Thing, ThingType, typecheck, typeNameOf } from "../objects/thing";
 import { parse } from "../parser/parse";
-import { metapattern_location, nonoverlappingreplace, parsePattern, removed_whitespace, typeNameToThingType } from "../patterns/meta";
+import { metapattern_location, nonoverlappingreplace, p, parsePattern, removed_whitespace, typeNameToThingType } from "../patterns/meta";
 import { type Scheduler } from "./scheduler";
 
 
@@ -117,7 +117,7 @@ export function parametersToVars(functionName: string, paramsDef: ParamDescripto
     return { e: map, p: pendingDefaults };
 }
 
-export function wrapImplicitBlock(obj: Thing, env: Thing<ThingType.env | ThingType.nil>) {
+export function wrapImplicitBlock(obj: Thing, env: Thing<ThingType.env> | Thing<ThingType.nil>) {
     return new Thing(ThingType.implicitfunc, [obj], env, "", "", "", obj.loc);
 }
 
@@ -189,6 +189,6 @@ export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> 
 }
 
 const base = "{@|}[p:name]{ : {[t:name]|[t:squareblock]}|}{ = d|} {!|} ";
-const signaturePattern = parsePattern(parse(base, metapattern_location.file).c);
-const splatEndPattern = parsePattern(parse(`${base}[=.].. [$]`, metapattern_location.file).c);
+const signaturePattern = p(base);
+const splatEndPattern = p(`${base}[=.].. [$]`);
 

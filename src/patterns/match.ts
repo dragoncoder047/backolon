@@ -65,6 +65,10 @@ export function matchPattern(source: readonly Thing[], pattern: Thing<ThingType.
             if (zippy(inputIndex, null, false)) break b;
             if (zippy(inputIndex, source[inputIndex]!, false)) break b;
         }
+        if (inputIndex === 0) {
+            // edge case for empty input (which can still match if the pattern permits an empty match)
+            queue.push(new NFASubstate(inputIndex, program, 0));
+        }
         zippy(inputIndex, null, true);
     }
     for (var i = 0; i < queue.length; i++) {
