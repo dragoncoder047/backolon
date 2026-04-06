@@ -75,7 +75,7 @@ export function expectEval(p: string, spec: ASTSpec) {
     return stdout;
 }
 
-export function expectEvalError(p: string, error: string, note?: string) {
+export function expectEvalError(p: string, error: string | RegExp, note?: string) {
     const s = new Scheduler([BUILTINS_MODULE]);
     try {
         s.startTask(1, p, null, F);
@@ -83,7 +83,7 @@ export function expectEvalError(p: string, error: string, note?: string) {
         expect.unreachable("Did not throw an error!");
     } catch (e: any) {
         expect(e).toBeInstanceOf(BackolonError);
-        expect(e.message).toEqual(error);
+        expect(e.message).toMatch(error);
         if (note !== undefined) {
             expect(e.notes.map((n: ErrorNote) => n.message)).toContain(note);
         }

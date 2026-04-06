@@ -148,7 +148,8 @@ describe("lambdas", () => {
             t: ThingType.nil,
         })).toEqual(["1 2 []", "1 2 [3, 4, 5]"]);
         expectEvalError("[x... y...] => 1", "can only have 1 rest parameter");
-    })
+        expectEval("let f = [x] => (x x; x x); f f", { t: ThingType.nil });
+    });
 });
 describe("conditionals", () => {
     test("if true", () => {
@@ -193,6 +194,7 @@ describe("operators", () => {
             v: "hello, world!",
         });
         expectEvalError("'hello' + 1", "No overload exists for operator \"add\" with arguments types \"string\", \"number\"");
+        expectEvalError("8**88**88", /out of memory|size exceeded/i);
     });
     test("sub", () => {
         expectEval("1 - 2", {

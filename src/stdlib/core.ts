@@ -64,7 +64,7 @@ export function initCoreSyntax(mod: NativeModule) {
         const argv = mapGetKey(groups, symbol_y);
         const args = argv ? removed_whitespace(argv.c) : [];
         const hasArgs = args.length > 0;
-        task.out(boxApply(fun, args, fun.loc, hasArgs ? "(" : "", hasArgs ? ")" : "!"));
+        task.out(boxApply(fun, args, fun.loc, hasArgs ? "(" : "", hasArgs ? ")" : "!", true));
     });
     // Second one is with arguments
     mod.defsyntax("[^] x  y...[$]", APPLY_PRECEDENCE, false, null, "__rewrite_apply");

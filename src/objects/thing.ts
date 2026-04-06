@@ -62,7 +62,7 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.curlyblock]: [null, readonly Thing[]],
     [ThingType.topblock]: [null, readonly Thing[]],
     [ThingType.stringblock]: [null, readonly Thing<ThingType.string | ThingType.roundblock>[]],
-    [ThingType.apply]: [null, readonly Thing[]],
+    [ThingType.apply]: [significant: boolean, readonly Thing[]],
     [ThingType.func]: [name: string | null, readonly [Thing<ThingType.squareblock>, Thing]],
     [ThingType.nativefunc]: [string, []],
     [ThingType.implicitfunc]: [Thing<ThingType.env> | Thing<ThingType.nil>, readonly [Thing]],
@@ -132,7 +132,7 @@ export function boxToplevelBlock(children: readonly Thing[], trace = UNKNOWN_LOC
 export function boxStringBlock(children: Thing<ThingType.string | ThingType.roundblock>[], trace = UNKNOWN_LOCATION, quote: string) { return boxBlock(children, ThingType.stringblock, trace, quote, quote); }
 export function boxList(items: Thing[], trace = UNKNOWN_LOCATION, start = "[", end = "]", join = ", ") { return new Thing(ThingType.list, items, null, start, end, join, trace, false); }
 export function boxNativeFunc(name: string, trace = UNKNOWN_LOCATION) { return new Thing(ThingType.nativefunc, [], name, `<built-in ${name}>`, "", "", trace); }
-export function boxApply(func: Thing, args: readonly Thing[], trace = UNKNOWN_LOCATION, start = "(", end = ")") { return new Thing(ThingType.apply, [func, ...args], null, start, end, " ", trace); }
+export function boxApply(func: Thing, args: readonly Thing[], trace = UNKNOWN_LOCATION, start = "(", end = ")", significant = false) { return new Thing(ThingType.apply, [func, ...args], significant, start, end, " ", trace); }
 // export function box(thing: any, trace = UNKNOWN_LOCATION) { return new Thing(ThingType.js_object, [], thing, "", "", "", trace, false); }
 
 // hack to make it one per Thing

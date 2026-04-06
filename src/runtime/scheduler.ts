@@ -16,7 +16,7 @@ export interface NativeFunctionDetails {
 export class Scheduler {
     tasks: Task[] = [];
     private s: Resurrect;
-    recursionLimit = 10000;
+    recursionLimit = 1000;
 
     constructor(
         public builtins: [NativeModule, ...NativeModule[]],

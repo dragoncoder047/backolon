@@ -11,6 +11,7 @@
         "strictNullChecks": true,
         "moduleResolution": "Bundler",
         "module": "ESNext",
+        "types": ["bun"],
         "lib": [
             "esnext",
             "dom"
