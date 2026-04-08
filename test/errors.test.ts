@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
 import { BackolonError, ErrorNote } from "../src";
-import { expectEval, F, L } from "./astCheck";
+import { F, L } from "./astCheck";
 
 
 function makeRepeatedNotes(line: string, count: number) {
     const notes: ErrorNote[] = [];
-    for (let i = 0; i < count; i++) {
+    for (var i = 0; i < count; i++) {
         notes.push(new ErrorNote(line, L));
     }
     return notes;
@@ -26,7 +26,7 @@ test("collapses repeated block patterns", () => {
         "note: frame C",
     ];
     const notes: ErrorNote[] = [];
-    for (let i = 0; i < 50; i++) {
+    for (var i = 0; i < 50; i++) {
         for (const line of block) {
             notes.push(new ErrorNote(line, L));
         }

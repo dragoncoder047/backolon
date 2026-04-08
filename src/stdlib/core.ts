@@ -69,7 +69,7 @@ export function initCoreSyntax(mod: NativeModule) {
     // Second one is with arguments
     mod.defsyntax("[^] x  y...[$]", APPLY_PRECEDENCE, false, null, "__rewrite_apply");
     // MARK: variable management
-    mod.defsyntax("[=let] x {= y|}", VARIABLE_ASSIGNMENT_PRECEDENCE, false, null, "__rewrite_declaration", rewriteAsApply(xy, "__declare"));
+    mod.defsyntax("x := y", VARIABLE_ASSIGNMENT_PRECEDENCE, false, null, "__rewrite_declaration", rewriteAsApply(xy, "__declare"));
     const binding_helper = (dipAmount: number, cb: (state: StackEntry, name: Thing<ThingType.name>, initialValue: Thing, loc: LocationTrace) => void): ((task: Task, state: StackEntry) => void) => {
         return (task, state) => {
             const name = state.argv[0]!;

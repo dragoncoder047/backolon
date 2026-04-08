@@ -48,52 +48,44 @@ describe("calling functions", () => {
     });
 });
 describe("variables", () => {
-    test("declaration", () => {
-        expectEval("let a", {
-            t: ThingType.nil,
-        });
-    });
     test("declaration return value", () => {
-        expectEval("let a = 1", {
+        expectEval("a := 1", {
             t: ThingType.number,
             v: 1
         });
     });
     test("initialization and retrieval", () => {
-        expect(expectEval("let a = __declare; a b print; b 'test'; b", {
+        expect(expectEval("a := __declare; a b print; b 'test'; b", {
             t: ThingType.nativefunc,
             v: "print"
         })).toEqual(["test"]);
     });
     test("redeclaration throws", () => {
-        expectEvalError("let a; let a", "variable \"a\" already exists in this scope");
+        expectEvalError("a := nil; a := nil", "variable \"a\" already exists in this scope");
     });
     test("new scopes are not created by inner blocks", () => {
-        expectEvalError("(let a); (let a)", "variable \"a\" already exists in this scope");
+        expectEvalError("(a := nil); (a := nil)", "variable \"a\" already exists in this scope");
     });
     test("can only declare a name", () => {
-        expectEvalError("let 1 = 2", "cannot assign to number");
+        expectEvalError("1 := 2", "cannot assign to number");
     });
     test("declarations override globals", () => {
-        expectEvalError("let print = 1; print 'hi'", "can't call number");
-    });
-    test("declaration syntax requires literal '='", () => {
-        expectEvalError("let a 1", "can't call nil");
+        expectEvalError("print := 1; print 'hi'", "can't call number");
     });
     test("reassignment", () => {
-        expect(expectEval("let a = 1; print a; a = 2; print a = 3; a", {
+        expect(expectEval("a := 1; print a; a = 2; print a = 3; a", {
             t: ThingType.number,
             v: 3
         })).toEqual(["1", "3"]);
     });
     test("assignment can span multiple lines", () => {
-        expectEval("let a; a =\n3; a", {
+        expectEval("a := nil; a =\n3; a", {
             t: ThingType.number,
             v: 3
         });
     });
     test("assignment is right associative", () => {
-        expectEval("let a; let b; a = b = 1", {
+        expectEval("a := nil; b := nil; a = b = 1", {
             t: ThingType.number,
             v: 1
         });
@@ -110,7 +102,7 @@ describe("lambdas", () => {
         });
     });
     test("lambdas get the name of the first thing they're assigned to", () => {
-        expectEval("let foo = [] => 1; let bar = foo; bar", {
+        expectEval("foo := [] => 1; bar := foo; bar", {
             t: ThingType.func,
             v: "foo",
         });
@@ -127,31 +119,31 @@ describe("lambdas", () => {
         })).toEqual([]);
     });
     test("closed-over scopes can be accessed and mutated", () => {
-        expectEval("let callWithThree = [function] => function 3; let outerVariable; callWithThree [three] => outerVariable = three; outerVariable", {
+        expectEval("callWithThree := [function] => function 3; outerVariable := nil; callWithThree [three] => outerVariable = three; outerVariable", {
             t: ThingType.number,
             v: 3
         });
     });
     test("lambda default parameters have dynamic scope", () => {
-        expectEval("let x = 4; let f = [a=x] => a; ([] => (let x = 3; f!))!", {
+        expectEval("x := 4; f := [a=x] => a; ([] => (x := 3; f!))!", {
             t: ThingType.number,
             v: 3
         });
     });
     test("lambdas are terminated by a newline like everything else", () => {
-        expect(expectEval("let f = [x] => print x 'hi'\nf 1\nf 2", {
+        expect(expectEval("f := [x] => print x 'hi'\nf 1\nf 2", {
             t: ThingType.nil,
         })).toEqual(["1 hi", "2 hi"]);
     });
     test("lambdas with rest parameters", () => {
-        expect(expectEval("let f = [x y z...] => print x y z; f 1 2; f 1 2 3 4 5", {
+        expect(expectEval("f := [x y z...] => print x y z; f 1 2; f 1 2 3 4 5", {
             t: ThingType.nil,
         })).toEqual(["1 2 []", "1 2 [3, 4, 5]"]);
         expectEvalError("[x... y...] => 1", "can only have 1 rest parameter");
     });
     test("recurson is capped", () => {
-        expectEvalError("let f = [x] => (x x; x x); f f", "too much recursion");
-        expectEvalError("let f = [x] => (if x > 0 (f x - 1) (g!)); let g = [] => f 10; g!", "too much recursion");
+        expectEvalError("f := [x] => (x x; x x); f f", "too much recursion");
+        expectEvalError("f := [x] => (if x > 0 (f x - 1) (g!)); g := [] => f 10; g!", "too much recursion");
     });
 });
 describe("conditionals", () => {
@@ -210,7 +202,7 @@ describe("operators", () => {
         });
     });
     test("works with assignment", () => {
-        expectEval("let x = 1 + 2; x", {
+        expectEval("x := 1 + 2; x", {
             t: ThingType.number,
             v: 3
         });
@@ -253,7 +245,7 @@ describe("collections", () => {
         });
     });
     test("self-referential collections", () => {
-        expect(expectEval("let x = [0]; x->0 = x; print x", {
+        expect(expectEval("x := [0]; x->0 = x; print x", {
             t: ThingType.nil
         })).toEqual(["#0=[#0#]"]);
     });
@@ -323,7 +315,7 @@ describe("collections", () => {
         expectEvalError("[1: 2, 3: 4]->4", "key 4 not found in map");
     });
     test("collections with dynamic values", () => {
-        expectEval("let x = 1; [x, x + 1, x + 2]->x", {
+        expectEval("x := 1; [x, x + 1, x + 2]->x", {
             t: ThingType.number,
             v: 2,
         });
@@ -331,25 +323,25 @@ describe("collections", () => {
 });
 describe("string interpolation", () => {
     test("string into string", () => {
-        expectEval("let x = 'world'; \"hello {x}!\"", {
+        expectEval("x := 'world'; \"hello {x}!\"", {
             t: ThingType.string,
             v: "hello world!",
         });
     });
     test("non-string into string", () => {
-        expectEval("let x = 123+456; \"hello {x}!\"", {
+        expectEval("x := 123+456; \"hello {x}!\"", {
             t: ThingType.string,
             v: "hello 579!",
         });
     });
     test("literals as-written are unparsed directly", () => {
-        expectEval("let x = 0x12323; \"hello {x}!\"", {
+        expectEval("x := 0x12323; \"hello {x}!\"", {
             t: ThingType.string,
             v: "hello 0x12323!",
         });
     });
     test("single string block convert to string", () => {
-        expectEval("let x = 1; \"{x}\"", {
+        expectEval("x := 1; \"{x}\"", {
             t: ThingType.string,
             v: "1",
         });
@@ -390,7 +382,7 @@ describe("homoiconicity", () => {
     });
     describe("templating", () => {
         test("interpolation into blocks", () => {
-            expect(expectEval("let x = print; let y = {$x 2}; __eval y; y", {
+            expect(expectEval("x := print; y := {$x 2}; __eval y; y", {
                 t: ThingType.roundblock,
                 c: [
                     { t: ThingType.nativefunc, v: "print" },
@@ -400,7 +392,7 @@ describe("homoiconicity", () => {
             })).toEqual(["2"]);
         });
         test("multi-level templating", () => {
-            expect(expectEval("let x = 1; print {print $x {print $y 2}}", {
+            expect(expectEval("x := 1; print {print $x {print $y 2}}", {
                 t: ThingType.nil,
             })).toEqual(["(print 1 {print $y 2})"]);
         });
@@ -410,12 +402,12 @@ describe("homoiconicity", () => {
     });
     describe("eval", () => {
         test("simple eval in original environment", () => {
-            expect(expectEval("let x = `(print 1); __eval x", {
+            expect(expectEval("x := `(print 1); __eval x", {
                 t: ThingType.nil,
             })).toEqual(["1"]);
         });
         test("eval in constructed environment", () => {
-            expect(expectEval("let x = `(say 1); __eval x [`say: [x] => print x x]", {
+            expect(expectEval("x := `(say 1); __eval x [`say: [x] => print x x]", {
                 t: ThingType.nil,
             })).toEqual(["1 1"]);
         });
@@ -428,7 +420,7 @@ describe("homoiconicity", () => {
     });
     test("implicit keys", () => {
         // TODO: this is a map again, if hash changes the order may be wrong
-        expectEval("let x = 1; let y = 2; [`x:, `y:]", {
+        expectEval("x := 1; y := 2; [`x:, `y:]", {
             t: ThingType.map,
             c: [
                 {

@@ -52,7 +52,7 @@ test("FFI dot syntax", () => {
 });
 
 test("FFI functions are bound by default", () => {
-    expect(expectEval("let f = (JS_new (JS_GLOBAL.Function) 'a' 'class Foo {constructor(x) { this.x = x; } hi() { return this.x * 123; } }; return new Foo(a); '); let y = (f 2).hi; print (y!)", {
+    expect(expectEval("f := (JS_new (JS_GLOBAL.Function) 'a' 'class Foo {constructor(x) { this.x = x; } hi() { return this.x * 123; } }; return new Foo(a); '); y := (f 2).hi; print (y!)", {
         t: ThingType.nil,
     })).toEqual(["246"]);
 });
