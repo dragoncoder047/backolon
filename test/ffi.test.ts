@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { test } from "bun:test";
 import { ThingType } from "../src";
 import { JSObjectType } from "../src/objects/js_interop";
 import { expectEval } from "./astCheck";
@@ -52,7 +52,8 @@ test("FFI dot syntax", () => {
 });
 
 test("FFI functions are bound by default", () => {
-    expect(expectEval("f := (JS_new (JS_GLOBAL.Function) 'a' 'class Foo {constructor(x) { this.x = x; } hi() { return this.x * 123; } }; return new Foo(a); '); y := (f 2).hi; print (y!)", {
-        t: ThingType.nil,
-    })).toEqual(["246"]);
+    expectEval("f := (JS_new (JS_GLOBAL.Function) 'a' 'class Foo {constructor(x) { this.x = x; } hi() { return this.x * 123; } }; return new Foo(a); '); y := (f 2).hi; y!", {
+        t: ThingType.number,
+        v: 246
+    });
 });

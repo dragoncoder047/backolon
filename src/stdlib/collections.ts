@@ -2,7 +2,7 @@ import { stringify } from "lib0/json";
 import { NativeModule, rewriteAsApply, symbol_x, symbol_y, symbol_z } from "./module";
 import { RuntimeError } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
-import { boxApply, boxList, boxNativeFunc, boxOperatorSymbol, boxRoundBlock, boxSquareBlock, boxString, Thing, ThingType } from "../objects/thing";
+import { boxApply, boxList, boxNativeFunc, boxNumber, boxOperatorSymbol, boxRoundBlock, boxSquareBlock, boxString, Thing, ThingType } from "../objects/thing";
 import { matchPattern } from "../patterns/match";
 import { p } from "../patterns/meta";
 import { BUILTINS_LOC } from "./locations";
@@ -143,6 +143,10 @@ export function collections(mod: NativeModule) {
         return value;
     });
     mod.defsyntax("x -> y = z", -2, true, null, "__rewrite_setitem", rewriteAsApply([symbol_x, symbol_y, symbol_z], "__setitem"));
+    mod.defop("__length", "length");
+    mod.defoverload("length", [ThingType.list], (loc, argv) => boxNumber(argv[0].c.length, loc));
+    mod.defoverload("length", [ThingType.map], (loc, argv) => boxNumber(argv[0].c.length, loc));
+    mod.defsyntax("#x", 0, true, null, "__rewrite_length", rewriteAsApply([symbol_x], "__length"));
 }
 
 const empty_list_pattern = p("[^] [$]");

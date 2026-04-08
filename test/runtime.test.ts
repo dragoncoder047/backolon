@@ -320,6 +320,20 @@ describe("collections", () => {
             v: 2,
         });
     });
+    test("getting length", () => {
+        expectEval("x := [1, 2, 3]; #x", {
+            t: ThingType.number,
+            v: 3
+        });
+        expectEval("x := [1: 2, 2: 3, 3: 4]; #x", {
+            t: ThingType.number,
+            v: 3
+        });
+        expectEval("x := 'hello'; #x", {
+            t: ThingType.number,
+            v: 5
+        });
+    });
 });
 describe("string interpolation", () => {
     test("string into string", () => {
@@ -398,7 +412,10 @@ describe("homoiconicity", () => {
         });
         test("too many quotes error", () => {
             expectEvalError("{{{$$$$x}}}", "too many unquotes (there are 4 unquotes, but we're only at level 3)", "note: level 3 starts here:");
-        })
+        });
+        test("quotes at end error", () => {
+            expectEvalError("{$}", "stray quotes at end");
+        });
     });
     describe("eval", () => {
         test("simple eval in original environment", () => {

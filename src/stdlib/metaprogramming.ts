@@ -104,6 +104,9 @@ function build_quasiquoted(value: Thing, level = 1): Thing {
             }
             output.push(item);
         }
+        if (unquoteCount > 0) {
+            throw new RuntimeError("stray quotes at end", output[firstUnquotePosition]!.loc);
+        }
         const result = boxRoundBlock(output, value.loc);
         // console.log("} OUT", JSON.stringify(output.map(e => DEFAULT_UNPARSER.unparse(e)), null, 4));
         // throw 1;

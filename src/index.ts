@@ -7,7 +7,7 @@ export {
     UNKNOWN_LOCATION
 } from "./errors";
 export {
-    fromJS, toJS, type JSObjectRef
+    fromJS, JSObjectType, toJS, type JSObjectRef
 } from "./objects/js_interop";
 export {
     mapDeleteKeyCopying,
@@ -47,8 +47,7 @@ export {
     tokenize
 } from "./parser/tokenizer";
 export {
-    Unparser,
-    DEFAULT_UNPARSER,
+    DEFAULT_UNPARSER, Unparser
 } from "./parser/unparse";
 export {
     compile as compilePattern
