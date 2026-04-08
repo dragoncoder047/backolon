@@ -15,6 +15,10 @@
         "prepare": "pnpm build --minify"
     },
     "license": "GPL-3.0-only",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/r47onfire/backolon.git"
+    },
     "devDependencies": {
         "@gitlab-org/jsfuzz": "^1.2.4",
         "@types/bun": "^1.3.9",
