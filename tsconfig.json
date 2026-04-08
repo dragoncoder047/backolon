@@ -11,11 +11,14 @@
         "strictNullChecks": true,
         "moduleResolution": "Bundler",
         "module": "ESNext",
-        "types": ["bun"],
+        "types": ["bun", "vanilla"],
         "lib": [
             "esnext",
             "dom"
-        ]
+        ],
+        "jsxFactory": "make",
+        "jsxFragmentFactory": "null",
+        "jsxImportSource": "vanilla"
     },
     "include": [
         "./**/*.ts"

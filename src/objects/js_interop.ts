@@ -13,12 +13,22 @@ import {
     typeNameOf
 } from "./thing";
 
+/**
+ * Internal wrapper for native JavaScript objects stored in Backolon values.
+ */
 export class JSObjectRef {
     constructor(public value: any, public self: any | null) { }
 }
 
+/**
+ * Type tag used for JavaScript object references.
+ * (String instead of ThingType enum since the FFI module is separate.)
+ */
 export const JSObjectType = "js_object";
 
+/**
+ * Convert a Backolon Thing into a native JavaScript value.
+ */
 export function toJS(thing: Thing, visited = new WeakMap()): any {
     if (visited.has(thing)) {
         return visited.get(thing);
@@ -56,6 +66,9 @@ export function toJS(thing: Thing, visited = new WeakMap()): any {
     }
 }
 
+/**
+ * Convert a native JavaScript value into a Backolon Thing.
+ */
 export function fromJS(val: any, loc = UNKNOWN_LOCATION, visited = new WeakMap()): Thing {
     if (undefinedToNull(val) === null) {
         return boxNil(loc);

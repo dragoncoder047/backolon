@@ -13,7 +13,9 @@ export type Command =
 
 export type PatternProgram = Command[];
 
-/** also memoizes the program */
+/**
+ * Compile a pattern Thing into an executable pattern program and memoize it on the pattern object.
+ */
 export function compile(thing: Thing<ThingType.pattern>): PatternProgram {
     const data = thing.v;
     if (data.p) return data.p;

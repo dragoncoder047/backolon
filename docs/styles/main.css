@@ -1,0 +1,347 @@
+/* Backolon Website - Minimal Dark Theme */
+
+:root {
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #2d2d2d;
+    --bg-tertiary: #3a3a3a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a8a8a8;
+    --accent: #58a6ff;
+    --accent-hover: #79c0ff;
+    --danger: #f85149;
+    --success: #3fb950;
+    --border: #404040;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+header {
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+
+p {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+code {
+    background-color: var(--bg-tertiary);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: "Fira Code", monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-family: "Fira Code", monospace;
+    margin: 1rem 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+/* Landing Page */
+.hero {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    color: var(--text-secondary);
+}
+
+.hero-example {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2rem;
+    margin: 2rem 0;
+    text-align: left;
+}
+
+.hero-example code {
+    font-size: 0.95em;
+    padding: 0;
+    background: none;
+}
+
+.cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 2rem 0;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    color: var(--bg-primary);
+    border-color: var(--accent);
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
+    text-decoration: none;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-secondary);
+    border-color: var(--accent-hover);
+    color: var(--accent-hover);
+    text-decoration: none;
+}
+
+/* Navigation */
+nav {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    flex-direction: row;
+}
+
+nav a {
+    color: var(--text-primary);
+}
+
+nav a:hover {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+/* Terminal (REPL) */
+#terminal {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-family: "Fira Code", monospace;
+}
+
+.jquery-terminal {
+    --color: var(--text-primary) !important;
+    --background: var(--bg-secondary) !important;
+    --error: var(--danger) !important;
+    --success: var(--success) !important;
+}
+
+/* Docs Navigation & Tabs */
+.tab-navigation {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: var(--accent);
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* API Documentation */
+.api-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.api-item {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background-color: var(--bg-tertiary);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+}
+
+.api-signature {
+    background-color: var(--bg-primary);
+    padding: 1rem;
+    border-radius: 4px;
+    margin: 0.5rem 0;
+    font-family: "Fira Code", monospace;
+    overflow-x: auto;
+}
+
+.api-param {
+    margin-top: 0.5rem;
+    font-size: 0.95em;
+}
+
+.api-param-name {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.api-example {
+    background-color: var(--bg-primary);
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    font-family: "Fira Code", monospace;
+    font-size: 0.9em;
+}
+
+/* Footer */
+footer {
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    margin-top: 4rem;
+    color: var(--text-secondary);
+}
+
+footer a {
+    color: var(--accent);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .hero h1 {
+        font-size: 2rem;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    nav {
+        gap: 1rem;
+    }
+
+    .tab-navigation {
+        gap: 0;
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* let's not import tailwind for all this */
+
+.mt-1 { margin-top: 1rem; }
+.mt-2 { margin-top: 2rem; }
+.mb-1 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 2rem; }
+
+.hidden {
+    display: none !important;
+}

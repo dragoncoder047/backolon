@@ -1,6 +1,9 @@
 import { LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
 import { Thing, ThingType, typecheck } from "./thing";
 
+/**
+ * Create an empty Backolon map.
+ */
 export function newEmptyMap(srcLocation = UNKNOWN_LOCATION): Thing<ThingType.map> {
     return new Thing(
         ThingType.map,
@@ -13,6 +16,10 @@ export function newEmptyMap(srcLocation = UNKNOWN_LOCATION): Thing<ThingType.map
         false)
 }
 
+/**
+ * Read a value from a Backolon map by key. The key must be hashable, throws if it's not.
+ * Returns undefined if the key is not found.
+ */
 export function mapGetKey(map: Thing<ThingType.map>, key: Thing, opTrace?: LocationTrace): Thing | undefined {
     if (!typecheck(ThingType.map)(map)){
         throw new RuntimeError("Cannot search non-map", opTrace);
@@ -22,6 +29,9 @@ export function mapGetKey(map: Thing<ThingType.map>, key: Thing, opTrace?: Locat
 }
 
 const childComparator = (a: Thing<ThingType.pair>, b: Thing<ThingType.pair>) => a.c[0]!.h! - b.c[0]!.h!;
+/**
+ * Add or update the value at the specified key, mutating the map.
+ */
 export function mapUpdateKeyMutating(map: Thing<ThingType.map>, key: Thing, item: Thing, opTrace?: LocationTrace): void {
     if (!typecheck(ThingType.map)(map)) {
         throw new RuntimeError("Cannot insert into non-map", opTrace);
@@ -35,6 +45,9 @@ export function mapUpdateKeyMutating(map: Thing<ThingType.map>, key: Thing, item
     }
 }
 
+/**
+ * Return a new Backolon map with the given key inserted or updated. The original map is not modified.
+ */
 export function mapUpdateKeyCopying(map: Thing<ThingType.map>, key: Thing, item: Thing, opTrace?: LocationTrace): Thing<ThingType.map> {
     if (!typecheck(ThingType.map)(map)) {
         throw new RuntimeError("Cannot insert into non-map", opTrace);
@@ -44,6 +57,9 @@ export function mapUpdateKeyCopying(map: Thing<ThingType.map>, key: Thing, item:
     return copyMapWithNewItems(map, index !== undefined ? map.c.with(index, newItem) : map.c.toSpliced(0, 0, newItem).sort(childComparator));
 }
 
+/**
+ * Remove a key from a Backolon map by mutating the map. If the key is not present, nothing happens.
+ */
 export function mapDeleteKeyMutating(map: Thing<ThingType.map>, key: Thing, opTrace?: LocationTrace): void {
     if (!typecheck(ThingType.map)(map)) {
         throw new RuntimeError("Cannot delete from non-map", opTrace);
@@ -52,6 +68,9 @@ export function mapDeleteKeyMutating(map: Thing<ThingType.map>, key: Thing, opTr
     if (index !== undefined) map.c.splice(index, 1);
 }
 
+/**
+ * Return a new Backolon map without the given key, or the original if the key is already gone.
+ */
 export function mapDeleteKeyCopying(map: Thing<ThingType.map>, key: Thing, opTrace?: LocationTrace): Thing<ThingType.map> {
     if (!typecheck(ThingType.map)(map)) {
         throw new RuntimeError("Cannot delete from non-map", opTrace);

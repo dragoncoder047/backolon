@@ -1,0 +1,27 @@
+{
+    "entryPoints": [
+        "src/index.ts"
+    ],
+    "entryPointStrategy": "expand",
+    "out": "docs/docs/embedding",
+    "tsconfig": "tsconfig.json",
+    "exclude": [
+        "test/**/*",
+        "node_modules/**/*"
+    ],
+    "excludePrivate": true,
+    "excludeExternals": true,
+    "hideGenerator": true,
+    "includeVersion": true,
+    "disableSources": true,
+    "skipErrorChecking": true,
+    "ignoredHighlightLanguages": [
+        "backolon"
+    ],
+    "readme": "none",
+    "plugin": [
+        "@to-skills/typedoc"
+    ],
+    "llmsTxt": true,
+    "llmsTxtOutDir": "docs/llms",
+}

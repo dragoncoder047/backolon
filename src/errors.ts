@@ -1,6 +1,9 @@
 import { floor } from "lib0/math";
 import { javaHash, rotate32, x23 } from "./utils";
 
+/**
+ * Source location information for Backolon parsing and runtime errors.
+ */
 export class LocationTrace {
     constructor(
         public line: number,
@@ -9,6 +12,9 @@ export class LocationTrace {
         public source: [string, LocationTrace] | null = null) { }
 
 }
+/**
+ * A sentinel location representing an unknown source.
+ */
 export const UNKNOWN_LOCATION = new LocationTrace(0, 0, new URL("about:unknown"));
 function formatTrace(trace: LocationTrace, message: string, sources: Record<string, string>): string {
     const src = sources[trace.file.href];
@@ -27,6 +33,9 @@ interface Hashed {
     format(onSources: Record<string, string>): string;
 }
 
+/**
+ * A single note or stack frame attached to a Backolon error.
+ */
 export class ErrorNote implements Hashed {
     public readonly hash: number;
     constructor(public readonly message: string, public readonly loc: LocationTrace) {
@@ -47,6 +56,9 @@ export class RepeatedErrorNote implements Hashed {
     }
 }
 
+/**
+ * Base class for Backolon parse and runtime errors.
+ */
 export class BackolonError extends Error {
     constructor(message: string, public trace: LocationTrace = UNKNOWN_LOCATION, public notes: ErrorNote[] = []) {
         super(message);
@@ -60,7 +72,13 @@ export class BackolonError extends Error {
     }
 }
 
+/**
+ * Thrown when an early-stage parse error occurs.
+ */
 export class ParseError extends BackolonError { }
+/**
+ * Thrown for all other error kinds - type errors, pattern match errors, recursion errors, length errors, etc.
+ */
 export class RuntimeError extends BackolonError { }
 
 function compressedNoteTracebacks(lines: ErrorNote[], sources: Record<string, string>, minRep = 8): string {

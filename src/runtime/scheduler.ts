@@ -8,11 +8,17 @@ import { NativeModule } from "../stdlib/module";
 import { newEnv } from "./env";
 import { StackEntry, Task } from "./task";
 
+/**
+ * Shape of native function metadata registered with the Backolon scheduler.
+ */
 export interface NativeFunctionDetails {
     params: (Thing<ThingType.paramdescriptor> | Thing<ThingType.name>)[],
     impl(task: Task, arg: StackEntry): void;
 }
 
+/**
+ * Backolon task scheduler responsible for running code and native functions.
+ */
 export class Scheduler {
     tasks: Task[] = [];
     private s: Resurrect;

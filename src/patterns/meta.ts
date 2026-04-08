@@ -8,26 +8,25 @@ import { DEFAULT_UNPARSER } from "../parser/unparse";
 
 export const pattern = (type: PatternType, gsv: number | boolean, loc = UNKNOWN_LOCATION, children: readonly Thing[] = [], start = "", end = "", join = "") => new Thing(ThingType.pattern, children, { t: type, gsv }, start, end, join, loc);
 
-/*
-
-pattern syntax:
-
-<space> --> ZERO OR MORE spaces (space is optional but permitted)
-<two spaces> --> ONE or more spaces (space is required)
-<newline> --> newline literal
-x --> wildcard capture of any element named x
-x ... --> repeat x (lazy)
-x ... [+] --> repeat x (greedy) where [+] is a square bracket containing +
-(x) --> grouping (parenthesised pattern)
-{x|y} --> alternation (either x or y)
-[x (stuff)] --> capture name with subpattern
-[x: roundblock] --> type match & capture
-[=xyz] --> literal match (can be symbol, number, string)
-[^] and [$] --> anchors
-number or string literal --> not allowed
-
-*/
-
+/**
+ * Convert a parsed Backolon pattern block into an internal pattern Thing.
+ *
+ * pattern syntax:
+ * * `<one space>` --> any amount (zero or more) of spaces or newlines
+ * * `<two spaces>` --> any amount (zero or more) of spaces, but no newlines
+ * * `<three spaces>` --> one or more spaces (space is required) without newlines
+ * * `<newline>` --> newline literal
+ * * `x` --> wildcard capture of any element named x
+ * * `x ...` --> repeat `x` (lazy)
+ * * `x ... [+]` --> repeat `x` (greedy) where `[+]` is a square bracket containing `+`
+ * * `(x)` --> grouping (parenthesised pattern)
+ * * `{x|y}` --> alternation (either `x` or `y`)
+ * * `[x(stuff)]` --> capture name with subpattern
+ * * `[x: roundblock]` --> type match & capture
+ * * `[=xyz]` --> literal match (can be symbol, number, string)
+ * * `[^]` and `[$]` --> anchors
+ * * number or string literal --> not allowed
+ */
 export function parsePattern(block: readonly Thing[]): Thing<ThingType.pattern> {
     // 1. turn 3 separated dots into a single ellipsis (since operator characters are not autojoined by the tokenizer)
     block = nonoverlappingreplace(block, tripledot, p => [boxOperatorSymbol("...", p[0]!.loc)]);

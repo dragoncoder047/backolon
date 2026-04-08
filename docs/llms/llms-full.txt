@@ -1,0 +1,709 @@
+# @r47onfire/backolon
+
+### fromJS
+
+Convert a native JavaScript value into a Backolon Thing.
+
+```ts
+fromJS(val: any, loc: LocationTrace, visited: WeakMap<WeakKey, any>): Thing
+```
+
+**Parameters:**
+- `val: any` — 
+- `loc: LocationTrace` — 
+- `visited: WeakMap<WeakKey, any>` — 
+
+**Returns:** `Thing`
+
+### toJS
+
+Convert a Backolon Thing into a native JavaScript value.
+
+```ts
+toJS(thing: Thing, visited: WeakMap<WeakKey, any>): any
+```
+
+**Parameters:**
+- `thing: Thing` — 
+- `visited: WeakMap<WeakKey, any>` — 
+
+**Returns:** `any`
+
+### mapDeleteKeyCopying
+
+Return a new Backolon map without the given key, or the original if the key is already gone.
+
+```ts
+mapDeleteKeyCopying(map: Thing<map>, key: Thing, opTrace?: LocationTrace): Thing<map>
+```
+
+**Parameters:**
+- `map: Thing<map>` — 
+- `key: Thing` — 
+- `opTrace: LocationTrace` (optional) — 
+
+**Returns:** `Thing<map>`
+
+### mapDeleteKeyMutating
+
+Remove a key from a Backolon map by mutating the map. If the key is not present, nothing happens.
+
+```ts
+mapDeleteKeyMutating(map: Thing<map>, key: Thing, opTrace?: LocationTrace): void
+```
+
+**Parameters:**
+- `map: Thing<map>` — 
+- `key: Thing` — 
+- `opTrace: LocationTrace` (optional) — 
+
+### mapGetKey
+
+Read a value from a Backolon map by key. The key must be hashable, throws if it's not.
+Returns undefined if the key is not found.
+
+```ts
+mapGetKey(map: Thing<map>, key: Thing, opTrace?: LocationTrace): Thing<string | ThingType> | undefined
+```
+
+**Parameters:**
+- `map: Thing<map>` — 
+- `key: Thing` — 
+- `opTrace: LocationTrace` (optional) — 
+
+**Returns:** `Thing<string | ThingType> | undefined`
+
+### mapUpdateKeyCopying
+
+Return a new Backolon map with the given key inserted or updated. The original map is not modified.
+
+```ts
+mapUpdateKeyCopying(map: Thing<map>, key: Thing, item: Thing, opTrace?: LocationTrace): Thing<map>
+```
+
+**Parameters:**
+- `map: Thing<map>` — 
+- `key: Thing` — 
+- `item: Thing` — 
+- `opTrace: LocationTrace` (optional) — 
+
+**Returns:** `Thing<map>`
+
+### mapUpdateKeyMutating
+
+Add or update the value at the specified key, mutating the map.
+
+```ts
+mapUpdateKeyMutating(map: Thing<map>, key: Thing, item: Thing, opTrace?: LocationTrace): void
+```
+
+**Parameters:**
+- `map: Thing<map>` — 
+- `key: Thing` — 
+- `item: Thing` — 
+- `opTrace: LocationTrace` (optional) — 
+
+### newEmptyMap
+
+Create an empty Backolon map.
+
+```ts
+newEmptyMap(srcLocation: LocationTrace): Thing<map>
+```
+
+**Parameters:**
+- `srcLocation: LocationTrace` — 
+
+**Returns:** `Thing<map>`
+
+### boxBlock
+
+```ts
+boxBlock<T>(children: T extends ThingType ? ChildrenType<T> : Thing<string | ThingType>[], kind: T, trace: LocationTrace, start: string, end: string): Thing<T>
+```
+
+**Parameters:**
+- `children: T extends ThingType ? ChildrenType<T> : Thing<string | ThingType>[]` — 
+- `kind: T` — 
+- `trace: LocationTrace` — 
+- `start: string` — 
+- `end: string` — 
+
+**Returns:** `Thing<T>`
+
+### boxCurlyBlock
+
+```ts
+boxCurlyBlock(children: readonly Thing<string | ThingType>[], trace: LocationTrace): Thing<curlyblock>
+```
+
+**Parameters:**
+- `children: readonly Thing<string | ThingType>[]` — 
+- `trace: LocationTrace` — 
+
+**Returns:** `Thing<curlyblock>`
+
+### boxEnd
+
+```ts
+boxEnd(trace: LocationTrace): Thing<end>
+```
+
+**Parameters:**
+- `trace: LocationTrace` — 
+
+**Returns:** `Thing<end>`
+
+### boxList
+
+```ts
+boxList(items: Thing<string | ThingType>[], trace: LocationTrace, start: string, end: string, join: string): Thing<list>
+```
+
+**Parameters:**
+- `items: Thing<string | ThingType>[]` — 
+- `trace: LocationTrace` — 
+- `start: string` — 
+- `end: string` — 
+- `join: string` — 
+
+**Returns:** `Thing<list>`
+
+### boxNameSymbol
+
+```ts
+boxNameSymbol(value: string, trace: LocationTrace): Thing<name>
+```
+
+**Parameters:**
+- `value: string` — 
+- `trace: LocationTrace` — 
+
+**Returns:** `Thing<name>`
+
+### boxNil
+
+```ts
+boxNil(trace: LocationTrace, str: string): Thing<nil>
+```
+
+**Parameters:**
+- `trace: LocationTrace` — 
+- `str: string` — 
+
+**Returns:** `Thing<nil>`
+
+### boxNumber
+
+```ts
+boxNumber(value: number | bigint, trace: LocationTrace, repr: string): Thing<number>
+```
+
+**Parameters:**
+- `value: number | bigint` — 
+- `trace: LocationTrace` — 
+- `repr: string` — 
+
+**Returns:** `Thing<number>`
+
+### boxOperatorSymbol
+
+```ts
+boxOperatorSymbol(value: string, trace: LocationTrace): Thing<operator>
+```
+
+**Parameters:**
+- `value: string` — 
+- `trace: LocationTrace` — 
+
+**Returns:** `Thing<operator>`
+
+### boxRoundBlock
+
+```ts
+boxRoundBlock(children: readonly Thing<string | ThingType>[], trace: LocationTrace): Thing<roundblock>
+```
+
+**Parameters:**
+- `children: readonly Thing<string | ThingType>[]` — 
+- `trace: LocationTrace` — 
+
+**Returns:** `Thing<roundblock>`
+
+### boxSpaceSymbol
+
+```ts
+boxSpaceSymbol(value: string, trace: LocationTrace): Thing<space>
+```
+
+**Parameters:**
+- `value: string` — 
+- `trace: LocationTrace` — 
+
+**Returns:** `Thing<space>`
+
+### boxSquareBlock
+
+```ts
+boxSquareBlock(children: readonly Thing<string | ThingType>[], trace: LocationTrace): Thing<squareblock>
+```
+
+**Parameters:**
+- `children: readonly Thing<string | ThingType>[]` — 
+- `trace: LocationTrace` — 
+
+**Returns:** `Thing<squareblock>`
+
+### boxString
+
+```ts
+boxString(value: string, trace: LocationTrace, raw: string, quote: string): Thing<string>
+```
+
+**Parameters:**
+- `value: string` — 
+- `trace: LocationTrace` — 
+- `raw: string` — 
+- `quote: string` — 
+
+**Returns:** `Thing<string>`
+
+### boxSymbol
+
+```ts
+boxSymbol<T>(value: string, kind: T, trace: LocationTrace): Thing<T>
+```
+
+**Parameters:**
+- `value: string` — 
+- `kind: T` — 
+- `trace: LocationTrace` — 
+
+**Returns:** `Thing<T>`
+
+### boxToplevelBlock
+
+```ts
+boxToplevelBlock(children: readonly Thing<string | ThingType>[], trace: LocationTrace): Thing<topblock>
+```
+
+**Parameters:**
+- `children: readonly Thing<string | ThingType>[]` — 
+- `trace: LocationTrace` — 
+
+**Returns:** `Thing<topblock>`
+
+### typecheck
+
+Return a helper function that returns true if the given Thing is any of the given types.
+
+```ts
+typecheck<T>(types: T[]): (thing: Thing<any>) => thing is OneTypeThing<T>
+```
+
+**Parameters:**
+- `types: T[]` — 
+
+**Returns:** `(thing: Thing<any>) => thing is OneTypeThing<T>`
+
+```js
+if (typecheck(ThingType.number, ThingType.string)(object)) {
+    // inside this block, object is known to be
+    // Thing<ThingType.number> | Thing<ThingType.string>
+}
+```
+
+### typeNameOf
+
+Returns the human-readable name of a ThingType, or returns the string itself if it's not a ThingType.
+
+```ts
+typeNameOf(type: string | ThingType): string
+```
+
+**Parameters:**
+- `type: string | ThingType` — 
+
+**Returns:** `string`
+
+### parse
+
+Parse Backolon source text into a syntax tree of Thing objects, but do not apply any patterns.
+
+```ts
+parse(string: string, filename: URL): Thing<string | ThingType>
+```
+
+**Parameters:**
+- `string: string` — 
+- `filename: URL` — 
+
+**Returns:** `Thing<string | ThingType>`
+
+### tokenize
+
+Tokenize Backolon source text into a stream of Things. No further parsing is done; parens like "(" are kept as operator symbols.
+
+```ts
+tokenize(source: string, filename: URL): Thing<string | ThingType>[]
+```
+
+**Parameters:**
+- `source: string` — 
+- `filename: URL` — 
+
+**Returns:** `Thing<string | ThingType>[]`
+
+### compilePattern
+
+Compile a pattern Thing into an executable pattern program and memoize it on the pattern object.
+
+```ts
+compilePattern(thing: Thing<pattern>): PatternProgram
+```
+
+**Parameters:**
+- `thing: Thing<pattern>` — 
+
+**Returns:** `PatternProgram`
+
+### matchPattern
+
+Finds all of the matches of the pattern and returns (for each match) the bindings
+and the span.
+
+Uses a tree-walking version of Thompson's NFA construction internally, for speed.
+
+```ts
+matchPattern(source: readonly Thing<string | ThingType>[], pattern: Thing<pattern>, findAll: boolean): MatchResult[]
+```
+
+**Parameters:**
+- `source: readonly Thing<string | ThingType>[]` — Stream of tokens to be fed to the pattern matching.
+- `pattern: Thing<pattern>` — A single parsed pattern tree to match against the source.
+- `findAll: boolean` — Whether to find all matches, if true, or stop early when the leftmost match is found, if false. (Default true)
+
+**Returns:** `MatchResult[]`
+
+### parsePattern
+
+Convert a parsed Backolon pattern block into an internal pattern Thing.
+
+pattern syntax:
+* `<one space>` --> any amount (zero or more) of spaces or newlines
+* `<two spaces>` --> any amount (zero or more) of spaces, but no newlines
+* `<three spaces>` --> one or more spaces (space is required) without newlines
+* `<newline>` --> newline literal
+* `x` --> wildcard capture of any element named x
+* `x ...` --> repeat `x` (lazy)
+* `x ... [+]` --> repeat `x` (greedy) where `[+]` is a square bracket containing `+`
+* `(x)` --> grouping (parenthesised pattern)
+* `{x|y}` --> alternation (either `x` or `y`)
+* `[x(stuff)]` --> capture name with subpattern
+* `[x: roundblock]` --> type match & capture
+* `[=xyz]` --> literal match (can be symbol, number, string)
+* `[^]` and `[$]` --> anchors
+* number or string literal --> not allowed
+
+```ts
+parsePattern(block: readonly Thing<string | ThingType>[]): Thing<pattern>
+```
+
+**Parameters:**
+- `block: readonly Thing<string | ThingType>[]` — 
+
+**Returns:** `Thing<pattern>`
+
+### pattern
+
+```ts
+pattern(type: PatternType, gsv: number | boolean, loc: LocationTrace, children: readonly Thing<string | ThingType>[], start: string, end: string, join: string): Thing<pattern>
+```
+
+**Parameters:**
+- `type: PatternType` — 
+- `gsv: number | boolean` — 
+- `loc: LocationTrace` — 
+- `children: readonly Thing<string | ThingType>[]` — 
+- `start: string` — 
+- `end: string` — 
+- `join: string` — 
+
+**Returns:** `Thing<pattern>`
+
+### newEnv
+
+Create a new Backolon environment frame with variables and pattern definitions.
+
+```ts
+newEnv(newVars: Thing<map>, newPatterns: Thing<list>, callsite: LocationTrace, parents: Thing<nil | env>[]): Thing<env>
+```
+
+**Parameters:**
+- `newVars: Thing<map>` — 
+- `newPatterns: Thing<list>` — 
+- `callsite: LocationTrace` — 
+- `parents: Thing<nil | env>[]` — 
+
+**Returns:** `Thing<env>`
+
+### rewriteAsApply
+
+Helper to rewrite pattern handlers into apply forms for native builtins.
+
+```ts
+rewriteAsApply(symbols: Thing<name>[], builtinName: string, start?: string, end?: string): (task: Task, arg: StackEntry) => void
+```
+
+**Parameters:**
+- `symbols: Thing<name>[]` — 
+- `builtinName: string` — 
+- `start: string` (optional) — 
+- `end: string` (optional) — 
+
+**Returns:** `(task: Task, arg: StackEntry) => void`
+
+### BackolonError
+
+Base class for Backolon parse and runtime errors.
+
+```ts
+constructor(message: string, trace: LocationTrace, notes: ErrorNote[]): BackolonError
+```
+
+**Properties:**
+- `trace: LocationTrace` — 
+- `notes: ErrorNote[]` — 
+
+**Methods:**
+- `displayOn(sources: Record<string, string>): string` — 
+- `addNote(message: string, loc: LocationTrace): void` — 
+
+### ErrorNote
+
+A single note or stack frame attached to a Backolon error.
+
+```ts
+constructor(message: string, loc: LocationTrace): ErrorNote
+```
+
+**Properties:**
+- `hash: number` — 
+- `message: string` — 
+- `loc: LocationTrace` — 
+
+**Methods:**
+- `format(onSources: Record<string, string>): string` — 
+
+### LocationTrace
+
+Source location information for Backolon parsing and runtime errors.
+
+```ts
+constructor(line: number, col: number, file: URL, source: [string, LocationTrace] | null): LocationTrace
+```
+
+**Properties:**
+- `line: number` — 
+- `col: number` — 
+- `file: URL` — 
+- `source: [string, LocationTrace] | null` — 
+
+### ParseError
+
+Thrown when an early-stage parse error occurs.
+
+```ts
+constructor(message: string, trace: LocationTrace, notes: ErrorNote[]): ParseError
+```
+
+**Properties:**
+- `trace: LocationTrace` — 
+- `notes: ErrorNote[]` — 
+
+**Methods:**
+- `displayOn(sources: Record<string, string>): string` — 
+- `addNote(message: string, loc: LocationTrace): void` — 
+
+### RuntimeError
+
+Thrown for all other error kinds - type errors, pattern match errors, recursion errors, length errors, etc.
+
+```ts
+constructor(message: string, trace: LocationTrace, notes: ErrorNote[]): RuntimeError
+```
+
+**Properties:**
+- `trace: LocationTrace` — 
+- `notes: ErrorNote[]` — 
+
+**Methods:**
+- `displayOn(sources: Record<string, string>): string` — 
+- `addNote(message: string, loc: LocationTrace): void` — 
+
+### Thing
+
+Every object in Backolon is wrapped or implemented by this class.
+
+```ts
+constructor<T>(t: T, c: T extends ThingType ? ChildrenType<T> : Thing<string | ThingType>[], v: T extends ThingType ? ValueType<T> : any, s0: string, s1: string, sj: string, loc: LocationTrace, hashable: boolean, valueInHash: boolean): Thing<T>
+```
+
+**Properties:**
+- `h: number | null` — Null if this or any child is not hashable.
+- `t: T` — type
+- `c: T extends ThingType ? ChildrenType<T> : Thing<string | ThingType>[]` — children
+- `v: T extends ThingType ? ValueType<T> : any` — value
+- `s0: string` — source prefix
+- `s1: string` — source suffix
+- `sj: string` — source joiner
+- `loc: LocationTrace` — source location
+
+### Unparser
+
+Class for converting Things back into source text, or at least a readable representation.
+
+```ts
+constructor(): Unparser
+```
+
+**Properties:**
+- `counter: number` — 
+- `seen: Map<Thing<string | ThingType>, number>` — 
+
+**Methods:**
+- `pre(thing: Thing): string` — Returns the text to be put before the contents of the given Thing.
+- `join(thing: Thing, parts: string[]): string` — Takes the string source of the children and joins it into a single string based on the Thing.
+- `post(thing: Thing): string` — Returns the text to be put after the contents of the given Thing.
+- `begin(): void` — Hook that gets called when an object is starting to be unparsed.
+- `end(): void` — Hook that gets called when an object has finished being unparsed.
+- `unparse(thing: Thing): string` — Main entry point to unparse an object to a string.
+- `walk(thing: Thing): void` — Walks the object tree recursively, and saves which objects have been seen once or multiple times
+in `this.seen`.
+- `stringify(thing: Thing): string` — Stringifies the object tree, while noting shared and circular structure using Scheme
+datums `#N=` and `#N#`.
+
+### MatchResult
+
+```ts
+constructor(bindings: [Thing<name>, Thing<string | ThingType> | Thing<string | ThingType>[]][], span: [number, number]): MatchResult
+```
+
+**Properties:**
+- `bindings: [Thing<name>, Thing<string | ThingType> | Thing<string | ThingType>[]][]` — 
+- `span: [number, number]` — 
+
+### Scheduler
+
+Backolon task scheduler responsible for running code and native functions.
+
+```ts
+constructor(builtins: [NativeModule, ...NativeModule[]], printHook?: (x: string) => void, customNames: Record<string, (args: any[]) => any>): Scheduler
+```
+
+**Properties:**
+- `tasks: Task[]` — 
+- `recursionLimit: number` — 
+- `builtins: [NativeModule, ...NativeModule[]]` — 
+- `printHook: (x: string) => void` — 
+
+**Methods:**
+- `startTask(priority: number, code: string, envs: (Thing<env> | Thing<nil>)[] | null, filename: URL): Task` — 
+- `serializeTasks(): string` — 
+- `loadFromSerialized(str: string): void` — 
+- `stepUntilSuspended(maxSteps: number): void` — 
+- `_getFunction(name: string): NativeFunctionDetails` — 
+- `getParamDescriptors(name: string): (Thing<name> | Thing<paramdescriptor>)[]` — 
+- `callFunction(task: Task, name: string, entry: StackEntry): void` — 
+- `operator(name: string, state: StackEntry): Thing` — 
+- `getApply(functorType: string | ThingType): CustomApplicator | null` — 
+
+### Task
+
+Represents a running Backolon evaluation task.
+
+```ts
+constructor(priority: number, scheduler: Scheduler, code: Thing, env: Thing<env> | Thing<nil>): Task
+```
+
+**Properties:**
+- `suspended: boolean` — Whether this task is currently suspended (e.g. waiting for a promise to resolve).
+If true, the scheduler will not run this task until it is resumed by setting suspended to false.
+- `stack: readonly StackEntry[]` — 
+- `result: Thing<string | ThingType> | null` — Represents the result of the last evaluated expression, used for returning values to whatever started this task.
+- `priority: number` — 
+- `scheduler: Scheduler` — 
+
+**Methods:**
+- `step(): boolean` — Try to take a single evaluation step in this task. Returns true if the task made progress (e.g. evaluated something or updated its state), or false if the task is currently suspended or has finished execution.
+If the task throws an error during evaluation, the task may end up in an undefined state.
+- `continuation(loc: LocationTrace): Thing<continuation>` — Return a new thing representing the current continuation at this point in evaluation,
+which when called will return to this point with the given value as the result of the current expression.
+
+The continuation will capture the entire stack, so it has infinite extent.
+- `updateArgs(args: Thing<string | ThingType>[]): StackEntry` — Update the current stack entry with new arguments, returning the new stack entry.
+- `updateCookie(index: number, state: number, data?: any): StackEntry` — Update the current stack entry with a new cookie value(s), returning the new stack entry.
+The cookie is used to track internal evaluation state for constructs that call back into Backolon code,
+so the Javascript implementation knows where it was and can resume evaluation from the correct point when the Backolon code returns.
+
+The exact meaning of the cookie value(s) depends on the construct being evaluated.
+- `updateFlags(toSet: number, toClear: number): StackEntry` — Updates the current stack entry with new flags, returning the new stack entry. toSet and toClear are bitmasks of StackFlag values to set and clear respectively.
+- `updateEnv(newEnv: Thing<env>): StackEntry` — Updates the current stack entry with a new environment, returning the new stack entry. This is used when entering a new scope (e.g. injecting context-sensitive information).
+- `enter(code: Thing, loc: LocationTrace, env: Thing<env> | Thing<nil>, args: readonly Thing<string | ThingType>[], name?: string | null): void` — Enters a new stack frame with the given code, location, environment, and arguments.
+- `out(result?: Thing<string | ThingType>): StackEntry` — Exit the current stack frame, optionally with a result to return to the caller.
+The result will be passed back to whatever got us here (e.g. the parent stack frame or the creator of the task).
+- `dip(depth: number, cb: (state: StackEntry) => void): void` — Temporarily pop the given number of stack frames, call the callback with the new top of the stack, and then restore the popped stack frames.
+This is used for things like variable declaration and assignment where we need to access the correct environment to put the variable in.
+
+If depth is greater than or equal to the current stack size, the callback will be called with the bottom of the stack (which is usually the global scope).
+
+### JSObjectRef
+
+Internal wrapper for native JavaScript objects stored in Backolon values.
+
+### CheckedType
+
+```ts
+type CheckedType = T extends (thing: Thing<any>) => thing is Thing<infer U> ? U : never
+```
+
+### StackEntry
+
+A single stack frame in the Backolon evaluator.
+
+### ThingType
+
+- `nil` = `0` — the empty value
+- `end` = `1` — represents the end-of-file marker for tokenization, or the end of a read stream, or the end of an iterable
+- `name` = `2` — an alphanumeric symbol, such as x, hello, or _QWE_RTY_123
+- `operator` = `3` — an operator character (only ever one character)
+- `space` = `4` — a symbol composed entirely of whitespace and/or comments. Newlines get their own Thing.
+- `newline` = `5` — 
+- `number` = `6` — 
+- `string` = `7` — 
+- `roundblock` = `8` — 
+- `squareblock` = `9` — 
+- `curlyblock` = `10` — 
+- `topblock` = `11` — 
+- `stringblock` = `12` — 
+- `apply` = `13` — represents a function call, children[0] is the function, children[1:] are the arguments
+- `func` = `14` — closed-over lambda function or macro, children[0] is the call signature, children[1] is the body
+- `nativefunc` = `15` — javascript function or macro, children is empty, value is the native function details
+- `implicitfunc` = `16` — implicit block, value=env, children[0] is the body
+- `paramdescriptor` = `17` — name, type, default; value=lazy
+- `continuation` = `18` — 
+- `boundmethod` = `19` — children[0] is the bind target object (the "self" value), children[1] is the method
+- `pattern` = `20` — pattern program in data, child nodes are just for reconstruction
+- `list` = `21` — 
+- `map` = `22` — 
+- `pair` = `23` — 
+- `pattern_entry` = `24` — 
+- `env` = `25` — triple (parent or nil, vars, patterns); patterns is list of (pattern, when, implementation)
+- `macroized` = `26` — 
+- `splat` = `27` — 
+
+### StackFlag
+
+Flags used to record internal task evaluation state.
+
+- `native_func_being_evaluated` = `1` — 

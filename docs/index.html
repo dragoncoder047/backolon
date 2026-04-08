@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Backolon</title>
+        <link rel="stylesheet" href="./styles/main.css" />
+    </head>
+
+    <body>
+        <header>
+            <div class="logo">Backolon</div>
+            <nav>
+                <a href="./repl/">REPL</a>
+                <a href="./docs/">Language Docs</a>
+                <a href="./docs/embedding/">JS API</a>
+                <a href="https://github.com/r47onfire/backolon" target="_blank">GitHub</a>
+            </nav>
+        </header>
+        <main class="container">
+            <section class="hero">
+                <h1>Backolon</h1>
+                <p>A tiny, homoiconic pattern-matching language with continuation-based control flow.</p>
+                <div class="hero-example">
+                    <pre><code>x := 42
+
+double := [n] => n * 2
+
+listSum := [1, 2, 3] + [4, 5]
+
+if (sum > 10) "big" "small"</code></pre>
+                </div>
+                <div class="cta-buttons">
+                    <a href="./repl/" class="btn btn-primary">Try the REPL</a>
+                    <a href="./docs/" class="btn btn-secondary">View Language Docs</a>
+                    <a href="./docs/embedding/" class="btn btn-secondary">View JS API</a>
+                </div>
+                <section style="margin-top: 3rem; text-align: left;">
+                    <h2>Features</h2>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin: 1rem 0;"><strong>Homoiconic:</strong> Code and data share the same
+                            representation.</li>
+                        <li style="margin: 1rem 0;"><strong>Pattern matching:</strong> All syntax is defined through
+                            extensible patterns.</li>
+                        <li style="margin: 1rem 0;"><strong>Keywordless:</strong> Operators are functions, not reserved
+                            words.</li>
+                        <li style="margin: 1rem 0;"><strong>Continuations:</strong> return and break are ordinary
+                            continuation values.</li>
+                        <li style="margin: 1rem 0;"><strong>JS interop:</strong> Call JavaScript objects, constructors,
+                            and promises directly.</li>
+                    </ul>
+                </section>
+            </section>
+        </main>
+    </body>
+
+</html>

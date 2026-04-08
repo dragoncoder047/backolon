@@ -15,5 +15,11 @@ function createFFIModule(): NativeModule {
     return mod;
 }
 
+/**
+ * Built-in core language module.
+ */
 export const BUILTINS_MODULE = createBuiltins();
+/**
+ * JavaScript foreign-function interface module.
+ */
 export const FFI_MODULE = createFFIModule();

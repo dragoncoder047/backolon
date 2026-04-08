@@ -4,6 +4,9 @@ import { mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
 import { boxList, boxNil, Thing, ThingType, typecheck } from "../objects/thing";
 import { MatchResult } from "../patterns/match";
 
+/**
+ * Create a new Backolon environment frame with variables and pattern definitions.
+ */
 export function newEnv(newVars: Thing<ThingType.map>, newPatterns: Thing<ThingType.list>, callsite: LocationTrace, parents: Thing<ThingType.nil | ThingType.env>[] = [boxNil(callsite)]): Thing<ThingType.env> {
     return new Thing(ThingType.env, [boxList(parents, callsite), newVars, newPatterns], null, "", "", "", callsite);
 }

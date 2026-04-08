@@ -18,7 +18,7 @@ export class MatchResult {
  * Uses a tree-walking version of Thompson's NFA construction internally, for speed.
  *
  * @param source Stream of tokens to be fed to the pattern matching.
- * @param patterns List of structured trees of `pattern`-type Things describing the patterns to be matched against.
+ * @param pattern A single parsed pattern tree to match against the source.
  * @param findAll Whether to find all matches, if true, or stop early when the leftmost match is found, if false. (Default true)
  */
 

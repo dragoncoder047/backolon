@@ -82,6 +82,9 @@ const unhashable = [ThingType.list, ThingType.map, ThingType.env];
 type ValueType<T extends ThingType> = ThingInternalTypes<T>[0];
 type ChildrenType<T extends ThingType> = ThingInternalTypes<T>[1];
 
+/**
+ * Every object in Backolon is wrapped or implemented by this class.
+ */
 export class Thing<T extends (ThingType | string) = ThingType | string> {
     /** Null if this or any child is not hashable. */
     public readonly h: number | null = null;
@@ -135,6 +138,17 @@ export function boxApply(func: Thing, args: readonly Thing[], trace = UNKNOWN_LO
 
 // hack to make it one per Thing
 type OneTypeThing<T extends (ThingType | string)> = T extends any ? Thing<T> : never;
+/**
+ * Return a helper function that returns true if the given Thing is any of the given types.
+ * 
+ * @example
+ * ```js
+ * if (typecheck(ThingType.number, ThingType.string)(object)) {
+ *     // inside this block, object is known to be
+ *     // Thing<ThingType.number> | Thing<ThingType.string>
+ * }
+ * ```
+ */
 export function typecheck<T extends (ThingType | string)>(...types: T[]) {
     return (thing: Thing<any>): thing is OneTypeThing<T> => types.includes(thing.t as T);
 }
@@ -155,4 +169,7 @@ export function extractSymbolName(thing: Thing): string {
     return thing.v;
 }
 
-export const typeNameOf = (type: ThingType | string) => ThingType[type as any] ?? type;
+/**
+ * Returns the human-readable name of a ThingType, or returns the string itself if it's not a ThingType.
+ */
+export const typeNameOf = (type: ThingType | string): string => (ThingType[type as any] ?? type) as string;

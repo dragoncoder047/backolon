@@ -199,6 +199,9 @@ function hexEsc(string: string, src: LocationTrace): string {
     throw new ParseError("unreachable", src);
 }
 
+/**
+ * Parse Backolon source text into a syntax tree of Thing objects, but do not apply any patterns.
+ */
 export function parse(string: string, filename: URL = UNKNOWN_LOCATION.file) {
     return blockParse(tokenize(string, filename), defaultBlockRules, BlockHandler.toplevel);
 }

@@ -38,7 +38,9 @@ export {
     isSymbol,
     Thing,
     ThingType,
-    type CheckedType
+    type CheckedType,
+    typecheck,
+    typeNameOf
 } from "./objects/thing";
 export {
     parse

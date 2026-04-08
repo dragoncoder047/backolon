@@ -8,10 +8,16 @@ import { flatToVarMap, newEnv, walkEnvTree } from "./env";
 import { getNthDescriptor, getParamDescriptors, isLazy, parametersToVars, wrapImplicitBlock } from "./functor";
 import { type Scheduler } from "./scheduler";
 
+/**
+ * Flags used to record internal task evaluation state.
+ */
 export enum StackFlag {
     native_func_being_evaluated = 1,
 }
 
+/**
+ * A single stack frame in the Backolon evaluator.
+ */
 export class StackEntry {
     constructor(
         /** current value being evaluated */
@@ -22,6 +28,7 @@ export class StackEntry {
         public readonly argv: readonly Thing[],
         /** current environment */
         public readonly env: Thing<ThingType.env> | Thing<ThingType.nil>,
+        /** resolved name of the stack entry if it is determined to be significant */
         public readonly name: string | null,
         /** current index in evaluating args */
         public readonly index = 0,
@@ -61,15 +68,29 @@ enum ApplyEvalState {
     waiting_for_arg_result,
 }
 
+/**
+ * Represents a running Backolon evaluation task.
+ */
 export class Task {
+    /**
+     * Whether this task is currently suspended (e.g. waiting for a promise to resolve).
+     * If true, the scheduler will not run this task until it is resumed by setting suspended to false.
+     */
     suspended = false;
     stack: readonly StackEntry[] = [];
+    /**
+     * Represents the result of the last evaluated expression, used for returning values to whatever started this task.
+     */
     result: Thing | null = null;
     constructor(public priority: number, public scheduler: Scheduler,
         code: Thing, env: Thing<ThingType.env> | Thing<ThingType.nil>) {
         this.enter(code, code.loc, env);
     }
 
+    /**
+     * Try to take a single evaluation step in this task. Returns true if the task made progress (e.g. evaluated something or updated its state), or false if the task is currently suspended or has finished execution.
+     * If the task throws an error during evaluation, the task may end up in an undefined state.
+     */
     step(): boolean {
         try {
             if (this.suspended) return false;
@@ -286,6 +307,12 @@ export class Task {
             throw e;
         }
     }
+    /**
+     * Return a new thing representing the current continuation at this point in evaluation,
+     * which when called will return to this point with the given value as the result of the current expression.
+     *
+     * The continuation will capture the entire stack, so it has infinite extent.
+     */
     continuation(loc = UNKNOWN_LOCATION) {
         return new Thing(
             ThingType.continuation,
@@ -358,39 +385,69 @@ export class Task {
             throw new RuntimeError(`can't call ${typeNameOf(functor.t)}`, callsite.loc);
         }
     }
+    /**
+     * Update the current stack entry with new arguments, returning the new stack entry.
+     */
     updateArgs(args: Thing[]) {
         const val = this.stack.at(-1)!.g(args);
         this.stack = this.stack.with(-1, val);
         return val;
     }
+    /**
+     * Update the current stack entry with a new cookie value(s), returning the new stack entry.
+     * The cookie is used to track internal evaluation state for constructs that call back into Backolon code,
+     * so the Javascript implementation knows where it was and can resume evaluation from the correct point when the Backolon code returns.
+     *
+     * The exact meaning of the cookie value(s) depends on the construct being evaluated.
+     * 
+     * @param data An optional additional data to store in the stack entry, which won't be updated if not provided.
+     */
     updateCookie(index: number, state: number, data?: any) {
         const top = this.stack.at(-1)!;
         const updated = top.sd(index, state, data ?? top.data);
         this.stack = this.stack.with(-1, updated);
         return updated;
     }
+    /**
+     * Updates the current stack entry with new flags, returning the new stack entry. toSet and toClear are bitmasks of StackFlag values to set and clear respectively.
+     */
     updateFlags(toSet: number, toClear: number) {
         const top = this.stack.at(-1)!;
         const updated = top.f(toSet, toClear);
         this.stack = this.stack.with(-1, updated);
         return updated;
     }
+    /**
+     * Updates the current stack entry with a new environment, returning the new stack entry. This is used when entering a new scope (e.g. injecting context-sensitive information).
+     */
     updateEnv(newEnv: Thing<ThingType.env>) {
         const top = this.stack.at(-1)!;
         const updated = top.e(newEnv);
         this.stack = this.stack.with(-1, updated);
         return updated;
     }
-    /** enter/call, with no injected block */
+    /**
+     * Enters a new stack frame with the given code, location, environment, and arguments.
+     * @param loc The location trace to use in error messages.
+     * @param name The name of the stack frame, if it is significant and should appear in a stack trace.
+     */
     enter(code: Thing, loc: LocationTrace, env: Thing<ThingType.env> | Thing<ThingType.nil>, args: readonly Thing[] = [], name?: string | null) {
         this.stack = this.stack.toSpliced(Infinity, 0, new StackEntry(code, loc, args, env, name ?? null));
     }
-    /** return a result and stop looping on this frame */
+    /**
+     * Exit the current stack frame, optionally with a result to return to the caller.
+     * The result will be passed back to whatever got us here (e.g. the parent stack frame or the creator of the task).
+     */
     out(result?: Thing): StackEntry {
         this.result = result ?? this.result;
         return (this.stack = this.stack.toSpliced(-1, 1)).at(-1)!;
     }
-    /** access scopes beneath this one */
+    /**
+     * Temporarily pop the given number of stack frames, call the callback with the new top of the stack, and then restore the popped stack frames.
+     * This is used for things like variable declaration and assignment where we need to access the correct environment to put the variable in.
+     *
+     * If depth is greater than or equal to the current stack size, the callback will be called with the bottom of the stack (which is usually the global scope).
+     */
     dip(depth: number, cb: (state: StackEntry) => void) {
         if (this.stack.length > depth) {
             const end = this.stack.slice(-depth);

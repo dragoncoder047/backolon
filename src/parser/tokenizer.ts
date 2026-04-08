@@ -26,6 +26,9 @@ const TOKENIZE_RULES: Rule[] = [
     [/^./, ThingType.operator, id]
 ];
 
+/**
+ * Tokenize Backolon source text into a stream of Things. No further parsing is done; parens like "(" are kept as operator symbols.
+ */
 export function tokenize(source: string, filename: URL = UNKNOWN_LOCATION.file) {
     var line = 0, col = 0;
     const out: Thing[] = [];
