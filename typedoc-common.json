@@ -14,6 +14,8 @@
     "skipErrorChecking": true,
     "disableGit": true,
     "sourceLinkTemplate": "https://github.com/r47onfire/backolon/blob/main/{path}#L{line}",
+    "favicon": "./docs/images/icon.png",
+    "useTsLinkResolution": true,
     "preservedTypeAnnotationTags": [
         "@param",
         "@returns"
@@ -22,12 +24,11 @@
         "backolon"
     ],
     "intentionallyNotExported": [
+        "MapValues",
         "Hashed",
-        "NativeModule",
         "ChildrenType",
         "ValueType",
         "PatternProgram",
-        "CustomApplicator",
         "PatternType",
         "TOKENIZE_RULES",
         "OneTypeThing",

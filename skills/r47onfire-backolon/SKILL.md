@@ -10,13 +10,13 @@ license: GPL-3.0-only
 
 - Calling `fromJS()`, `toJS()`, `mapDeleteKeyCopying()`, `mapDeleteKeyMutating()`, `mapGetKey()`, and 27 more
 - Instantiating or extending `BackolonError`, `ErrorNote`, `LocationTrace`
-- Typing with `JSObjectRef`, `CheckedType`, `Token`, `StackEntry`
+- Typing with `JSObjectRef`, `CheckedType`, `Token`, `NativeFunctionDetails`, `ParamDescriptor`
 
 ## Quick Reference
 
 **32 functions** — `fromJS`, `toJS`, `mapDeleteKeyCopying`, `mapDeleteKeyMutating`, `mapGetKey`, `mapUpdateKeyCopying`, `mapUpdateKeyMutating`, `newEmptyMap`, `boxBlock`, `boxCurlyBlock`, `boxEnd`, `boxList`, `boxNameSymbol`, `boxNil`, `boxNumber`, `boxOperatorSymbol`, `boxRoundBlock`, `boxSpaceSymbol`, `boxSquareBlock`, `boxString`, `boxSymbol`, `boxToplevelBlock`, `typecheck`, `typeNameOf`, `parse`, `tokenize`, `compilePattern`, `matchPattern`, `parsePattern`, `pattern`, `newEnv`, `rewriteAsApply`
-**10 classes** — `BackolonError`, `ErrorNote`, `LocationTrace`, `ParseError`, `RuntimeError`, `Thing`, `Unparser`, `MatchResult`, `Scheduler`, `Task`
-**4 types** — `JSObjectRef`, `CheckedType`, `Token`, `StackEntry`
+**11 classes** — `BackolonError`, `ErrorNote`, `LocationTrace`, `ParseError`, `RuntimeError`, `Thing`, `Unparser`, `MatchResult`, `Scheduler`, `Task`, `NativeModule`
+**8 types** — `JSObjectRef`, `CheckedType`, `Token`, `NativeFunctionDetails`, `ParamDescriptor`, `StackEntry`, `OperatorOverload`, `CustomApplicator`
 **2 enums** — `ThingType`, `StackFlag`
 
 ## Links

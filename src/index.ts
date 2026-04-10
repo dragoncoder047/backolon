@@ -64,8 +64,12 @@ export {
     newEnv
 } from "./runtime/env";
 export {
-    Scheduler
+    Scheduler,
+    type NativeFunctionDetails,
 } from "./runtime/scheduler";
+export {
+    type ParamDescriptor
+} from "./runtime/functor";
 export {
     StackFlag, Task,
     type StackEntry
@@ -75,6 +79,9 @@ export {
     FFI_MODULE
 } from "./stdlib";
 export {
-    rewriteAsApply
+    rewriteAsApply,
+    NativeModule,
+    type OperatorOverload,
+    type CustomApplicator
 } from "./stdlib/module";
 

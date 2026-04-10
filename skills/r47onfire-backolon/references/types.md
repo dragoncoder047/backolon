@@ -15,8 +15,20 @@ T extends (thing: Thing<any>) => thing is Thing<infer U> ? U : never
 OneTypeThing<typeof TOKENIZE_RULES[number][1] | end>
 ```
 
+### `NativeFunctionDetails`
+Shape of native function metadata registered with the Backolon scheduler.
+
+### `ParamDescriptor`
+```ts
+Thing<paramdescriptor> | Thing<name>
+```
+
 ### `StackEntry`
 A single stack frame in the Backolon evaluator.
+
+### `OperatorOverload`
+
+### `CustomApplicator`
 
 ## Enums
 
@@ -52,4 +64,7 @@ A single stack frame in the Backolon evaluator.
 
 ### `StackFlag`
 Flags used to record internal task evaluation state.
-- `native_func_being_evaluated` = `1` — 
+- `native_func_being_evaluated` = `1` — Normally, a native function is treated as a value and returned; however,
+when one is called it needs to be the StackEntry#value|value of the
+StackEntry it's in so that its arguments can be processed. That stack has this
+flag set to mark that it's actually being called and not just returned.

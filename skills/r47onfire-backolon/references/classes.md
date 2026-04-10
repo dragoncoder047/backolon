@@ -161,7 +161,7 @@ The cookie is used to track internal evaluation state for constructs that call b
 so the Javascript implementation knows where it was and can resume evaluation from the correct point when the Backolon code returns.
 
 The exact meaning of the cookie value(s) depends on the construct being evaluated.
-- `updateFlags(toSet: number, toClear: number): StackEntry` — Updates the current stack entry with new flags, returning the new stack entry. toSet and toClear are bitmasks of StackFlag values to set and clear respectively.
+- `updateFlags(toSet: number, toClear: number): StackEntry` — Updates the current stack entry with new flags, returning the new stack entry.
 - `updateEnv(newEnv: Thing<env>): StackEntry` — Updates the current stack entry with a new environment, returning the new stack entry. This is used when entering a new scope (e.g. injecting context-sensitive information).
 - `enter(code: Thing, loc: LocationTrace, env: Thing<env> | Thing<nil>, args: readonly Thing<string | ThingType>[], name?: string | null): void` — Enters a new stack frame with the given code, location, environment, and arguments.
 - `out(result?: Thing<string | ThingType>): StackEntry` — Exit the current stack frame, optionally with a result to return to the caller.
@@ -170,3 +170,28 @@ The result will be passed back to whatever got us here (e.g. the parent stack fr
 This is used for things like variable declaration and assignment where we need to access the correct environment to put the variable in.
 
 If depth is greater than or equal to the current stack size, the callback will be called with the bottom of the stack (which is usually the global scope).
+
+## `NativeModule`
+Native module container for Backolon builtins, syntax, and operators.
+```ts
+constructor(name: string, loc: LocationTrace): NativeModule
+```
+**Properties:**
+- `env: Thing<env>` — 
+- `funcs: Record<string, NativeFunctionDetails>` — 
+- `ops: Record<string, Partial<Record<number, OperatorOverload[]>>>` — 
+- `applicators: Partial<Record<string, CustomApplicator>>` — 
+- `name: string` — 
+- `loc: LocationTrace` — 
+**Methods:**
+- `defvar(name: string, value: Thing): void` — Defines a variable in the module's environment.
+- `defun(name: string, signature: string, body: (task: Task, arg: StackEntry) => void, defvar: boolean): void` — Defines a native function in the module.
+
+If the function needs to call into Backolon code, it can do so by updating the current cookie on the task to remember where it is in execution and then calling `task.enter(code, loc, env)` with the appropriate code, location, and environment.
+
+The function should "return" its result by calling `task.out(result)`. If the Javascript function does not call `task.out()` and just returns, the scheduler will call the implementation again until it does, so it's important to call `task.out()` at some point to avoid infinite loops.
+- `defsyntax(pattern: string, precedence: number, right: boolean, when: ThingType[] | null, handler: string, handlerBody?: (task: Task, arg: StackEntry) => void): void` — Defines a new pattern syntax. The handler can be either a native function implementation, or a Backolon function defined in the same module (in either case
+the handler will be called with the pattern variables as a single map argument).
+- `defop(builtin: string, name: string): void` — Defines a new operator overload native function, mapping to the given operator name.
+- `defoverload<T>(name: string, types: T, cb: (opTrace: LocationTrace, argv: MapValues<T>) => Thing): void` — Defines a new operator overload for the given operator name and argument types. The handler will be called with the operator arguments as an array, and should return the result of the operator application.
+- `defcall(type: string, applicator: CustomApplicator): void` — Defines a custom applicator for a given type of functor. The applicator will be called with the functor, arguments, and callsite information whenever an apply form with a functor of the given type is evaluated in Backolon code.

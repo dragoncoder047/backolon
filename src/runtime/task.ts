@@ -17,6 +17,12 @@ import { type Scheduler } from "./scheduler";
  * Flags used to record internal task evaluation state.
  */
 export enum StackFlag {
+    /**
+     * Normally, a native function is treated as a value and returned; however,
+     * when one is called it needs to be the {@link StackEntry#value|value} of the
+     * {@link StackEntry} it's in so that its arguments can be processed. That stack has this
+     * flag set to mark that it's actually being called and not just returned.
+     */
     native_func_being_evaluated = 1,
 }
 
@@ -422,7 +428,7 @@ export class Task {
      *
      * The exact meaning of the cookie value(s) depends on the construct being evaluated.
      * 
-     * @param data An optional additional data to store in the stack entry, which won't be updated if not provided.
+     * @param data An optional additional data to store in the stack entry. If not provided, the data value from the current stack entry is used.
      */
     updateCookie(index: number, state: number, data?: any) {
         const top = this.stack.at(-1)!;
@@ -431,7 +437,10 @@ export class Task {
         return updated;
     }
     /**
-     * Updates the current stack entry with new flags, returning the new stack entry. toSet and toClear are bitmasks of StackFlag values to set and clear respectively.
+     * Updates the current stack entry with new flags, returning the new stack entry.
+     * @see {@link StackFlag}
+     * @param toClear Bitmask of flags to clear
+     * @param toSet Bitmask of flags to set (takes precedence over `toClear`)
      */
     updateFlags(toSet: number, toClear: number) {
         const top = this.stack.at(-1)!;

@@ -47,6 +47,7 @@ and the span.
 - `MatchResult`
 - `Scheduler`: Backolon task scheduler responsible for running code and native functions.
 - `Task`: Represents a running Backolon evaluation task.
+- `NativeModule`: Native module container for Backolon builtins, syntax, and operators.
 
 ## Optional
 
@@ -55,6 +56,10 @@ and the span.
 - `JSObjectRef`: Internal wrapper for native JavaScript objects stored in Backolon values.
 - `CheckedType`
 - `Token`
+- `NativeFunctionDetails`: Shape of native function metadata registered with the Backolon scheduler.
+- `ParamDescriptor`
 - `StackEntry`: A single stack frame in the Backolon evaluator.
+- `OperatorOverload`
+- `CustomApplicator`
 - `ThingType`
 - `StackFlag`: Flags used to record internal task evaluation state.

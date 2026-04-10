@@ -140,14 +140,23 @@ export function collections(mod: NativeModule) {
         return m2;
     });
     /**
-     * Access list indexes or map keys
+     * Access list indices
      * @backolon
      * @category Collections
-     * @syntax map -> any
      * @syntax list -> number
      * @example
      * ```backolon
      * [1, 2, 3]->1 # => 2
+     * ```
+     */
+    /**
+     * Access map keys
+     * @backolon
+     * @category Collections
+     * @syntax map -> any
+     * @example
+     * ```backolon
+     * ["a": 1, "b": 2]->"b" # => 2
      * ```
      */
     mod.defop("__getitem", "getitem");
@@ -170,7 +179,16 @@ export function collections(mod: NativeModule) {
         return value;
     });
     mod.defsyntax("x -> y", -1, false, null, "__rewrite_getitem", rewriteAsApply([symbol_x, symbol_y], "__getitem"));
-    // Syntax sugar: x.y expands to x->"y"
+    /**
+     * Dot-key shorthand for indexing with a name string.
+     * @backolon
+     * @category Collections
+     * @syntax map.name
+     * @example
+     * ```backolon
+     * ["a": 1, "b": 2].b # => 2
+     * ```
+     */
     mod.defsyntax("x . [y:name]", -1, false, null, "__rewrite_dot_getitem", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
         const x = mapGetKey(groups, symbol_x)!;
