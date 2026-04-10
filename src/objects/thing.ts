@@ -33,8 +33,6 @@ export enum ThingType {
     /** name, type, default; value=lazy */
     paramdescriptor,
     continuation,
-    /** children[0] is the bind target object (the "self" value), children[1] is the method */
-    boundmethod,
     /** pattern program in data, child nodes are just for reconstruction */
     pattern,
     list,
@@ -67,7 +65,6 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.implicitfunc]: [Thing<ThingType.env> | Thing<ThingType.nil>, readonly [Thing]],
     [ThingType.paramdescriptor]: [[isLazy: boolean, isSplat: boolean, mustUnpack: boolean], readonly [Thing<ThingType.name>] | readonly [Thing<ThingType.name>, Thing<ThingType.list>] | readonly [Thing<ThingType.name>, Thing<ThingType.list>, Thing]],
     [ThingType.continuation]: [readonly StackEntry[], []],
-    [ThingType.boundmethod]: [null, readonly [Thing, Thing<ThingType.func>]],
     [ThingType.pattern]: [Pattern, readonly Thing[]],
     [ThingType.list]: [null, Thing[]],
     [ThingType.map]: [null, Thing<ThingType.pair>[]],
@@ -155,9 +152,9 @@ export function typecheck<T extends (ThingType | string)>(...types: T[]) {
 
 export const isBlock = typecheck(ThingType.roundblock, ThingType.squareblock, ThingType.curlyblock, ThingType.stringblock, ThingType.topblock);
 export const isSymbol = typecheck(ThingType.name, ThingType.operator, ThingType.space);
-export const isCallable = typecheck(ThingType.func, ThingType.nativefunc, ThingType.implicitfunc, ThingType.continuation, ThingType.boundmethod);
+export const isCallable = typecheck(ThingType.func, ThingType.nativefunc, ThingType.implicitfunc, ThingType.continuation);
 export const isPattern = typecheck(ThingType.pattern);
-export const isAtom = typecheck(ThingType.nil, ThingType.end, ThingType.name, ThingType.operator, ThingType.number, ThingType.string, ThingType.func, ThingType.boundmethod, ThingType.implicitfunc, ThingType.nativefunc, ThingType.continuation, ThingType.list, ThingType.map, ThingType.splat, ThingType.macroized);
+export const isAtom = typecheck(ThingType.nil, ThingType.end, ThingType.name, ThingType.operator, ThingType.number, ThingType.string, ThingType.func, ThingType.implicitfunc, ThingType.nativefunc, ThingType.continuation, ThingType.list, ThingType.map, ThingType.splat, ThingType.macroized);
 
 export type CheckedType<T extends (thing: Thing<any>) => thing is Thing<any>> = T extends (thing: Thing<any>) => thing is Thing<infer U> ? U : never;
 

@@ -383,10 +383,6 @@ export class Task {
             this.enter(functor, callsite.loc, env, argv, significant ? functor.v : undefined);
             this.updateFlags(StackFlag.native_func_being_evaluated, 0);
         }
-        else if (typecheck(ThingType.boundmethod)(functor)) {
-            const realFunctor = functor.c[1];
-            this.a(callsite, realFunctor.c[1], [functor.c[0], ...argv], env, `<bound ${realFunctor.v}>`);
-        }
         else if (typecheck(ThingType.continuation)(functor)) {
             if (argv.length !== 1) throw new RuntimeError("expected an argument to continuation", callsite.loc);
             this.stack = functor.v;

@@ -19,9 +19,6 @@ export function getParamDescriptors(fn: Thing, scheduler: Scheduler, callsite: T
     else if (typecheck(ThingType.nativefunc)(fn)) {
         return scheduler.getParamDescriptors(fn.v);
     }
-    else if (typecheck(ThingType.boundmethod)(fn)) {
-        return getParamDescriptors(fn.c[1], scheduler, callsite);
-    }
     else if (typecheck(ThingType.implicitfunc)(fn)) {
         return IMPLICIT_SIGNATURE;
     }
