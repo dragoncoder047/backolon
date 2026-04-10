@@ -21,16 +21,22 @@ function renderExamples(examples: Example[]) {
     });
 }
 
-function renderNameThing<T extends keyof HTMLElementTagNameMap>(elType: T, name: string, type: string, lazy: boolean, description: string, colon: boolean) {
+function renderNameThing<T extends keyof HTMLElementTagNameMap>(elType: T, name: string, type: string, lazy: boolean, rest: boolean, description: string, colon: boolean) {
     const el = make(elType);
     el.append(name);
-    if (type || lazy) el.append(" (");
+    if (type || lazy || rest) el.append(" (");
     if (lazy) {
         el.append("lazy");
+        if (rest) el.append(",")
+        if (type || rest) el.append(" ");
+    }
+    if (rest) {
+        el.append("rest");
+        if (lazy) el.append(",");
         if (type) el.append(" ");
     }
     if (type) el.append(type);
-    if (type || lazy) el.append(")");
+    if (type || lazy || rest) el.append(")");
     if (description) {
         if (colon) el.append(": ");
         el.append(html(description));
@@ -44,10 +50,10 @@ function renderFunction(func: FunctionDoc) {
         make("div.api-info", {},
             make("div", {}, "Parameters:",
                 make("ul", {},
-                    ...func.params.map(({ name, type, lazy, description }) => renderNameThing("li", name, type, lazy, description, true))
+                    ...func.params.map(({ name, type, lazy, rest, description }) => renderNameThing("li", name, type, lazy, rest, description, true))
                 )
             ),
-            ...(func.returns || func.returnType ? [renderNameThing("span", "Returns: ", func.returnType, false, func.returns, false)] : []),
+            ...(func.returns || func.returnType ? [renderNameThing("span", "Returns: ", func.returnType, false, false, func.returns, false)] : []),
             make("p", {}, html(func.description))),
         ...renderExamples(func.examples)
     );

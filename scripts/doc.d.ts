@@ -27,6 +27,7 @@ interface ValueDoc extends Documented {
 interface ParamDoc extends Documented {
     type: string;
     lazy: boolean;
+    rest: boolean;
 }
 
 export type Documentation = Record<string, ModuleDoc>;

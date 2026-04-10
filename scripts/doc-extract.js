@@ -49,11 +49,13 @@ export function extractBackolonDocs(data) {
                         returnType: returnsTag?.type?.slice(1, -1), // Remove {...},
                         category,
                         params: params.map(tag => {
-                            const text = tag.name;
+                            var name = tag.name;
                             const description = parseMarkdown(tag.value);
                             const type = tag.type?.slice(1, -1); // Remove {...}
-                            const [name, lazy] = text.startsWith("@") ? [text.slice(1), true] : [text, false];
-                            return { name, type, description, lazy };
+                            var lazy, rest;
+                            [name, lazy] = name.startsWith("@") ? [name.slice(1), true] : [name, false];
+                            [name, rest] = name.endsWith("...") ? [name.slice(0, -3), true] : [name, false];
+                            return { name, type, description, lazy, rest };
                         }),
                     });
                 } else if (tags.has("@syntax")) {
