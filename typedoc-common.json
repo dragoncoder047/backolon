@@ -12,6 +12,8 @@
     "includeVersion": true,
     "disableSources": false,
     "skipErrorChecking": true,
+    "disableGit": true,
+    "sourceLinkTemplate": "https://github.com/r47onfire/backolon/blob/main/{path}#L{line}",
     "preservedTypeAnnotationTags": [
         "@param",
         "@returns"
