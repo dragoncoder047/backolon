@@ -35,6 +35,7 @@ and the span.
 - `parsePattern`: Convert a parsed Backolon pattern block into an internal pattern Thing.
 - `pattern`
 - `newEnv`: Create a new Backolon environment frame with variables and pattern definitions.
+- `makePrimitiveReference`: Return a reference, which can be used as a value like normal, but also assigned to to change its value.
 - `rewriteAsApply`: Helper to rewrite pattern handlers into apply forms for native builtins.
 - `BackolonError`: Base class for Backolon parse and runtime errors.
 - `ErrorNote`: A single note or stack frame attached to a Backolon error.

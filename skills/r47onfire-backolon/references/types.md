@@ -95,6 +95,8 @@ The children are a list of parent envs or nil if there's no parent,
 a map of the variables, and a list of pattern_entry.
 - `macroized` = `25` — Returned by a function to signal its result is a macro body, and should be evaluated again.
 - `splat` = `26` — Represents a function that should have its return value spliced into the callee's arguments list.
+- `reference` = `27` — Represents a "generalized lvalue" that can be assigned to. The children are 2 functions that can be
+called to get or set the value that this reference refers to.
 
 ### `PatternType`
 - `sequence` = `0` — Sequence of things in order `abcd`

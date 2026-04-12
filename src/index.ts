@@ -82,6 +82,8 @@ export {
     FFI_MODULE
 } from "./stdlib";
 export {
-    NativeModule, rewriteAsApply, type CustomApplicator, type OperatorOverload
+    makePrimitiveReference, NativeModule,
+    rewriteAsApply, type CustomApplicator,
+    type OperatorOverload
 } from "./stdlib/module";
 

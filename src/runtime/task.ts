@@ -3,6 +3,7 @@ import { forEach } from "lib0/object";
 import { BackolonError, LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
 import { boxApply, boxList, boxNameSymbol, boxNil, isAtom, isBlock, isSymbol, Thing, ThingType, typecheck, typeNameOf } from "../objects/thing";
+import { DEFAULT_UNPARSER } from "../parser/unparse";
 import { matchPattern } from "../patterns/match";
 import { flatToVarMap, newEnv, walkEnvTree } from "./env";
 import { getNthDescriptor, getParamDescriptors, isLazy, parametersToVars, wrapImplicitBlock } from "./functor";
@@ -292,6 +293,15 @@ export class Task {
                 */
                 if (typecheck(ThingType.nativefunc)(val) && (top.flags & StackFlag.native_func_being_evaluated)) {
                     this.scheduler.callFunction(this, val.v, top);
+                    return true;
+                }
+                /*
+                reference:
+                    call the getter function
+                */
+                if (typecheck(ThingType.reference)(val)) {
+                    this.out();
+                    this.enter(boxApply(val.c[0], [], loc), loc, top.env);
                     return true;
                 }
                 /*

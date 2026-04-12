@@ -1,10 +1,10 @@
 import { LocationTrace } from "../errors";
-import { newEmptyMap, mapUpdateKeyMutating, mapGetKey } from "../objects/map";
-import { boxNameSymbol, ThingType, Thing, boxList, boxNativeFunc, boxNumber, boxApply } from "../objects/thing";
+import { mapGetKey, mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
+import { boxApply, boxList, boxNameSymbol, boxNativeFunc, boxNumber, boxSquareBlock, Thing, ThingType } from "../objects/thing";
 import { parse } from "../parser/parse";
 import { parsePattern } from "../patterns/meta";
 import { newEnv } from "../runtime/env";
-import { ParamDescriptor, parseSignature } from "../runtime/functor";
+import { ParamDescriptor, parseSignature, wrapImplicitBlock } from "../runtime/functor";
 import { NativeFunctionDetails } from "../runtime/scheduler";
 
 
@@ -143,6 +143,25 @@ export function rewriteAsApply(symbols: Thing<ThingType.name>[], builtinName: st
         if (values.includes(undefined)) values = values.slice(0, values.indexOf(undefined));
         task.out(boxApply(boxNativeFunc(builtinName, state.value.loc), values as Thing[], state.value.loc, start, end));
     };
+}
+
+var gensym_i = 0;
+const gensym = (loc: LocationTrace) => boxNameSymbol(`$_${gensym_i++}`, loc);
+
+/**
+ * Return a reference, which can be used as a value like normal, but also assigned to to change its value.
+ *
+ * @param startArgs The unevaluated arguments to prepend to the calls to the getter and setter functions (usually item/key etc)
+ * @param getter The name of the native function implementing the get functionality (will be called with the `startArgs`)
+ * @param setter The name of the native function implementing the set functionality (will be called with the `startArgs` plus the value to set to)
+ * @param env The env that the `startArgs` should be evaluated in
+ */
+export function makePrimitiveReference(startArgs: Thing[], getter: string, setter: string, env: Thing<ThingType.nil> | Thing<ThingType.env>, loc: LocationTrace): Thing<ThingType.reference> {
+    const sym = gensym(loc);
+    return new Thing(ThingType.reference, [
+        wrapImplicitBlock(boxApply(boxNativeFunc(getter, loc), startArgs, loc), env),
+        new Thing(ThingType.func, [boxSquareBlock([sym], loc), wrapImplicitBlock(boxApply(boxNativeFunc(setter, loc), [...startArgs, sym], loc), env)], "__set", "", "", " => ", loc),
+    ], null, "", "", "", loc);
 }
 
 export function sortPatternsList(list: Thing<ThingType.pattern_entry>[]) {

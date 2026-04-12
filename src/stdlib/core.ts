@@ -14,6 +14,7 @@ import { math } from "./math";
 import { metaprogramming } from "./metaprogramming";
 import { misc } from "./misc";
 import { strings } from "./strings";
+import { DEFAULT_UNPARSER } from "../parser/unparse";
 
 /**
  * @file
@@ -101,11 +102,14 @@ export function initCoreSyntax(mod: NativeModule) {
      * ```
      */
     mod.defsyntax("x := y", VARIABLE_ASSIGNMENT_PRECEDENCE, false, null, "__rewrite_declaration", rewriteAsApply(xy, "__declare"));
-    const binding_helper = (dipAmount: number, cb: (state: StackEntry, name: Thing<ThingType.name>, initialValue: Thing, loc: LocationTrace) => void): ((task: Task, state: StackEntry) => void) => {
+    const binding_helper = (dipAmount: number, cb: (state: StackEntry, name: Thing<ThingType.name>, value: Thing, loc: LocationTrace) => void, refCb: (state: StackEntry, task: Task, ref: Thing<ThingType.reference>, value: Thing, loc: LocationTrace) => void): ((task: Task, state: StackEntry) => void) => {
         return (task, state) => {
             const name = state.argv[0]!;
             const value = state.argv[1]!;
             const loc = name.loc;
+            if (typecheck(ThingType.reference)(name)) {
+                return refCb(state, task, name, value, loc);
+            }
             if (!typecheck(ThingType.name)(name)) {
                 throw new RuntimeError(`cannot assign to ${typeNameOf(name.t)}`, loc);
             }
@@ -122,6 +126,8 @@ export function initCoreSyntax(mod: NativeModule) {
         if (typecheck(ThingType.func)(value)) {
             value.v ??= name.v;
         }
+    }, (_state, _task, _ref, _value, loc) => {
+        throw new RuntimeError("cannot declare this", loc);
     }));
     /**
      * Assign a new value to an existing variable
@@ -149,6 +155,9 @@ export function initCoreSyntax(mod: NativeModule) {
         })) {
             throw new RuntimeError(`undefined: ${stringify(name.v)}`, loc, [new ErrorNote(`note: change the "=" to ":=" to declare ${stringify(name.v)} to be in this scope`, loc)]);
         };
+    }, (state, task, ref, value, loc) => {
+        task.out();
+        task.enter(boxApply(ref.c[1], [value], loc), loc, state.env);
     }));
     // MARK: lambdas
     /**
@@ -182,7 +191,7 @@ export function initCoreSyntax(mod: NativeModule) {
     mod.defun("__build_lambda", "@params! @body", (task, state) => {
         const params = state.argv[0]!;
         if (!typecheck(ThingType.squareblock)(params)) throw new RuntimeError(`wrong object type for lambda signature`, params.loc);
-        const signature = boxSquareBlock(parseSignature(params.c), params.loc);
+        const signature = boxSquareBlock(parseSignature(params.c), params.loc, " ");
         const body = state.argv[1]!;
         task.out(new Thing(ThingType.func, [signature, body], null, "", "", " => ", params.loc));
     });

@@ -188,7 +188,7 @@ describe("operators", () => {
             t: ThingType.string,
             v: "hello, world!",
         });
-        expectEvalError("'hello' + 1", "No overload exists for operator \"add\" with arguments types \"string\", \"number\"");
+        expectEvalError("'hello' + 1", "No overload exists for operator \"add\" with argument types \"string\", \"number\"");
         expectEvalError("8**88**88", /out of memory|size exceeded/i);
     });
     test("sub", () => {
@@ -295,7 +295,7 @@ describe("collections", () => {
                 }
             ]
         });
-        expectEvalError("[1, 2, 3: 4]", "No overload exists for operator \"add\" with arguments types \"list\", \"map\"");
+        expectEvalError("[1, 2, 3: 4]", "No overload exists for operator \"add\" with argument types \"list\", \"map\"");
     });
     test("indexing lists", () => {
         expectEval("[1, 2, 3]->2", {

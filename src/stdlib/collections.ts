@@ -1,13 +1,13 @@
 import { stringify } from "lib0/json";
-import { NativeModule, rewriteAsApply, symbol_x, symbol_y, symbol_z } from "./module";
 import { RuntimeError } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
 import { boxApply, boxList, boxNativeFunc, boxNumber, boxOperatorSymbol, boxRoundBlock, boxSquareBlock, boxString, Thing, ThingType } from "../objects/thing";
+import { DEFAULT_UNPARSER } from "../parser/unparse";
 import { matchPattern } from "../patterns/match";
 import { p } from "../patterns/meta";
 import { BUILTINS_LOC } from "./locations";
 import { BUILTIN_QUOTE } from "./metaprogramming";
-import { DEFAULT_UNPARSER } from "../parser/unparse";
+import { makePrimitiveReference, NativeModule, rewriteAsApply, symbol_x, symbol_y } from "./module";
 
 /**
  * @file
@@ -17,6 +17,8 @@ import { DEFAULT_UNPARSER } from "../parser/unparse";
 const BUILTIN_LIST = boxNativeFunc("__list", BUILTINS_LOC);
 const BUILTIN_DICT = boxNativeFunc("__dict", BUILTINS_LOC);
 const IMPLICIT_KEY = boxNativeFunc("__implicit_key", BUILTINS_LOC);
+const BUILTIN_GETITEM = boxNativeFunc("__getitem", BUILTINS_LOC);
+const BUILTIN_SETITEM = boxNativeFunc("__setitem", BUILTINS_LOC);
 export function collections(mod: NativeModule) {
     /**
      * List literal
@@ -146,7 +148,9 @@ export function collections(mod: NativeModule) {
      * @syntax list -> number
      * @example
      * ```backolon
-     * [1, 2, 3]->1 # => 2
+     * x := [1, 2, 3]
+     * x->1 # => 2
+     * x->0 = 3 # now x == [3, 2, 3]
      * ```
      */
     /**
@@ -156,7 +160,9 @@ export function collections(mod: NativeModule) {
      * @syntax map -> any
      * @example
      * ```backolon
-     * ["a": 1, "b": 2]->"b" # => 2
+     * y := ["a": 1, "b": 2]
+     * y->"b" # => 2
+     * y->"c" = 3 # now y == ["a": 1, "b": 2, "c": 3]
      * ```
      */
     mod.defop("__getitem", "getitem");
@@ -178,7 +184,13 @@ export function collections(mod: NativeModule) {
         }
         return value;
     });
-    mod.defsyntax("x -> y", -1, false, null, "__rewrite_getitem", rewriteAsApply([symbol_x, symbol_y], "__getitem"));
+    mod.defsyntax("x -> y", -1, false, null, "__rewrite_getitem", (task, state) => {
+        const groups: Thing<ThingType.map> = state.argv[0]! as any;
+        const x = mapGetKey(groups, symbol_x)!;
+        const y = mapGetKey(groups, symbol_y)!;
+        const loc = state.value.loc;
+        task.out(makePrimitiveReference([x, y], "__getitem", "__setitem", state.env, loc));
+    });
     /**
      * Dot-key shorthand for indexing with a name string.
      * @backolon
@@ -217,8 +229,6 @@ export function collections(mod: NativeModule) {
         mapUpdateKeyMutating(map, key, value, loc);
         return value;
     });
-    // TODO: this breaks for w->x=y->z it parses as (w->x=y)->z
-    mod.defsyntax("x -> y = z", -2, true, null, "__rewrite_setitem", rewriteAsApply([symbol_x, symbol_y, symbol_z], "__setitem"));
     /**
      * Length of string, list, or map
      * @backolon

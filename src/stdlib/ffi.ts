@@ -1,8 +1,8 @@
 import { stringify } from "lib0/json";
-import { NativeModule } from "./module";
 import { RuntimeError } from "../errors";
 import { fromJS, JSObjectType, toJS } from "../objects/js_interop";
 import { boxNameSymbol, Thing, ThingType, typecheck, typeNameOf } from "../objects/thing";
+import { NativeModule } from "./module";
 
 /**
  * @file
@@ -103,7 +103,7 @@ export function initFFI(mod: NativeModule) {
     });
 
     // Register applicator for calling js_object as a function
-    const JSFunc_params = [new Thing(ThingType.paramdescriptor, [boxNameSymbol("arguments")], [false, true, false], "", "", "", mod.loc)];  
+    const JSFunc_params = [new Thing(ThingType.paramdescriptor, [boxNameSymbol("arguments")], [false, true, false], "", "", "", mod.loc)];
     mod.defcall(JSObjectType, {
         params: () => JSFunc_params,
         call(task, functor, argv, callsite) {

@@ -86,7 +86,7 @@ newEmptyMap(srcLocation: LocationTrace): Thing<map>
 
 ## `boxBlock`
 ```ts
-boxBlock<T>(children: T extends ThingType ? ChildrenType<T> : Thing<string | ThingType>[], kind: T, trace: LocationTrace, start: string, end: string): Thing<T>
+boxBlock<T>(children: T extends ThingType ? ChildrenType<T> : Thing<string | ThingType>[], kind: T, trace: LocationTrace, start: string, end: string, join: string): Thing<T>
 ```
 **Parameters:**
 - `children: T extends ThingType ? ChildrenType<T> : Thing<string | ThingType>[]` — 
@@ -94,6 +94,7 @@ boxBlock<T>(children: T extends ThingType ? ChildrenType<T> : Thing<string | Thi
 - `trace: LocationTrace` — default: `UNKNOWN_LOCATION` — 
 - `start: string` — 
 - `end: string` — 
+- `join: string` — default: `""` — 
 **Returns:** `Thing<T>`
 
 ## `boxCurlyBlock`
@@ -182,11 +183,12 @@ boxSpaceSymbol(value: string, trace: LocationTrace): Thing<space>
 
 ## `boxSquareBlock`
 ```ts
-boxSquareBlock(children: readonly Thing<string | ThingType>[], trace: LocationTrace): Thing<squareblock>
+boxSquareBlock(children: readonly Thing<string | ThingType>[], trace: LocationTrace, join: string): Thing<squareblock>
 ```
 **Parameters:**
 - `children: readonly Thing<string | ThingType>[]` — 
 - `trace: LocationTrace` — default: `UNKNOWN_LOCATION` — 
+- `join: string` — default: `""` — 
 **Returns:** `Thing<squareblock>`
 
 ## `boxString`
@@ -328,6 +330,19 @@ newEnv(newVars: Thing<map>, newPatterns: Thing<list>, callsite: LocationTrace, p
 - `callsite: LocationTrace` — 
 - `parents: Thing<nil | env>[]` — default: `...` — 
 **Returns:** `Thing<env>`
+
+## `makePrimitiveReference`
+Return a reference, which can be used as a value like normal, but also assigned to to change its value.
+```ts
+makePrimitiveReference(startArgs: Thing<string | ThingType>[], getter: string, setter: string, env: Thing<env> | Thing<nil>, loc: LocationTrace): Thing<reference>
+```
+**Parameters:**
+- `startArgs: Thing<string | ThingType>[]` — The unevaluated arguments to prepend to the calls to the getter and setter functions (usually item/key etc)
+- `getter: string` — The name of the native function implementing the get functionality (will be called with the `startArgs`)
+- `setter: string` — The name of the native function implementing the set functionality (will be called with the `startArgs` plus the value to set to)
+- `env: Thing<env> | Thing<nil>` — The env that the `startArgs` should be evaluated in
+- `loc: LocationTrace` — 
+**Returns:** `Thing<reference>`
 
 ## `rewriteAsApply`
 Helper to rewrite pattern handlers into apply forms for native builtins.

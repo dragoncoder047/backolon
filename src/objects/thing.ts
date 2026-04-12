@@ -135,6 +135,11 @@ export enum ThingType {
      * Represents a function that should have its return value spliced into the callee's arguments list.
      */
     splat,
+    /**
+     * Represents a "generalized lvalue" that can be assigned to. The children are 2 functions that can be
+     * called to get or set the value that this reference refers to.
+     */
+    reference,
 }
 
 type ThingInternalTypes<T extends ThingType> = {
@@ -152,10 +157,10 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.topblock]: [null, readonly Thing[]],
     [ThingType.stringblock]: [null, readonly Thing<ThingType.string | ThingType.roundblock>[]],
     [ThingType.apply]: [significant: boolean, readonly Thing[]],
-    [ThingType.func]: [name: string | null, readonly [Thing<ThingType.squareblock>, Thing]],
+    [ThingType.func]: [name: string | null, readonly [signature: Thing<ThingType.squareblock>, body: Thing]],
     [ThingType.nativefunc]: [string, []],
-    [ThingType.implicitfunc]: [Thing<ThingType.env> | Thing<ThingType.nil>, readonly [Thing]],
-    [ThingType.paramdescriptor]: [[isLazy: boolean, isSplat: boolean, mustUnpack: boolean], readonly [Thing<ThingType.name>] | readonly [Thing<ThingType.name>, Thing<ThingType.list>] | readonly [Thing<ThingType.name>, Thing<ThingType.list>, Thing]],
+    [ThingType.implicitfunc]: [Thing<ThingType.env> | Thing<ThingType.nil>, readonly [body: Thing]],
+    [ThingType.paramdescriptor]: [[isLazy: boolean, isSplat: boolean, mustUnpack: boolean], readonly [name: Thing<ThingType.name>] | readonly [name: Thing<ThingType.name>, types: Thing<ThingType.list>] | readonly [name: Thing<ThingType.name>, types: Thing<ThingType.list>, defaultValue: Thing]],
     [ThingType.continuation]: [readonly StackEntry[], []],
     [ThingType.pattern]: [Pattern, readonly Thing[]],
     [ThingType.list]: [null, Thing[]],
@@ -165,6 +170,7 @@ type ThingInternalTypes<T extends ThingType> = {
     [ThingType.env]: [null, readonly [parents: Thing<ThingType.list>, vars: Thing<ThingType.map>, patterns: Thing<ThingType.list>]]
     [ThingType.macroized]: [null, readonly [Thing]],
     [ThingType.splat]: [null, readonly Thing[]],
+    [ThingType.reference]: [null, readonly [get: Thing, set: Thing]]
 }[T];
 
 const unhashable = [ThingType.list, ThingType.map, ThingType.env];
@@ -214,9 +220,9 @@ export function boxOperatorSymbol(value: string, trace = UNKNOWN_LOCATION) { ret
 export function boxSpaceSymbol(value: string, trace = UNKNOWN_LOCATION) { return boxSymbol(value, ThingType.space, trace); }
 export function boxNumber(value: number | bigint, trace = UNKNOWN_LOCATION, repr = value.toString().replace("n", "")) { return new Thing(ThingType.number, [], value, repr, "", "", trace); }
 export function boxString(value: string, trace = UNKNOWN_LOCATION, raw: string, quote: string) { return new Thing(ThingType.string, [], value, quote + raw, quote, "", trace); }
-export function boxBlock<T extends ThingType.roundblock | ThingType.squareblock | ThingType.curlyblock | ThingType.stringblock | ThingType.topblock>(children: Thing<T>["c"], kind: T, trace = UNKNOWN_LOCATION, start: string, end: string): Thing<T> { return new Thing(kind, children, null as any, start, end, "", trace); }
+export function boxBlock<T extends ThingType.roundblock | ThingType.squareblock | ThingType.curlyblock | ThingType.stringblock | ThingType.topblock>(children: Thing<T>["c"], kind: T, trace = UNKNOWN_LOCATION, start: string, end: string, join = ""): Thing<T> { return new Thing(kind, children, null as any, start, end, join, trace); }
 export function boxRoundBlock(children: readonly Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.roundblock, trace, "(", ")"); }
-export function boxSquareBlock(children: readonly Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.squareblock, trace, "[", "]"); }
+export function boxSquareBlock(children: readonly Thing[], trace = UNKNOWN_LOCATION, join = "") { return boxBlock(children, ThingType.squareblock, trace, "[", "]", join); }
 export function boxCurlyBlock(children: readonly Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.curlyblock, trace, "{", "}"); }
 export function boxToplevelBlock(children: readonly Thing[], trace = UNKNOWN_LOCATION) { return boxBlock(children, ThingType.topblock, trace, "", ""); }
 export function boxStringBlock(children: Thing<ThingType.string | ThingType.roundblock>[], trace = UNKNOWN_LOCATION, quote: string) { return boxBlock(children, ThingType.stringblock, trace, quote, quote); }

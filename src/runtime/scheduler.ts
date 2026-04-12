@@ -138,7 +138,7 @@ export class Scheduler {
                 }
             }
         }
-        throw new RuntimeError(`No overload exists for operator ${stringify(name)} with arguments types ${argv.map(t => stringify(typeNameOf(t.t))).join(", ")}`, loc);
+        throw new RuntimeError(`No overload exists for operator ${stringify(name)} with argument types ${argv.map(t => stringify(typeNameOf(t.t))).join(", ")}`, loc);
     }
     getApply(functorType: ThingType | string) {
         for (var module of this.builtins) {
