@@ -4,6 +4,7 @@ import * as Backolon from "../src/index";
 
 init(window, $);
 
+// TODO: generate this programmatically
 const HELP_TEXT = `
 Syntax Help:
   Control:          if <condition> <true_val> <false_val>

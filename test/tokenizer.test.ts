@@ -1,6 +1,6 @@
+(globalThis as any).TEST = true;
+import { LocationTrace, Thing, ThingType, tokenize } from "@r47onfire/backolon";
 import { expect, test } from "bun:test";
-import { LocationTrace, Thing, ThingType } from "../src";
-import { tokenize } from "../src/parser/tokenizer";
 import { F } from "./astCheck";
 
 const getTokenContents = (a: Thing[]) => a.map(t => t.v);

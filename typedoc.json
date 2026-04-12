@@ -18,9 +18,9 @@
     "llmsTxt": true,
     "llmsTxtOutDir": "docs",
     "navigationLinks": {
-        "Home": "../../",
-        "REPL": "../../repl",
-        "Language Docs": "../../docs",
+        "Home": "/",
+        "REPL": "/repl",
+        "Language Docs": "/docs",
         "Github": "https://github.com/r47onfire/backolon"
     }
 }

@@ -1,15 +1,20 @@
 import {
+    Application,
+    Context,
     Converter,
+    Comment,
     DeclarationReflection,
-    LogLevel,
+    Logger,
     MinimalSourceFile,
-    ReflectionKind
+    NormalizedPath,
+    ReflectionKind,
+    CommentDisplayPart
 } from "typedoc";
 import ts from "typescript";
+import { DOC_TAG, FILE_DEFAULTS_TAG, Tags } from "./comment-utils.js";
 // THIS IS A HACK AAAAAA
 import { lexBlockComment } from "../node_modules/typedoc/dist/lib/converter/comments/blockLexer.js";
 import { parseComment } from "../node_modules/typedoc/dist/lib/converter/comments/parser.js";
-import { DOC_TAG, FILE_DEFAULTS_TAG, Tags } from "./comment-utils.js";
 
 
 var gensymCounter = 0;
@@ -18,12 +23,12 @@ function gensym() {
 }
 
 /** main entry point for plugin */
-export function load(app) {
+export function load(app: Application) {
     var done = false;
     app.converter.on(Converter.EVENT_CREATE_DECLARATION, context => {
         if (done) return;
         const detachedComments = collectDetachedComments(app, context);
-        for (var comment of detachedComments) {
+        for (const comment of detachedComments) {
             const dummy = new DeclarationReflection(gensym(), ReflectionKind.Interface, context.project);
             dummy.comment = comment;
             context.project.addChild(dummy);
@@ -32,35 +37,35 @@ export function load(app) {
     });
 }
 
-function hacky_parse(file, range, app, logger) {
-    const context = {
+function hacky_parse(file: MinimalSourceFile, range: ts.CommentRange, app: Application, logger: Logger): Comment {
+    return parseComment(lexBlockComment(file.text, range.pos, range.end), file, {
         logger,
         config: app.converter.config,
         files: app.files,
-    };
-    return parseComment(lexBlockComment(file.text, range.pos, range.end), file, context);
+        createSymbolId: null as any
+    }) as unknown as Comment;
 }
 
-function collectDetachedComments(app, context) {
+function collectDetachedComments(app: Application, context: Context) {
     const comments = [];
     for (var sf of context.program.getSourceFiles()) {
         if (sf.isDeclarationFile || /node_modules/.test(sf.fileName)) continue;
         const text = sf.getFullText();
-        const file = new MinimalSourceFile(text, sf.fileName);
+        const file = new MinimalSourceFile(text, sf.fileName as NormalizedPath);
         const seenRanges = new Set();
-        let defaultComments = undefined;
-        const fileComments = [];
-        function visit(node) {
+        let defaultComments: Comment;
+        const fileComments: Comment[] = [];
+        function visit(node: ts.Node) {
             // TODO: detect if node is on a documented symbol or not and skip if true
             const commentRanges = ts.getLeadingCommentRanges(text, node.getFullStart());
             if (commentRanges?.length) {
                 for (var r of commentRanges) {
                     // Dedupe comments by position, since inline stuff can be on top of multiple AST nodes
                     // effectively and be gotten multiple times.
+                    if (r.kind !== ts.SyntaxKind.MultiLineCommentTrivia) continue;
                     const key = "" + [r.pos, r.end];
                     if (seenRanges.has(key)) continue;
                     seenRanges.add(key);
-                    if (r.kind !== ts.SyntaxKind.MultiLineCommentTrivia) continue;
                     const comment = hacky_parse(file, r, app, context.logger);
                     const tags = Tags.fromComment(comment);
 
@@ -75,10 +80,10 @@ function collectDetachedComments(app, context) {
                     }
                     else if (tags.has(DOC_TAG)) {
                         fileComments.push(comment);
-                        const checkContent = content => {
+                        const checkContent = (content: CommentDisplayPart[]) => {
                             for (var chunk of content) {
                                 if (chunk.kind === "inline-tag") {
-                                    const pos = r.pos + new RegExp(RegExp.escape("{" + chunk.tag) + "\\s+" + RegExp.escape(chunk.text)).exec(text.slice(r.pos, r.end)).index;
+                                    const pos = r.pos + new RegExp(RegExp.escape("{" + chunk.tag) + "\\s+" + RegExp.escape(chunk.text)).exec(text.slice(r.pos, r.end))!.index;
                                     app.logger.warn(`ignoring inline tag ${chunk.tag} in comment text`, pos, file);
                                 }
                             }
@@ -93,7 +98,7 @@ function collectDetachedComments(app, context) {
             ts.forEachChild(node, visit);
         }
         visit(sf);
-        if (defaultComments) {
+        if (defaultComments!) {
             for (var comment of fileComments) {
                 comment.blockTags.push(...defaultComments.blockTags);
                 defaultComments.modifierTags.forEach(t => comment.modifierTags.add(t));

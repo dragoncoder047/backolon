@@ -6,13 +6,15 @@ export const ROOT = join(import.meta.dir, "..");
 export const WEBSITE_DIR = join(ROOT, "website");
 export const DOCS_DIR = join(ROOT, "docs");
 
-export async function build(options) {
+export async function build(options: esbuild.BuildOptions) {
     await esbuild.build({
         bundle: true,
         sourcemap: true,
         platform: "browser",
         target: "esnext",
         format: "esm",
+        charset: "utf8",
+        define: { TEST: "false" },
         ...options,
     });
 }

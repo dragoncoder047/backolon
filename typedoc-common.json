@@ -31,5 +31,10 @@
         "ValueType",
         "TOKENIZE_RULES",
         "OneTypeThing",
-    ]
+    ],
+    "externalSymbolLinkMappings": {
+        "esbuild": {
+            "Plugin": "https://esbuild.github.io/plugins/"
+        }
+    }
 }

@@ -1,26 +1,21 @@
-import { Tags, contentToText } from "./comment-utils.js";
+import { Reflection } from "typedoc";
+import { Tags, contentToText } from "./comment-utils";
+import type { Documentation } from "./doc";
 
-function parseMarkdown(string) {
+function parseMarkdown(string: string) {
     return string;
 }
 
-function parseExample(string) {
-    const match = /(```|~~~)(.+?)\n([\s\S]+)\1/.exec(string);
-    return { code: match[3], lang: match[2] };
+function parseExample(string: string) {
+    const match = /(```|~~~)(.+?)\n([\s\S]+)\1/.exec(string)!;
+    return { code: match[3]!, lang: match[2]! };
 }
 
-/**
- * @typedef {import("./doc").Documentation} Documentation
- */
+export function extractBackolonDocs(data: Reflection) {
 
-export function extractBackolonDocs(data) {
+    const docs: Documentation = {};
 
-    /**
-     * @type {Documentation}
-     */
-    const docs = {};
-
-    function recur(reflection) {
+    function recur(reflection: Reflection) {
         var comment = reflection.comment;
         if (comment) {
             const tags = Tags.fromComment(comment);
@@ -49,7 +44,7 @@ export function extractBackolonDocs(data) {
                         returnType: returnsTag?.type,
                         category,
                         params: params.map(tag => {
-                            var name = tag.name;
+                            var name = tag.name!;
                             const description = parseMarkdown(tag.value);
                             const type = tag.type;
                             var lazy, rest;
@@ -80,15 +75,14 @@ export function extractBackolonDocs(data) {
                 }
             }
         }
-
-        if (reflection.children) {
-            reflection.children.forEach(recur);
+        if ((reflection as any).children) {
+            (reflection as any).children.forEach(recur);
         }
-        if (reflection.signatures) {
-            reflection.signatures.forEach(recur);
+        if ((reflection as any).signatures) {
+            (reflection as any).signatures.forEach(recur);
         }
     }
 
-    recur(data);
+    recur(data as any);
     return docs;
 }

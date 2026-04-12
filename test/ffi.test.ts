@@ -1,6 +1,6 @@
+(globalThis as any).TEST = true;
+import { JSObjectType, ThingType } from "@r47onfire/backolon";
 import { test } from "bun:test";
-import { ThingType } from "../src";
-import { JSObjectType } from "../src/objects/js_interop";
 import { expectEval } from "./astCheck";
 
 test("FFI basic functionality", () => {

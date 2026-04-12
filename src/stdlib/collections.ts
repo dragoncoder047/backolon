@@ -17,8 +17,6 @@ import { makePrimitiveReference, NativeModule, rewriteAsApply, symbol_x, symbol_
 const BUILTIN_LIST = boxNativeFunc("__list", BUILTINS_LOC);
 const BUILTIN_DICT = boxNativeFunc("__dict", BUILTINS_LOC);
 const IMPLICIT_KEY = boxNativeFunc("__implicit_key", BUILTINS_LOC);
-const BUILTIN_GETITEM = boxNativeFunc("__getitem", BUILTINS_LOC);
-const BUILTIN_SETITEM = boxNativeFunc("__setitem", BUILTINS_LOC);
 export function collections(mod: NativeModule) {
     /**
      * List literal

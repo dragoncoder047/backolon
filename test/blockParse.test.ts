@@ -1,5 +1,6 @@
+(globalThis as any).TEST = true;
+import { DEFAULT_UNPARSER, parse, ThingType } from "@r47onfire/backolon";
 import { describe, expect, test } from "bun:test";
-import { parse, ThingType, DEFAULT_UNPARSER } from "../src";
 import { expectParse, expectParseError, makespec } from "./astCheck";
 
 test("top-level block", () => {

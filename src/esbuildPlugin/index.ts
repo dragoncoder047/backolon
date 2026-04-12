@@ -1,5 +1,6 @@
 import type { Plugin } from "esbuild";
 import { stringify } from "lib0/json";
+import { compress } from "lz-string";
 import { readFileSync } from "node:fs";
 import { relative } from "node:path";
 import { NamespaceResolver, Resurrect } from "resurrect-esm";
@@ -40,16 +41,20 @@ function convertAST(file: string) {
     }).stringify(parsed);
     return {
         javascript: `import { Resurrect, NamespaceResolver } from "resurrect-esm";
+import { decompress } from "lz-string";
 import { Thing, LocationTrace } from "@r47onfire/backolon";
 
-export const ast = new Resurrect({
+export const ast = /* @__PURE__ */ new Resurrect({
     cleanup: true,
     resolver: new NamespaceResolver({
         Thing,
         LocationTrace,
     }),
-}).resurrect(${stringify(stringified)});
-export const source = \`${text.replaceAll("`", "\\`")}\`;
+}).resurrect(decompress(${stringify(compress(stringified))}));
+/*
+${text.replaceAll("*/", "*)")}
+*/
+export const source = /* @__PURE__ */ decompress(${stringify(compress(text))});
 export default ast;
 `,
     }

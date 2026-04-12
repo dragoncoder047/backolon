@@ -1,5 +1,6 @@
+(globalThis as any).TEST = true;
+import { BUILTINS_MODULE, Scheduler, ThingType } from "@r47onfire/backolon";
 import { describe, expect, test } from "bun:test";
-import { BUILTINS_MODULE, Scheduler, ThingType } from "../src";
 import { expectEval, expectEvalError, F } from "./astCheck";
 
 test("empty result", () => {

@@ -1,3 +1,6 @@
+import { Thing } from "../objects/thing";
+import { parse } from "../parser/parse";
+import { Scheduler } from "../runtime/scheduler";
 import { initCoreSyntax } from "./core";
 import { initFFI } from "./ffi";
 import { BUILTINS_LOC, FFI_LOC } from "./locations";
@@ -23,3 +26,21 @@ export const BUILTINS_MODULE = createBuiltins();
  * JavaScript foreign-function interface module.
  */
 export const FFI_MODULE = createFFIModule();
+
+// @ts-expect-error
+import ast from "./core.bk";
+
+var CORE = ast;
+
+declare global { const TEST: boolean }
+if (typeof TEST === "undefined" ? !(ast instanceof Thing) : TEST) {
+    // we're in a test
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const core = fs.readFileSync(path.join(import.meta.dir, "./core.bk"), "utf8");
+    CORE = parse(core, new URL("file://builtins/core.bk"));
+}
+
+const scheduler = new Scheduler([BUILTINS_MODULE]);
+scheduler.startTaskRaw(0, CORE, BUILTINS_MODULE.env);
+scheduler.stepUntilSuspended();

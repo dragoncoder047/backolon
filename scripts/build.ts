@@ -1,4 +1,5 @@
-import { build } from "./build-common.js";
+import plugin from "../src/esbuildPlugin";
+import { build } from "./build-common";
 
 await build({
     splitting: true,
@@ -9,5 +10,6 @@ await build({
     },
     minify: process.argv.includes('--minify'),
     external: ["node:fs", "node:path"],
+    plugins: [plugin]
 });
 console.log("Build OK");

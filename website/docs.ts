@@ -21,7 +21,7 @@ function renderExamples(examples: Example[]) {
     });
 }
 
-function renderNameThing<T extends keyof HTMLElementTagNameMap>(elType: T, name: string, type: string, lazy: boolean, rest: boolean, description: string, colon: boolean) {
+function renderNameThing<T extends keyof HTMLElementTagNameMap>(elType: T, name: string, type: string | undefined, lazy: boolean, rest: boolean, description: string | undefined, colon: boolean) {
     const el = make(elType);
     el.append(name);
     if (type || lazy || rest) el.append(" (");

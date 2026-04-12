@@ -1,5 +1,7 @@
 # @r47onfire/backolon
 
+> homoiconic scripting language
+
 ## index
 
 ### fromJS
@@ -627,6 +629,7 @@ if null or omitted, the environments of all builtin modules will be used.
 
 The new Task will have its top-level block in a *new* environment that has the provided envs
 as parents, so changes to the top-level block's environment won't affect the provided envs or other tasks that share those envs.
+- `startTaskRaw(priority: number, code: Thing, env: Thing<env> | Thing<nil>): Task` — 
 - `serializeTasks(): string` — Dumps the state of all tasks into a string, which can later be loaded with `loadFromSerialized` to restore the tasks and their states.
 - `loadFromSerialized(str: string): void` — Deserializes a string produced by `serializeTasks` and adds the resulting tasks to the scheduler.
 Note that the deserialized tasks will share the same Scheduler instance (this) as each other and any tasks that were already in the scheduler,

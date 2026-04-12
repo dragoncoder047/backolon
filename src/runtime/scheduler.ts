@@ -7,6 +7,7 @@ import { parse } from "../parser/parse";
 import { NativeModule } from "../stdlib/module";
 import { newEnv } from "./env";
 import { StackEntry, Task } from "./task";
+import { compress, decompress } from "lz-string";
 
 /**
  * Shape of native function metadata registered with the Backolon scheduler.
@@ -75,7 +76,10 @@ export class Scheduler {
     startTask(priority: number, code: string | Thing, envs?: (Thing<ThingType.env> | Thing<ThingType.nil>)[] | null, filename?: URL): Task {
         if (typeof code === "string") code = parse(code, filename);
         const loc = code.loc;
-        const task = new Task(priority, this, code, newEnv(newEmptyMap(loc), boxList([], loc), loc, envs || this.builtins.map(mod => mod.env)));
+        return this.startTaskRaw(priority, code, newEnv(newEmptyMap(loc), boxList([], loc), loc, envs || this.builtins.map(mod => mod.env)));
+    }
+    startTaskRaw(priority: number, code: Thing, env: Thing<ThingType.env> | Thing<ThingType.nil>): Task {
+        const task = new Task(priority, this, code, env);
         this.tasks.push(task);
         this.t();
         return task;
@@ -87,7 +91,7 @@ export class Scheduler {
      * Dumps the state of all tasks into a string, which can later be loaded with `loadFromSerialized` to restore the tasks and their states.
      */
     serializeTasks(): string {
-        return this.s.stringify(this.tasks, (k, v) => k === "scheduler" && (v === this) ? undefined : v);
+        return compress(this.s.stringify(this.tasks, (k, v) => k === "scheduler" && (v === this) ? undefined : v));
     }
     /**
      * Deserializes a string produced by `serializeTasks` and adds the resulting tasks to the scheduler.
@@ -95,7 +99,7 @@ export class Scheduler {
      * but will not share any state with tasks that were already in the scheduler before (e.g. they won't share environments or variables).
      */
     loadFromSerialized(str: string): void {
-        this.tasks.push(...this.s.resurrect(str).map((t: Task) => (t.scheduler = this, t)));
+        this.tasks.push(...this.s.resurrect(decompress(str)).map((t: Task) => (t.scheduler = this, t)));
     }
     /**
      * Run tasks until all tasks are suspended or complete or the optional maxSteps limit is reached (-1 or undefined means no limit).

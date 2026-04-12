@@ -9,6 +9,6 @@
     "out": "/dev/null",
     "json": "dist/typedoc_output.json",
     "plugin": [
-        "./scripts/backolon-comments.js"
+        "./scripts/backolon-comments"
     ]
 }

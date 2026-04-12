@@ -1,6 +1,7 @@
+(globalThis as any).TEST = true;
+import { BackolonError, BUILTINS_MODULE, ErrorNote, FFI_MODULE, LocationTrace, parse, Scheduler, ThingType } from "@r47onfire/backolon";
 import { expect } from "bun:test";
 import { keys } from "lib0/object";
-import { BackolonError, BUILTINS_MODULE, ErrorNote, FFI_MODULE, LocationTrace, parse, Scheduler, ThingType } from "../src";
 
 export const F = new URL("about:test");
 export const L = new LocationTrace(0, 0, F);
