@@ -27,7 +27,6 @@
         "jsxImportSource": "vanilla"
     },
     "include": [
-        "./**/*.ts",
-        "./**/*.tsx"
+        "./**/*.ts"
     ]
 }
