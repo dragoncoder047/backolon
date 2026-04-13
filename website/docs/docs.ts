@@ -1,9 +1,17 @@
+import Prism from "prismjs";
 import { get, html, make } from "vanilla";
-import { Documentation, Example, FunctionDoc, SyntaxDoc, ValueDoc } from "../scripts/doc.d";
+import { Documentation, Example, FunctionDoc, SyntaxDoc, ValueDoc } from "../../scripts/doc";
 // @ts-ignore
 import LANGUAGE_DOCS from "$_DOCUMENTATION";
-import { syntaxHighlight } from "../website_common/rendering";
 declare const LANGUAGE_DOCS: Documentation;
+
+function syntaxHighlight(string: string, lang: string): string {
+    if (lang === "backolon") {
+        // TODO: Backolon self-highlighting using an Unparser
+        return string;
+    }
+    return Prism.highlight(string, Prism.languages[lang]!, lang);
+}
 
 function renderExamples(examples: Example[]) {
     return examples.map(ex => {

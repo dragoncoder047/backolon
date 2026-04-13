@@ -1,6 +1,6 @@
+import * as Backolon from "@r47onfire/backolon";
 import $ from "jquery";
 import init from "jquery.terminal";
-import * as Backolon from "../src/index";
 
 init(window, $);
 

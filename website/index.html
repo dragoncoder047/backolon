@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta property="og:title" content="Backolon" />
+        <meta property="og:description"
+            content="A tiny, homoiconic language where syntax is defined through pattern matching and control flow is continuation-based." />
+        <link rel="icon" href="./images/icon.png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Backolon</title>
+        <link rel="stylesheet" href="./styles/main.css" />
+        <link rel="stylesheet" href="../node_modules/prismjs/themes/prism-tomorrow.css" />
+    </head>
+
+    <body>
+        <header>
+            <div class="logo">Backolon</div>
+            <nav>
+                <a href="/repl">REPL</a>
+                <a href="/docs">Language Docs</a>
+                <a href="/docs/embedding">JS API</a>
+                <a href="https://github.com/r47onfire/backolon" target="_blank">GitHub</a>
+            </nav>
+        </header>
+        <main class="container">
+            <section class="hero">
+                <div markdown="block">
+                    ![Backolon logo](./images/icon.png)
+
+                    # Backolon
+
+                    A tiny, homoiconic language where syntax is defined through pattern matching and control flow is
+                    continuation-based.
+                </div>
+
+                <div class="hero-example" markdown="block">
+
+                    ```backolon
+                    x := 42
+
+                    double := [n] => n * 2
+
+                    list := [1, 2, 3] + [4, 5]
+
+                    if (#list > 5) "many" "few"
+                    ```
+
+                </div>
+
+                <div class="cta-buttons">
+                    <a href="/repl/" class="btn btn-primary">Try the REPL</a>
+                    <a href="/docs/" class="btn btn-secondary">Language Docs</a>
+                    <a href="/docs/embedding/" class="btn btn-secondary">JS API</a>
+                </div>
+
+            </section>
+            <section class="feature-grid">
+                <article markdown="block">
+                    ## Homoiconic
+
+                    Expressions are structured data, so macros and syntax extensions stay concise and readable.
+                </article>
+                <article markdown="block">
+                    ## Keywordless
+
+                    Operators and control flow are ordinary functions rather than reserved keywords.
+                </article>
+                <article markdown="block">
+                    ## Self-Extensible
+
+                    coming soon! {.coming-soon}
+
+                    Define a new syntax, and then immediately use it in the same file.
+                </article>
+                <article markdown="block">
+                    ## First-class Continuations
+
+                    `return` is just a variable holding a continuation, making nonlocal jumps, backtracking, coroutines,
+                    and cooperative multitasking easy.
+                </article>
+                <article markdown="block">
+                    ## JS/TS Embedding
+
+                    Designed to be embedded in JavaScript applications for seamless scripting. You can use the provided
+                    FFI module, or create your own native functions.
+                </article>
+            </section>
+            <section class="content-block" markdown="block">
+                ## Why Backolon?
+
+                Backolon's extensible syntax makes it perfect for building domain-specific languages, such as
+                configuration files, while also allowing full Turing-complete functions where traditional syntax falls
+                short.
+            </section>
+            <section class="content-block" markdown="block">
+                ## How it works
+
+                ### Parsing
+
+                Backolon does not discard any token, meaning you can make whitespace significant or not as you desire,
+                or even introspect and parse the contents of comments.
+
+                ### Lambdas
+
+                Parameters can be lazy, preventing normal evaluation and allowing block bodies to be run once, not at
+                all, or multiple times, as determined by what they're passed to.
+
+                ### Patterns
+
+                Syntax is defined through structural patterns that match sequences of tokens literally, allowing exotic
+                and complex syntax to be defined easily.
+
+                ### Runtime
+
+                Every lambda receives a built-in `return` continuation, so `return`, `break`, and generators are
+                ordinary values that can be passed around and stored.
+            </section>
+            <!-- NOTE: don't forget to re-indent the stuff since the html formatter wants to unindent it since it doesn't know it's a code block -->
+            <section class="content-block" markdown="block">
+                ## Embed from JavaScript
+
+                ```js
+                import * as Backolon from "@r47onfire/backolon";
+
+                const scheduler = new Backolon.Scheduler([
+                    Backolon.BUILTINS_MODULE,
+                    Backolon.FFI_MODULE
+                ], console.log);
+
+                const task = scheduler.startTask(0, "x := 1", null, Backolon.UNKNOWN_LOCATION.file);
+                scheduler.stepUntilSuspended();
+                console.log(task.result);
+                ```
+            </section>
+        </main>
+        <footer markdown="block">
+            Made with ❤️ by [Burning Resistor Games](https://github.com/r47onfire/)
+        </footer>
+    </body>
+
+</html>
