@@ -33,8 +33,8 @@
         "OneTypeThing",
     ],
     "externalSymbolLinkMappings": {
-        "esbuild": {
-            "Plugin": "https://esbuild.github.io/plugins/"
+        "bun": {
+            "BunPlugin": "https://bun.com/docs/bundler/plugins"
         }
     }
 }

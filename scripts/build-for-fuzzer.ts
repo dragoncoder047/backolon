@@ -1,13 +1,12 @@
 import { build } from "./build-common";
-import plugin from "../src/esbuildPlugin";
+import plugin from "../src/plugin";
 
 await build({
-    platform: "node",
+    target: "node",
     minify: true, // Must minify for the fs imports to be eliminated
     format: "cjs",
-    entryPoints: { "backolon": "src/index.ts" },
-    outExtension: { ".js": ".cjs" },
-    outdir: "dist/",
+    entrypoints: ["src/index.ts"],
+    naming: "[name].cjs",
     plugins: [plugin],
 });
 console.log("Build for fuzzer OK");

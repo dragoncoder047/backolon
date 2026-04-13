@@ -1,18 +1,14 @@
 import { stringify } from "lib0/json";
-import { join } from "path";
-import plugin from "../src/esbuildPlugin";
-import { build, DOCS_DIR, WEBSITE_DIR } from "./build-common.js";
+import plugin from "../src/plugin";
+import { build } from "./build-common.js";
 import { extractBackolonDocs } from "./doc-extract";
 
 
 await build({
     splitting: true,
     minify: true,
-    entryPoints: {
-        repl: join(WEBSITE_DIR, "repl.ts"),
-        docs: join(WEBSITE_DIR, "docs.ts"),
-    },
-    outdir: join(DOCS_DIR, "js"),
+    entrypoints: ["./website/repl.ts", "./website/docs.ts"],
+    outdir: "./docs/js/",
     plugins: [
         plugin,
         {
@@ -40,7 +36,7 @@ await build({
                 build.onResolve({ filter: /^jquery$/ }, args => {
                     // args.importer is the file doing the require/import
                     if (args.importer && /jquery\.terminal/.test(args.importer)) {
-                        return { external: true };
+                        return { external: true, path: "" };
                     }
                     // otherwise let esbuild resolve normally
                     return;

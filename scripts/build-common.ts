@@ -1,19 +1,10 @@
-import * as esbuild from "esbuild";
-import { join } from "path";
+import { BuildConfig } from "bun";
 
-export const ROOT = join(import.meta.dir, "..");
-
-export const WEBSITE_DIR = join(ROOT, "website");
-export const DOCS_DIR = join(ROOT, "docs");
-
-export async function build(options: esbuild.BuildOptions) {
-    await esbuild.build({
-        bundle: true,
+export async function build(options: BuildConfig) {
+    await Bun.build({
         sourcemap: true,
-        platform: "browser",
-        target: "esnext",
+        target: "browser",
         format: "esm",
-        charset: "utf8",
         define: { TEST: "false" },
         ...options,
     });

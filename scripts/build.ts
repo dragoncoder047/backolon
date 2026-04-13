@@ -1,13 +1,11 @@
-import plugin from "../src/esbuildPlugin";
+import plugin from "../src/plugin";
 import { build } from "./build-common";
 
 await build({
     splitting: true,
     outdir: "dist/",
-    entryPoints: {
-        "backolon": "src/index.ts",
-        "backolon-esbuild-plugin": "src/esbuildPlugin/index.ts",
-    },
+    entrypoints: ["src/index.ts", "src/plugin/index.ts"],
+    naming: "[dir]/[name].[ext]",
     minify: process.argv.includes('--minify'),
     external: ["node:fs", "node:path"],
     plugins: [plugin]
