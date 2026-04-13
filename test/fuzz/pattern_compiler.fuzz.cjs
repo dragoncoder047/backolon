@@ -3,7 +3,7 @@ const {
     parsePattern,
     parse,
     BackolonError
-} = require("../../dist/backolon.cjs");
+} = require("../../dist/index.cjs");
 module.exports.fuzz = function fuzz(src) {
     // if (!/^[\x32-\x7F]*$/.test(src.toString())) return;
     try {

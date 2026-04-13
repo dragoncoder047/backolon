@@ -1,4 +1,4 @@
-const { parse, BackolonError } = require("../../dist/backolon.cjs");
+const { parse, BackolonError } = require("../../dist/index.cjs");
 module.exports.fuzz = function fuzz(src) {
     // if (!/^[\x20-\x7F]*$/.test(src.toString())) return;
     try {
