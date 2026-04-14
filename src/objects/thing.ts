@@ -11,7 +11,7 @@ export enum ThingType {
     /**
      * Represents the end-of-file marker for tokenization.
      */
-    end,
+    done,
     /**
      * An alphanumeric symbol, such as `x`, `hello`, or `_QWE_RTY_123`.
      */
@@ -144,7 +144,7 @@ export enum ThingType {
 
 type ThingInternalTypes<T extends ThingType> = {
     [ThingType.nil]: [null, []],
-    [ThingType.end]: [null, []],
+    [ThingType.done]: [null, []],
     [ThingType.name]: [string, []],
     [ThingType.operator]: [string, []],
     [ThingType.space]: [string, []],
@@ -213,7 +213,7 @@ export class Thing<T extends (ThingType | string) = ThingType | string> {
 }
 
 export function boxNil(trace = UNKNOWN_LOCATION, str = "nil") { return new Thing(ThingType.nil, [], null, str, "", "", trace); }
-export function boxEnd(trace = UNKNOWN_LOCATION) { return new Thing(ThingType.end, [], null, "", "", "", trace); }
+export function boxEnd(trace = UNKNOWN_LOCATION) { return new Thing(ThingType.done, [], null, "", "", "", trace); }
 export function boxSymbol<T extends ThingType.name | ThingType.operator | ThingType.space>(value: string, kind: T, trace = UNKNOWN_LOCATION): Thing<T> { return new Thing(kind, [] as any, value as any, value, "", "", trace); }
 export function boxNameSymbol(value: string, trace = UNKNOWN_LOCATION) { return boxSymbol(value, ThingType.name, trace); }
 export function boxOperatorSymbol(value: string, trace = UNKNOWN_LOCATION) { return boxSymbol(value, ThingType.operator, trace); }
@@ -251,7 +251,7 @@ export function typecheck<T extends (ThingType | string)>(...types: T[]) {
 export const isBlock = typecheck(ThingType.roundblock, ThingType.squareblock, ThingType.curlyblock, ThingType.stringblock, ThingType.topblock);
 export const isSymbol = typecheck(ThingType.name, ThingType.operator, ThingType.space);
 export const isCallable = typecheck(ThingType.func, ThingType.nativefunc, ThingType.implicitfunc, ThingType.continuation);
-export const isAtom = typecheck(ThingType.nil, ThingType.end, ThingType.name, ThingType.operator, ThingType.number, ThingType.string, ThingType.func, ThingType.implicitfunc, ThingType.nativefunc, ThingType.continuation, ThingType.list, ThingType.map, ThingType.splat, ThingType.macroized);
+export const isAtom = typecheck(ThingType.nil, ThingType.done, ThingType.name, ThingType.operator, ThingType.number, ThingType.string, ThingType.func, ThingType.implicitfunc, ThingType.nativefunc, ThingType.continuation, ThingType.list, ThingType.map, ThingType.splat, ThingType.macroized);
 
 export type CheckedType<T extends (thing: Thing<any>) => thing is Thing<any>> = T extends (thing: Thing<any>) => thing is Thing<infer U> ? U : never;
 

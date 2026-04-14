@@ -29,7 +29,7 @@ export function blockParse<T extends Record<string, BlockRule>, U extends keyof 
             throw new ParseError(`${stringify(beginStr)} was never closed`, beginLoc);
         }
         const token = tokens[pos]!;
-        if (!typecheck(ThingType.end)(token) || advanceEnd) pos++;
+        if (!typecheck(ThingType.done)(token) || advanceEnd) pos++;
         return token;
     };
     const processCounters = (txt: string | null, starts: (string | null)[], counters: Counter[], targets: string[], onMatch: (target: string, counter: Counter, start: string) => void) => {

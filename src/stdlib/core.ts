@@ -1,6 +1,5 @@
 import { last } from "lib0/array";
 import { stringify } from "lib0/json";
-import { NativeModule, rewriteAsApply, symbol_x, symbol_y } from "./module";
 import { ErrorNote, LocationTrace, RuntimeError } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating } from "../objects/map";
 import { boxApply, boxNativeFunc, boxNil, boxNumber, boxRoundBlock, boxSquareBlock, Thing, ThingType, typecheck, typeNameOf } from "../objects/thing";
@@ -13,8 +12,14 @@ import { control_flow } from "./control_flow";
 import { math } from "./math";
 import { metaprogramming } from "./metaprogramming";
 import { misc } from "./misc";
+import { NativeModule, rewriteAsApply, symbol_x, symbol_y } from "./module";
 import { strings } from "./strings";
-import { DEFAULT_UNPARSER } from "../parser/unparse";
+
+const EXPLICIT_BLOCK_PRECEDENCE = -Infinity;
+const LAMBDA_PRECEDENCE = -1e100;
+export const VARIABLE_ASSIGNMENT_PRECEDENCE = 12;
+const IMPLICIT_BLOCK_PRECEDENCE = 1e100;
+const APPLY_PRECEDENCE = Infinity;
 
 /**
  * @file
@@ -40,13 +45,14 @@ export function initCoreSyntax(mod: NativeModule) {
      * @type {number}
      */
     mod.defvar("true", boxNumber(1, mod.loc, "true"));
+    /**
+     * @backolon
+     * @value done
+     * @type {done}
+     */
+    mod.defvar("done", new Thing(ThingType.done, [], null, "done", "", "", mod.loc));
     const xy = [symbol_x, symbol_y];
     // MARK: blocks and logical lines
-    const EXPLICIT_BLOCK_PRECEDENCE = -Infinity;
-    const LAMBDA_PRECEDENCE = -1e100;
-    const VARIABLE_ASSIGNMENT_PRECEDENCE = 12;
-    const IMPLICIT_BLOCK_PRECEDENCE = 1e100;
-    const APPLY_PRECEDENCE = Infinity;
     mod.defsyntax("[^] {x...|}  ;  [y{_| }...] [$]", EXPLICIT_BLOCK_PRECEDENCE, false, null, "__rewrite_sequence", (task, state) => {
         const groups: Thing<ThingType.map> = state.argv[0]! as any;
         var first = mapGetKey(groups, symbol_x);
@@ -103,7 +109,7 @@ export function initCoreSyntax(mod: NativeModule) {
      * ```
      */
     mod.defsyntax("x := y", VARIABLE_ASSIGNMENT_PRECEDENCE, false, null, "__rewrite_declaration", rewriteAsApply(xy, "__declare"));
-    const binding_helper = (dipAmount: number, cb: (state: StackEntry, name: Thing<ThingType.name>, value: Thing, loc: LocationTrace) => void, refCb: (state: StackEntry, task: Task, ref: Thing<ThingType.reference>, value: Thing, loc: LocationTrace) => void): ((task: Task, state: StackEntry) => void) => {
+    const binding_helper = (cb: (state: StackEntry, name: Thing<ThingType.name>, value: Thing, loc: LocationTrace) => void, refCb: (state: StackEntry, task: Task, ref: Thing<ThingType.reference>, value: Thing, loc: LocationTrace) => void): ((task: Task, state: StackEntry) => void) => {
         return (task, state) => {
             const name = state.argv[0]!;
             const value = state.argv[1]!;
@@ -115,10 +121,10 @@ export function initCoreSyntax(mod: NativeModule) {
                 throw new RuntimeError(`cannot assign to ${typeNameOf(name.t)}`, loc);
             }
             task.out(value);
-            task.dip(dipAmount, state => cb(state, name, value, loc));
+            task.dip(1, state => cb(state, name, value, loc));
         }
     }
-    mod.defun("__declare", "@name! value=nil", binding_helper(1, (state, name, value, loc) => {
+    mod.defun("__declare", "@name! value=nil", binding_helper((state, name, value, loc) => {
         const vars = state.env;
         if (mapGetKey(vars.c[1]!, name) !== undefined) {
             throw new RuntimeError(`variable ${stringify(name.v)} already exists in this scope`, loc, [new ErrorNote(`note: change the ":=" to "=" if you just want to reassign ${stringify(name.v)}`, loc)]);
@@ -146,7 +152,7 @@ export function initCoreSyntax(mod: NativeModule) {
      * ```
      */
     mod.defsyntax("x = y", VARIABLE_ASSIGNMENT_PRECEDENCE, true, null, "__rewrite_assign", rewriteAsApply(xy, "__assign"));
-    mod.defun("__assign", "@name! value", binding_helper(2, (state, name, value, loc) => {
+    mod.defun("__assign", "@name! value", binding_helper((state, name, value, loc) => {
         if (!walkEnvTree(state.env, vars => {
             if (mapGetKey(vars, name, loc) !== undefined) {
                 mapUpdateKeyMutating(vars, name, value, loc);
@@ -199,6 +205,21 @@ export function initCoreSyntax(mod: NativeModule) {
         const signature = boxSquareBlock(parseSignature(params.c), params.loc, " ");
         const body = state.argv[1]!;
         task.out(new Thing(ThingType.func, [signature, body], null, "", "", " => ", params.loc));
+    });
+    /**
+     * Throw an error with the specified message
+     * @backolon
+     * @category Errors
+     * @function error
+     * @param {string} message
+     * @returns {never}
+     * @example
+     * ```backolon
+     * error "Something went wrong with {x}!"
+     * ```
+     */
+    mod.defun("error", "message:string", (task, state) => {
+        throw new RuntimeError(state.argv[0]!.v, state.value.loc);
     });
     // initialize everything else
     control_flow(mod);

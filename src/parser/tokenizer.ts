@@ -26,7 +26,7 @@ const TOKENIZE_RULES = [
     [/^./, ThingType.operator, id]
 ] satisfies Rule[];
 
-export type Token = OneTypeThing<(typeof TOKENIZE_RULES)[number][1] | ThingType.end>;
+export type Token = OneTypeThing<(typeof TOKENIZE_RULES)[number][1] | ThingType.done>;
 
 /**
  * Tokenize Backolon source text into a stream of Things. No further parsing is done;

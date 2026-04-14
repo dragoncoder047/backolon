@@ -81,6 +81,9 @@ export {
     FFI_MODULE
 } from "./stdlib";
 export {
+    BUILTINS_LOC
+} from "./stdlib/locations";
+export {
     makePrimitiveReference, NativeModule,
     rewriteAsApply, type CustomApplicator,
     type OperatorOverload

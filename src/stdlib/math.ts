@@ -45,6 +45,7 @@ export function math(mod: NativeModule) {
         if (implementation) {
             mod.defsyntax(`x ${operator} y`, precedence!, right!, null, `__rewrite_${name}`, rewriteAsApply(xy, `__${name}`));
             mod.defoverload(name, [ThingType.number, ThingType.number], number_op(implementation));
+            // TODO: add augmented assignment operators here
         }
     };
     const unary = (name: string, operator: string, precedence: number, right: boolean, impl: (x: number) => number) => {

@@ -108,11 +108,11 @@ boxCurlyBlock(children: readonly Thing<string | ThingType>[], trace: LocationTra
 
 ## `boxEnd`
 ```ts
-boxEnd(trace: LocationTrace): Thing<end>
+boxEnd(trace: LocationTrace): Thing<done>
 ```
 **Parameters:**
 - `trace: LocationTrace` — default: `UNKNOWN_LOCATION` — 
-**Returns:** `Thing<end>`
+**Returns:** `Thing<done>`
 
 ## `boxList`
 ```ts

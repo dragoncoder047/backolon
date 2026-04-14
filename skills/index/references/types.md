@@ -9,7 +9,7 @@ T extends (thing: Thing<any>) => thing is Thing<infer U> ? U : never
 
 ### `Token`
 ```ts
-OneTypeThing<typeof TOKENIZE_RULES[number][1] | end>
+OneTypeThing<typeof TOKENIZE_RULES[number][1] | done>
 ```
 
 ### `Command`
@@ -46,7 +46,7 @@ See NativeModule#defcall|NativeModule.defcall for details.
 
 ### `ThingType`
 - `nil` = `0` — The empty value.
-- `end` = `1` — Represents the end-of-file marker for tokenization.
+- `done` = `1` — Represents the end-of-file marker for tokenization.
 - `name` = `2` — An alphanumeric symbol, such as `x`, `hello`, or `_QWE_RTY_123`.
 - `operator` = `3` — An operator character, such as `+`, `@`, or `$`, but never multiple characters
 like `+=` or `|>`.

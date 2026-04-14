@@ -31,7 +31,7 @@ export * from "./env.d";
 
 function convertAST(file: string) {
     const text = readFileSync(file, "utf8");
-    const parsed = parse(text, new URL("file://" + relative(process.cwd(), file)));
+    const parsed = parse(text, new URL("frozen://" + relative(process.cwd(), file)));
     const stringified = new Resurrect({
         cleanup: true,
         resolver: new NamespaceResolver({

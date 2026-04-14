@@ -2,7 +2,7 @@
 callcc := [f] => f return
 while := [@cond @body] => callcc [break] => (
     continue := nil
-    callcc [k] => continue = k
+    callcc [k] => (continue = k)
     if (cond [:]) (
         body [`break:, `continue:]
         continue!
@@ -10,12 +10,12 @@ while := [@cond @body] => callcc [break] => (
 )
 generator := [@body] => (
     cont := nil
-    resume := [] => body [`yield:]
-    yield := [] => callcc [k] => (
+    resume := [] => (body [`yield:]; done)
+    yield := [value] => callcc [k] => (
         resume = k
-        cont!
+        cont value
     )
-    [sent] => callcc [k] => (
+    [] => callcc [k] => (
         cont = k
         resume!
     )
@@ -24,7 +24,7 @@ foreach := [@varname:name list @body] => (
     i := 0
     while i < #list (
         callcc [k] => body [varname: list->i, `break:, `continue: k]
-        i += 1
+        i = i + 1
     )
 )
 # don't "return" anything

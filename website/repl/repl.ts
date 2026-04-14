@@ -60,7 +60,7 @@ function initREPL() {
 
     const main_env = main_task.stack[0]!.env;
 
-    const REPL_FILE_PREFIX = "about:repl#";
+    const REPL_FILE_PREFIX = "repl://";
 
     const HISTORY: string[] = [];
     function run() {
@@ -81,7 +81,9 @@ function initREPL() {
         } catch (err: any) {
             console.error(err);
             if (err instanceof Backolon.BackolonError) {
-                term.error(err.displayOn(Object.fromEntries(HISTORY.map((h, i) => [REPL_FILE_PREFIX + i, h]))));
+                term.error(err.displayOn({
+                    ...Object.fromEntries(HISTORY.map((h, i) => [REPL_FILE_PREFIX + i, h]))
+                }));
             } else {
                 term.error(`Error: ${err?.message ?? String(err)}`);
             }
@@ -97,7 +99,7 @@ function initREPL() {
         for (; ;) {
             const progress = run();
             const now = performance.now();
-            if (now - start > 8 || !progress) break;
+            if (now - start > 100 || !progress) break;
         }
         setTimeout(runLoop, 0);
     }

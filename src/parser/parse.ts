@@ -160,7 +160,10 @@ const defaultBlockRules: Record<BlockHandler, BlockRule> = {
                 }
             }
             if (curStringRaw.length !== 0) chuck();
-            return bits.length === 1 ? bits[0]! : boxStringBlock(bits, loc, start);
+            if (bits.length > 1) {
+                return boxStringBlock(bits, loc, start);
+            }
+            return boxString(bits[0]!.v as string, bits[0]!.loc, bits[0]!.s0, '"');
         },
         b: []
     },

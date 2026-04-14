@@ -10,14 +10,14 @@ test("doesn't make assumptions about comments", () => {
     const y = tokenize("## foo ##");
     expect(getTokenContents(x)).toEqual(["#", " ", "foo", null]);
     expect(getTokenContents(y)).toEqual(["#", "#", " ", "foo", " ", "#", "#", null]);
-    expect(getTokenTypes(x)).toEqual([ThingType.operator, ThingType.space, ThingType.name, ThingType.end]);
-    expect(getTokenTypes(y)).toEqual([ThingType.operator, ThingType.operator, ThingType.space, ThingType.name, ThingType.space, ThingType.operator, ThingType.operator, ThingType.end]);
+    expect(getTokenTypes(x)).toEqual([ThingType.operator, ThingType.space, ThingType.name, ThingType.done]);
+    expect(getTokenTypes(y)).toEqual([ThingType.operator, ThingType.operator, ThingType.space, ThingType.name, ThingType.space, ThingType.operator, ThingType.operator, ThingType.done]);
 });
 test("groups name tokens", () => {
     expect(getTokenContents(tokenize("a b coffee", F))).toEqual(["a", " ", "b", " ", "coffee", null]);
 });
 test("'_' is a valid name", () => {
-    expect(getTokenTypes(tokenize("_", F))).toEqual([ThingType.name, ThingType.end]);
+    expect(getTokenTypes(tokenize("_", F))).toEqual([ThingType.name, ThingType.done]);
 });
 test("maintains column and line", () => {
     expect(tokenize("a\nb c", F).map(t => t.loc)).toEqual([
