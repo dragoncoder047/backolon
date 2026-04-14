@@ -455,17 +455,17 @@ describe("homoiconicity", () => {
     });
     describe("eval", () => {
         test("simple eval in original environment", () => {
-            expect(expectEval("x := `(print 1); __eval x", {
+            expect(expectEval("x := `(print 1); eval x", {
                 t: ThingType.nil,
             })).toEqual(["1"]);
         });
         test("eval in constructed environment", () => {
-            expect(expectEval("x := `(say 1); __eval x [`say: [x] => print x x]", {
+            expect(expectEval("x := `(say 1); evalin [`say: [x] => print x x] x", {
                 t: ThingType.nil,
             })).toEqual(["1 1"]);
         });
         test("concatenation of blocks", () => {
-            expectEval("__eval `(1 +) + `(2)", {
+            expectEval("eval `(1 +) + `(2)", {
                 t: ThingType.number,
                 v: 3,
             });

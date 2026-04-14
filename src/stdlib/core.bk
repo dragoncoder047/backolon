@@ -27,5 +27,8 @@ foreach := [@varname:name list @body] => (
         i = i + 1
     )
 )
+eval := [value] => __eval value
+evalin := [env value] => __eval value env
+sandboxed := [value] => __eval value nil nil false
 # don't "return" anything
 ;;

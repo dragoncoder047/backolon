@@ -28,7 +28,6 @@ export function metaprogramming(mod: NativeModule) {
         const item = state.argv[0] as Thing<ThingType.implicitfunc>;
         task.out(item.c[0]);
     });
-    // TODO: better wrapper for this
     mod.defun("__eval", "value env:[map nil]=nil patterns:[list nil]=nil inherit=true", (task, state) => {
         const valueToEval = state.argv[0]!;
         const envArg = state.argv[1]! as Thing<ThingType.map> | Thing<ThingType.nil>;
@@ -36,7 +35,7 @@ export function metaprogramming(mod: NativeModule) {
         const inherit = !!state.argv[3]!.v;
         const envIsNil = typecheck(ThingType.nil)(envArg);
         const patternsIsNil = typecheck(ThingType.nil)(patternsArg);
-        var patternsList: Thing<ThingType.pattern_entry>[] = patternsArg.c.slice() as any[];
+        const patternsList: Thing<ThingType.pattern_entry>[] = patternsArg.c.slice() as any[];
         if (!patternsIsNil) for (var item of patternsList) {
             if (!typecheck(ThingType.pattern_entry)(item)) {
                 throw new RuntimeError("Invalid pattern", (item as any).loc);

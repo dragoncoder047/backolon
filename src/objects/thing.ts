@@ -30,11 +30,11 @@ export enum ThingType {
      */
     newline,
     /**
-     * A math number - JS number or bigint.
+     * JS number or bigint.
      */
     number,
     /**
-     * A string - literal, or part of an interpolation block.
+     * Literal, or part of an interpolation block.
      */
     string,
     /**

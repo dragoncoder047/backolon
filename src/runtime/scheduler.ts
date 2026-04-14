@@ -127,7 +127,11 @@ export class Scheduler {
         return this.f(name).params ?? [];
     }
     callFunction(task: Task, name: string, entry: StackEntry) {
-        return this.f(name).impl(task, entry);
+        const result = this.f(name).impl(task, entry);
+        if (result !== undefined) {
+            console.warn(`Native function implementation ${name} should call task.out(result), not return result`);
+            task.out(result);
+        }
     }
     operator(name: string, state: StackEntry): Thing {
         const argv = state.argv;

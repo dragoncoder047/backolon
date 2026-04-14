@@ -7,7 +7,9 @@ export {
     UNKNOWN_LOCATION
 } from "./errors";
 export {
-    fromJS, JSObjectType, toJS
+    fromJS,
+    JSObjectType,
+    toJS
 } from "./objects/js_interop";
 export {
     mapDeleteKeyCopying,
@@ -36,23 +38,29 @@ export {
     isCallable,
     isSymbol,
     Thing,
-    ThingType, typecheck,
-    typeNameOf, type CheckedType
+    ThingType,
+    typecheck,
+    typeNameOf,
+    type CheckedType
 } from "./objects/thing";
 export {
     parse
 } from "./parser/parse";
 export {
-    tokenize, type Token
+    tokenize,
+    type Token
 } from "./parser/tokenizer";
 export {
-    DEFAULT_UNPARSER, Unparser
+    DEFAULT_UNPARSER,
+    Unparser
 } from "./parser/unparse";
 export {
-    type Command, type PatternProgram
+    type Command,
+    type PatternProgram
 } from "./patterns/compile";
 export {
-    PatternType, type Pattern
+    PatternType,
+    type Pattern
 } from "./patterns/internals";
 export {
     matchPattern,
@@ -73,7 +81,8 @@ export {
     type NativeFunctionDetails
 } from "./runtime/scheduler";
 export {
-    StackFlag, Task,
+    StackFlag,
+    Task,
     type StackEntry
 } from "./runtime/task";
 export {
@@ -84,8 +93,10 @@ export {
     BUILTINS_LOC
 } from "./stdlib/locations";
 export {
-    makePrimitiveReference, NativeModule,
-    rewriteAsApply, type CustomApplicator,
+    makePrimitiveReference,
+    NativeModule,
+    rewriteAsApply,
+    type CustomApplicator,
     type OperatorOverload
 } from "./stdlib/module";
 

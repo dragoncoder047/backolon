@@ -1,6 +1,6 @@
-import { NativeModule, rewriteAsApply, symbol_x, symbol_y } from "./module";
 import { LocationTrace } from "../errors";
 import { boxNumber, Thing, ThingType } from "../objects/thing";
+import { NativeModule, rewriteAsApply, symbol_x, symbol_y } from "./module";
 
 /**
  * @file
@@ -40,12 +40,29 @@ export function math(mod: NativeModule) {
     const xy = [symbol_x, symbol_y];
     const x = [symbol_x];
 
+    // mod.defun("__rewrite_augmented", "_:map", (task, state) => {
+    //     // TODO: this is just a stupid rewrite, need to make references only get evaluated once because getters/setters may be added
+    //     const groups: Thing<ThingType.map> = state.argv[0]! as any;
+    //     const x = mapGetKey(groups, symbol_x)!;
+    //     const y = mapGetKey(groups, symbol_x)!;
+    //     const z = mapGetKey(groups, symbol_x)!;
+    //     const reassignExpr = new Thing(ThingType.splat, [
+    //         x,
+    //         boxOperatorSymbol("=", x.loc),
+    //         x,
+    //         z,
+    //         y,
+    //     ], null, "", "", "", state.value.loc);
+    //     task.out(reassignExpr);
+    // });
+
     const operation = (name: string, operator?: string, precedence?: number, right?: boolean, implementation?: BinaryFun) => {
         mod.defop(`__${name}`, name);
         if (implementation) {
             mod.defsyntax(`x ${operator} y`, precedence!, right!, null, `__rewrite_${name}`, rewriteAsApply(xy, `__${name}`));
             mod.defoverload(name, [ThingType.number, ThingType.number], number_op(implementation));
-            // TODO: add augmented assignment operators here
+            // TODO: this doesn't work cause there's no way to stop x and y from matching operators
+            // mod.defsyntax(`x [z(${operator})]= y`, VARIABLE_ASSIGNMENT_PRECEDENCE, true, null, "__rewrite_augmented");
         }
     };
     const unary = (name: string, operator: string, precedence: number, right: boolean, impl: (x: number) => number) => {

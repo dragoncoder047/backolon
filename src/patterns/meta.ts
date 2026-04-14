@@ -281,18 +281,4 @@ export function typeNameToThingType(name: string, loc: LocationTrace): ThingType
         throw new RuntimeError("Unknown type " + name, loc);
     }
     return t;
-    // switch (name) {
-    //     case "nil": return ThingType.nil;
-    //     case "number": return ThingType.number;
-    //     case "string": return ThingType.string;
-    //     case "name": return ThingType.name;
-    //     case "operator": return ThingType.operator;
-    //     case "space": return ThingType.space;
-    //     case "roundblock": return ThingType.roundblock;
-    //     case "squareblock": return ThingType.squareblock;
-    //     case "curlyblock": return ThingType.curlyblock;
-    //     case "topblock": return ThingType.topblock;
-    //     case "stringblock": return ThingType.stringblock;
-    //     default: 
-    // }
 }

@@ -52,8 +52,8 @@ See NativeModule#defcall|NativeModule.defcall for details.
 like `+=` or `|>`.
 - `space` = `4` — A symbol composed entirely of whitespace (excluding newlines) and/or comments.
 - `newline` = `5` — A symbol composed of entirely newlines.
-- `number` = `6` — A math number - JS number or bigint.
-- `string` = `7` — A string - literal, or part of an interpolation block.
+- `number` = `6` — JS number or bigint.
+- `string` = `7` — Literal, or part of an interpolation block.
 - `roundblock` = `8` — A block of code enclosed in `(...)`.
 - `squareblock` = `9` — A block of code enclosed in `[...]`.
 - `curlyblock` = `10` — A block of code enclosed in `{...}`.
