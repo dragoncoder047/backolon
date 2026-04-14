@@ -3,7 +3,6 @@ import { forEach } from "lib0/object";
 import { BackolonError, LocationTrace, RuntimeError, UNKNOWN_LOCATION } from "../errors";
 import { mapGetKey, mapUpdateKeyMutating, newEmptyMap } from "../objects/map";
 import { boxApply, boxList, boxNameSymbol, boxNil, isAtom, isBlock, isSymbol, Thing, ThingType, typecheck, typeNameOf } from "../objects/thing";
-import { DEFAULT_UNPARSER } from "../parser/unparse";
 import { matchPattern } from "../patterns/match";
 import { flatToVarMap, newEnv, walkEnvTree } from "./env";
 import { getNthDescriptor, getParamDescriptors, isLazy, parametersToVars, wrapImplicitBlock } from "./functor";
@@ -408,7 +407,6 @@ export class Task {
             if (!typecheck(ThingType.map)(map)) {
                 throw new RuntimeError(`expected a map to inject (got ${typeNameOf(map.t)})`, callsite.loc);
             }
-            console.log("implicit func evaluate", [DEFAULT_UNPARSER.unparse(functor.v.c[1]!), DEFAULT_UNPARSER.unparse(functor.c[0])]);
             const e = map.c.length === 0 ? functor.v : newEnv(map, boxList([]), callsite.loc, [functor.v]);
             this.enter(functor.c[0], callsite.loc, e, [], significant ? name : undefined);
         }
