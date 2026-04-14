@@ -109,7 +109,7 @@ export function initCoreSyntax(mod: NativeModule) {
      * ```
      */
     mod.defsyntax("x := y", VARIABLE_ASSIGNMENT_PRECEDENCE, false, null, "__rewrite_declaration", rewriteAsApply(xy, "__declare"));
-    const binding_helper = (cb: (state: StackEntry, name: Thing<ThingType.name>, value: Thing, loc: LocationTrace) => void, refCb: (state: StackEntry, task: Task, ref: Thing<ThingType.reference>, value: Thing, loc: LocationTrace) => void): ((task: Task, state: StackEntry) => void) => {
+    const binding_helper = (dip: boolean, cb: (state: StackEntry, name: Thing<ThingType.name>, value: Thing, loc: LocationTrace) => void, refCb: (state: StackEntry, task: Task, ref: Thing<ThingType.reference>, value: Thing, loc: LocationTrace) => void): ((task: Task, state: StackEntry) => void) => {
         return (task, state) => {
             const name = state.argv[0]!;
             const value = state.argv[1]!;
@@ -121,10 +121,11 @@ export function initCoreSyntax(mod: NativeModule) {
                 throw new RuntimeError(`cannot assign to ${typeNameOf(name.t)}`, loc);
             }
             task.out(value);
-            task.dip(1, state => cb(state, name, value, loc));
+            if (dip) task.dip(1, state => cb(state, name, value, loc));
+            else cb(state, name, value, loc);
         }
     }
-    mod.defun("__declare", "@name! value=nil", binding_helper((state, name, value, loc) => {
+    mod.defun("__declare", "@name! value=nil", binding_helper(true, (state, name, value, loc) => {
         const vars = state.env;
         if (mapGetKey(vars.c[1]!, name) !== undefined) {
             throw new RuntimeError(`variable ${stringify(name.v)} already exists in this scope`, loc, [new ErrorNote(`note: change the ":=" to "=" if you just want to reassign ${stringify(name.v)}`, loc)]);
@@ -152,7 +153,7 @@ export function initCoreSyntax(mod: NativeModule) {
      * ```
      */
     mod.defsyntax("x = y", VARIABLE_ASSIGNMENT_PRECEDENCE, true, null, "__rewrite_assign", rewriteAsApply(xy, "__assign"));
-    mod.defun("__assign", "@name! value", binding_helper((state, name, value, loc) => {
+    mod.defun("__assign", "@name! value", binding_helper(false, (state, name, value, loc) => {
         if (!walkEnvTree(state.env, vars => {
             if (mapGetKey(vars, name, loc) !== undefined) {
                 mapUpdateKeyMutating(vars, name, value, loc);

@@ -408,6 +408,7 @@ export class Task {
             if (!typecheck(ThingType.map)(map)) {
                 throw new RuntimeError(`expected a map to inject (got ${typeNameOf(map.t)})`, callsite.loc);
             }
+            console.log("implicit func evaluate", [DEFAULT_UNPARSER.unparse(functor.v.c[1]!), DEFAULT_UNPARSER.unparse(functor.c[0])]);
             const e = map.c.length === 0 ? functor.v : newEnv(map, boxList([]), callsite.loc, [functor.v]);
             this.enter(functor.c[0], callsite.loc, e, [], significant ? name : undefined);
         }

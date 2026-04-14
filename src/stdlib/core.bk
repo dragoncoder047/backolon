@@ -2,7 +2,7 @@
 callcc := [f] => f return
 while := [@cond @body] => callcc [break] => (
     continue := nil
-    callcc [k] => (continue = k)
+    callcc [k] => continue = k
     if (cond [:]) (
         body [`break:, `continue:]
         continue!

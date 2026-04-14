@@ -88,37 +88,7 @@ Backolon's control flow model leans on first-class functions and continuations v
 callcc := [f] => f return
 ```
 
-Because `return` is just another variable, and not a keyword, it can be assigned to and passed around. For example, here's how control flow macros are implemented:
-
-```backolon
-while := [@cond @body] => callcc [break] => (
-    continue := nil
-    callcc [k] => continue = k
-    if (cond [:]) (
-        body [`break:, `continue:]
-        continue!
-    )
-)
-generator := [@body] => (
-    cont := nil
-    resume := [] => body [`yield:]
-    yield := [value] => callcc [k] => (
-        resume = k
-        cont value
-    )
-    [sent] => callcc [k] => (
-        cont = k
-        resume sent
-    )
-)
-foreach := [@varname:name list @body] => (
-    i := 0
-    while i < #list (
-        callcc [k] => body [varname: list->i, `break:, `continue: k]
-        i += 1
-    )
-)
-```
+Because `return` is just another variable, and not a keyword, it can be assigned to and passed around. For example, have a look at the control flow structures in [the core file](./src/stdlib/core.bk) - they use call/cc extensively.
 
 [repl]: https://r47onfire.github.io/backolon/repl/
 [langdocs]: https://r47onfire.github.io/backolon/docs/

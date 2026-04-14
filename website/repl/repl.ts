@@ -157,6 +157,7 @@ function initREPL() {
                 "CTRL+C"() {
                     term.error("Interrupted");
                     main_task.stack = [];
+                    term.set_command("");
                 }
             }
         }
