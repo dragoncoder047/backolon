@@ -217,7 +217,7 @@ export function math(mod: NativeModule) {
     /**
      * @syntax Greater than or equal
      * @backolon
-     * @category COmparison
+     * @category Comparison
      * @pattern number >= number
      */
     operation("gte", ">=", 6.9, false, (x, y) => x >= y);
