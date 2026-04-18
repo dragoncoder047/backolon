@@ -19,6 +19,9 @@ test("groups name tokens", () => {
 test("'_' is a valid name", () => {
     expect(getTokenTypes(tokenize("_", F))).toEqual([ThingType.name, ThingType.done]);
 });
+test("'_' gets separated from operators", () => {
+    expect(getTokenTypes(tokenize(":_+", F))).toEqual([ThingType.operator, ThingType.name, ThingType.operator, ThingType.done]);
+});
 test("maintains column and line", () => {
     expect(tokenize("a\nb c", F).map(t => t.loc)).toEqual([
         new LocationTrace(0, 0, F),
