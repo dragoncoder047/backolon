@@ -14,7 +14,7 @@ import { compress, decompress } from "lz-string";
  */
 export interface NativeFunctionDetails {
     params: (Thing<ThingType.paramdescriptor> | Thing<ThingType.name>)[],
-    impl(task: Task, arg: StackEntry): void;
+    impl(task: Task, state: StackEntry): void;
 }
 
 /**

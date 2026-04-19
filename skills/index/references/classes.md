@@ -186,12 +186,12 @@ constructor(name: string, loc: LocationTrace): NativeModule
 - `loc: LocationTrace` — 
 **Methods:**
 - `defvar(name: string, value: Thing): void` — Defines a variable in the module's environment.
-- `defun(name: string, signature: string, body: (task: Task, arg: StackEntry) => void, defvar: boolean): void` — Defines a native function in the module.
+- `defun(name: string, signature: string, body: (task: Task, state: StackEntry) => void, defvar: boolean): void` — Defines a native function in the module.
 
 If the function needs to call into Backolon code, it can do so by updating the current cookie on the task to remember where it is in execution and then calling `task.enter(code, loc, env)` with the appropriate code, location, and environment.
 
 The function should "return" its result by calling `task.out(result)`. If the Javascript function does not call `task.out()` and just returns, the scheduler will call the implementation again until it does, so it's important to call `task.out()` at some point to avoid infinite loops.
-- `defsyntax(pattern: string, precedence: number, right: boolean, when: ThingType[] | null, handler: string, handlerBody?: (task: Task, arg: StackEntry) => void): void` — Defines a new pattern syntax. The handler can be either a native function implementation, or a Backolon function defined in the same module (in either case
+- `defsyntax(pattern: string, precedence: number, right: boolean, when: ThingType[] | null, handler: string, handlerBody?: (task: Task, state: StackEntry) => void): void` — Defines a new pattern syntax. The handler can be either a native function implementation, or a Backolon function defined in the same module (in either case
 the handler will be called with the pattern variables as a single map argument).
 - `defop(builtin: string, name: string): void` — Defines a new operator overload native function, mapping to the given operator name.
 - `defoverload<T>(name: string, types: T, cb: (opTrace: LocationTrace, argv: MapValues<T>) => Thing): void` — Defines a new operator overload for the given operator name and argument types. The handler will be called with the operator arguments as an array, and should return the result of the operator application.

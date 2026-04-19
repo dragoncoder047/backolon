@@ -508,28 +508,38 @@ describe("homoiconicity", () => {
 });
 describe("recursion stress tests with memoization", () => {
     const MEMOIZE = "memoize := [f] => (cache := [:]; [x] => (x <: cache ? cache->x : (cache->x = (f x))))";
-    test("A000142 (factorial)", async () => {
+    test("A000142 (factorial)", () => {
         expectEval(`${MEMOIZE}; f := (memoize [a] => a > 1 ? (a * (f a - 1)) : 1); f 100`, {
             t: ThingType.number,
             v: 93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000n
         });
     });
-    test("A000045 (Fibonacci sequence)", async () => {
+    test("A000045 (Fibonacci sequence)", () => {
         expectEval(`${MEMOIZE}; f := (memoize [a] => a < 2 ? a : ((f a - 1) + (f a - 2))); f 100`, {
             t: ThingType.number,
             v: 354224848179261915075n
         });
     });
-    test("A005185 (Hofstadter 'Q' sequence)", async () => {
+    test("A005185 (Hofstadter 'Q' sequence)", () => {
         expectEval(`${MEMOIZE}; f := (memoize [a] => a < 3 ? 1 : ((f a - (f a - 1)) + (f a - (f a - 2)))); f 80`, {
             t: ThingType.number,
             v: 43
         });
     });
-    test("A063510", async () => {
+    test("A063510", () => {
         expectEval(`${MEMOIZE}; f := (memoize [a] => a < 2 ? 1 : ((f a ** .5 | 0) + 1)); f 100`, {
             t: ThingType.number,
             v: 4
+        });
+    });
+    test("list building via splat", () => {
+        const x = 6;
+        expectEval(`f := [a n] => n > 0 ? [...(f a n - 1), ...(f a n - 1)] : [a]; f 1 ${x}`, {
+            t: ThingType.list,
+            c: new Array(2 ** x).fill({
+                t: ThingType.number,
+                v: 1
+            }),
         });
     });
 });

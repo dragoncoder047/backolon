@@ -81,10 +81,25 @@ export function metaprogramming(mod: NativeModule) {
         const { s0, s1 } = result;
         task.out(boxBlock(c, type, loc, s0, s1));
     });
-    // /**
-    //  * 
-    //  */
-    // mod.defun("splat", "value:[list roundblock]",)
+    /**
+     * Force the value to be spliced into its callsite.
+     * @backolon
+     * @function splat
+     * @param {list | roundblock} value
+     * @returns {splat}
+     */
+    mod.defun("splat", "value:[list roundblock]", (task, state) => {
+        const arg = state.argv[0]!;
+        task.out(new Thing(ThingType.splat, arg.c, null, arg.s0, arg.s1, arg.sj, arg.loc));
+    });
+    /**
+     * Expand the item by wrapping it in a call to `splat`.
+     * @backolon
+     * @syntax Splat
+     * @pattern ...list
+     * @pattern ...roundblock
+     */
+    mod.defsyntax("[=.].. x", -3, true, null, "__rewrite_splat", rewriteAsApply([symbol_x], "splat"));
 }
 
 const BUILTIN_CHANGE_BLOCK_TYPE = boxNativeFunc("__change_block_type", BUILTINS_LOC);

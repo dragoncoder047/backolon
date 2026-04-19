@@ -357,11 +357,11 @@ makePrimitiveReference(startArgs: Thing<string | ThingType>[], getter: string, s
 ## `rewriteAsApply`
 Helper to rewrite pattern handlers into apply forms for native builtins.
 ```ts
-rewriteAsApply(symbols: Thing<name>[], builtinName: string, start?: string, end?: string): (task: Task, arg: StackEntry) => void
+rewriteAsApply(symbols: Thing<name>[], builtinName: string, start?: string, end?: string): (task: Task, state: StackEntry) => void
 ```
 **Parameters:**
 - `symbols: Thing<name>[]` — 
 - `builtinName: string` — 
 - `start: string` (optional) — 
 - `end: string` (optional) — 
-**Returns:** `(task: Task, arg: StackEntry) => void`
+**Returns:** `(task: Task, state: StackEntry) => void`
