@@ -130,10 +130,10 @@ export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> 
             lazystr = "@";
             items = items.slice(1);
         }
-        var unwrap = false, unwrapstr = "";
+        var unwrap = false, poststr = isSplat ? "..." : "";
         if (typecheck(ThingType.operator)(items.at(-1)!)) {
             unwrap = true;
-            unwrapstr = "!";
+            poststr += "!";
             items = items.slice(0, -1);
         }
         const loc = items[0].loc;
@@ -158,17 +158,17 @@ export function parseSignature(block: readonly Thing[]): (Thing<ThingType.name> 
         switch (items.length) {
             case 1:
                 return lazy || isSplat || unwrap
-                    ? new Thing(ThingType.paramdescriptor, [items[0], empty, nil], [lazy, isSplat, unwrap], lazystr, unwrapstr, "", loc)
+                    ? new Thing(ThingType.paramdescriptor, [items[0], empty, nil], [lazy, isSplat, unwrap], lazystr, poststr, "", loc)
                     : items[0];
             case 5:
                 checkSplat();
-                return new Thing(ThingType.paramdescriptor, [items[0], doType(), items[4]], [lazy, isSplat, unwrap], lazystr, unwrapstr, [":", "="] as any, loc);
+                return new Thing(ThingType.paramdescriptor, [items[0], doType(), items[4]], [lazy, isSplat, unwrap], lazystr, poststr, [":", "="] as any, loc);
             case 3:
                 const isType = items[1].v === ":";
                 if (!isType) checkSplat();
                 return isType
-                    ? new Thing(ThingType.paramdescriptor, [items[0], doType(), nil], [lazy, isSplat, unwrap], lazystr, unwrapstr, ":", loc)
-                    : new Thing(ThingType.paramdescriptor, [items[0], empty, items[2]], [lazy, isSplat, unwrap], lazystr, unwrapstr, "=", loc);
+                    ? new Thing(ThingType.paramdescriptor, [items[0], doType(), nil], [lazy, isSplat, unwrap], lazystr, poststr, ":", loc)
+                    : new Thing(ThingType.paramdescriptor, [items[0], empty, items[2]], [lazy, isSplat, unwrap], lazystr, poststr, "=", loc);
             default:
                 throw "unreachable";
         }
