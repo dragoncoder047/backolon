@@ -22,9 +22,6 @@
             "esnext",
             "dom"
         ],
-        "jsxFactory": "make",
-        "jsxFragmentFactory": "null",
-        "jsxImportSource": "vanilla"
     },
     "include": [
         "./**/*.ts"
