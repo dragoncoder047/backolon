@@ -29,7 +29,7 @@
         "clean-dist": "rm -rf dist/*",
         "clean-docs": "rm -rf docs/*"
     },
-    "license": "GPL-3.0-only",
+    "license": "AGPL-3.0-only",
     "repository": {
         "type": "git",
         "url": "https://github.com/r47onfire/backolon.git"
