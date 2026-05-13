@@ -1,7 +1,7 @@
 ---
 name: plugin
 description: API reference for plugin
-license: GPL-3.0-only
+license: AGPL-3.0-only
 ---
 
 # plugin

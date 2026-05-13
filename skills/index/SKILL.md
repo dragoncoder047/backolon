@@ -1,7 +1,7 @@
 ---
 name: index
 description: "API reference for index Use when working with fromJS, toJS, mapDeleteKeyCopying, mapDeleteKeyMutating, mapGetKey, BackolonError, ErrorNote, LocationTrace."
-license: GPL-3.0-only
+license: AGPL-3.0-only
 ---
 
 # index
