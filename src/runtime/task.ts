@@ -172,7 +172,7 @@ export class Task {
                                     }
                                     if (result) {
                                         this.updateCookie(0, BlockEvalState.waiting_for_pattern_result, result.span);
-                                        this.enter(boxApply(impl, [this.i(loc, flatToVarMap(result, loc), {
+                                        this.enter(boxApply(impl, [this.#injectVarsToCall(loc, flatToVarMap(result, loc), {
                                             // TODO: inject block type variable
                                         })], top!.argv[result.span[0]!]!.loc), loc, top!.env, undefined, "<pattern expansion>");
                                         return true;
@@ -256,7 +256,7 @@ export class Task {
                         case ApplyEvalState.evaluate_arguments:
                             if (top.index >= children.length) {
                                 this.out(); // Result will be the result of the application
-                                this.a(val, top.argv[0]!, top.argv.slice(1), top.env, undefined, (val as Thing<ThingType.apply>).v);
+                                this.#doApply(val, top.argv[0]!, top.argv.slice(1), top.env, undefined, (val as Thing<ThingType.apply>).v);
                                 return true;
                             }
                             const desc = getNthDescriptor(getParamDescriptors(top.argv[0]!, this.scheduler, val), top.argv.length - 1);  // -1 to account for offset of functor
@@ -347,7 +347,7 @@ export class Task {
             false);
     }
     /** inject variables */
-    private i(opTrace: LocationTrace, vars: Thing<ThingType.map>, extraVars: Record<string, Thing> = {}, injectReturn = true) {
+    #injectVarsToCall(opTrace: LocationTrace, vars: Thing<ThingType.map>, extraVars: Record<string, Thing> = {}, injectReturn = true) {
         forEach(extraVars, (value, key) => mapUpdateKeyMutating(vars, boxNameSymbol(key, opTrace), value, opTrace));
         if (injectReturn) {
             /**
@@ -370,7 +370,7 @@ export class Task {
         return vars;
     }
     /** apply - for functions the parameters will need to have been evaluated / typechecked*/
-    private a(callsite: Thing, functor: Thing, argv: Thing[], env: Thing<ThingType.env> | Thing<ThingType.nil>, name?: string, significant = false) {
+    #doApply(callsite: Thing, functor: Thing, argv: Thing[], env: Thing<ThingType.env> | Thing<ThingType.nil>, name?: string, significant = false) {
         const goDefaults = (pendingDefaults: Thing[], vars: Thing<ThingType.map>) => {
             // Make the new parent env for evaluating the arguments include the caller's scope, to allow dynamic bindings of defaults.
             this.enter(boxApply(functor, pendingDefaults, callsite.loc), callsite.loc, newEnv(vars, boxList([]), callsite.loc, [env]), [functor, ...argv], significant ? name : undefined);
@@ -384,7 +384,7 @@ export class Task {
                 // We haven't evaluated the defaults yet...
                 return goDefaults(pendingDefaults, vars);
             }
-            this.a(callsite, functor.c[1], [this.i(callsite.loc, vars)], env, name ?? functor.v ?? "<lambda>", true);
+            this.#doApply(callsite, functor.c[1], [this.#injectVarsToCall(callsite.loc, vars)], env, name ?? functor.v ?? "<lambda>", true);
         }
         else if (typecheck(ThingType.nativefunc)(functor)) {
             const { e: vars, p: pendingDefaults } = parametersToVars(functor.v, this.scheduler.getParamDescriptors(functor.v), argv, callsite);

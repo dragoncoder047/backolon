@@ -25,7 +25,7 @@ export class Scheduler {
      * List of currently active tasks, sorted by priority (lowest first). Tasks that have finished executing but haven't been removed from the list yet will have an empty stack.
      */
     tasks: Task[] = [];
-    private s: Resurrect;
+    #serializer: Resurrect;
     /**
      * Maximum allowed stack length before a task throws a recursion error.
      * Backolon uses its own stack and not the JavaScript call stack, so this serves
@@ -51,7 +51,7 @@ export class Scheduler {
          */
         customNames: ConstructorParameters<typeof NamespaceResolver>[0] = {}
     ) {
-        this.s = new Resurrect({
+        this.#serializer = new Resurrect({
             cleanup: true,
             resolver: new NamespaceResolver({
                 ...customNames,
@@ -81,17 +81,17 @@ export class Scheduler {
     startTaskRaw(priority: number, code: Thing, env: Thing<ThingType.env> | Thing<ThingType.nil>): Task {
         const task = new Task(priority, this, code, env);
         this.tasks.push(task);
-        this.t();
+        this.#sortTasks();
         return task;
     }
-    private t() {
+    #sortTasks() {
         this.tasks.sort((t1, t2) => t1.priority - t2.priority);
     }
     /**
      * Dumps the state of all tasks into a string, which can later be loaded with `loadFromSerialized` to restore the tasks and their states.
      */
     serializeTasks(): string {
-        return compress(this.s.stringify(this.tasks, (k, v) => k === "scheduler" && (v === this) ? undefined : v));
+        return compress(this.#serializer.stringify(this.tasks, (k, v) => k === "scheduler" && (v === this) ? undefined : v));
     }
     /**
      * Deserializes a string produced by `serializeTasks` and adds the resulting tasks to the scheduler.
@@ -99,7 +99,7 @@ export class Scheduler {
      * but will not share any state with tasks that were already in the scheduler before (e.g. they won't share environments or variables).
      */
     loadFromSerialized(str: string): void {
-        this.tasks.push(...this.s.resurrect(decompress(str)).map((t: Task) => (t.scheduler = this, t)));
+        this.tasks.push(...this.#serializer.resurrect(decompress(str)).map((t: Task) => (t.scheduler = this, t)));
     }
     /**
      * Run tasks until all tasks are suspended or complete or the optional maxSteps limit is reached (-1 or undefined means no limit).
@@ -116,7 +116,7 @@ export class Scheduler {
         } while (madeProgressThisRound && --maxSteps !== 0);
         return madeAnyProgress;
     }
-    private f(name: string): NativeFunctionDetails {
+    #findFunc(name: string): NativeFunctionDetails {
         const func = this.builtins.find(mod => name in mod.funcs)?.funcs[name];
         if (!func) {
             throw new Error(`api function ${name} requested but not implemented!`);
@@ -124,10 +124,10 @@ export class Scheduler {
         return func;
     }
     getParamDescriptors(name: string): (Thing<ThingType.paramdescriptor> | Thing<ThingType.name>)[] {
-        return this.f(name).params ?? [];
+        return this.#findFunc(name).params ?? [];
     }
     callFunction(task: Task, name: string, entry: StackEntry) {
-        const result = this.f(name).impl(task, entry);
+        const result = this.#findFunc(name).impl(task, entry);
         if (result !== undefined) {
             console.warn(`Native function implementation ${name} should call task.out(result), not return result`);
             task.out(result);
