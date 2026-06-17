@@ -1,2 +1,11 @@
-export { BackolonError, LocationTrace } from "./errors";
-export { tokenize, type Token } from "./tokenizer";
+export {
+    BackolonError
+} from "./errors";
+export {
+    createTokenizer,
+    nextToken,
+    type Token,
+    type Tokenizer,
+    type TokenType
+} from "./tokenizer";
+

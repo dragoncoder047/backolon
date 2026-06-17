@@ -1,7 +1,4 @@
-import { LocationTrace } from "@r47onfire/backolon";
-
 export const F = new URL("about:test");
-export const L = new LocationTrace(0, 0, F);
 
 // type ASTSpec = {
 //     t: ThingType | string,
