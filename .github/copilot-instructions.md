@@ -17,7 +17,7 @@ for an overview of the language itself and its syntax and behavior, check out th
 
 * to build: `pnpm build`
   * don't use `pnpm build-for-fuzzer`; that builds it as a CommonJS module which is only used by the fuzzer and not exported/uploaded to npm
-  * don't use `pnpm tsc`; that will only lint and not build (tsc is set to `noEmit: true` since esbuild handles building)
+  * don't use `pnpm tsc`; that will only lint and not build (tsc is set to `noEmit: true` since Bun handles building)
 
 * to run the unit tests: `AGENT=1 pnpm test`, or start a background terminal and `AGENT=1 pnpm test:watch` (which reruns automatically on file changes).
 
@@ -33,10 +33,8 @@ for an overview of the language itself and its syntax and behavior, check out th
 
 ```
 src/
-  objects/        # core data structures (Thing, maps, etc.)
-  parser/         # tokenizer, stage one parser, unparser
-  patterns/       # pattern matching engine, meta-pattern parser
-  runtime/        # environment, scheduler, tasks, functor handling
+  tokenizer/      # tokenizer
+  parser/         # core Pratt parselet engine
   stdlib/         # builtin macros/functions that define core syntax and functionality
 test/             # Bun-based tests and fuzzing harnesses
   fuzz/           # fuzz targets (inputs folder's contents is .gitignore'd; none of them are seeds)
@@ -55,8 +53,8 @@ Top‑level exports live in `src/index.ts`.
   * avoid unnecessary whitespace changes
 * always place the opening brace on the same line, and the closing brace on its own line, with the only exception being a `} else {` when it's a simple if-else (no else-ifs).
 * prefer double-quoted strings over single-quoted strings where possible
-* give all object properties that are not meant to be used directly (even if you can't mark them `private`) names that start with `_` - that way esbuild can name-mangle all the properties that start with `_` without consequence (currently turned off but it's easy to put back).
-  * for user-facing properties, the name length should be inversely proportional to its frequency of use. For example all the properties of `Thing` get used a lot so they have one-character names (but doc comments to explain what they are).
+* give all object properties that are not meant to be used directly (even if you can't mark them `private`) names that start with `_` - that way Bun can name-mangle all the properties that start with `_` without consequence (currently turned off but it's easy to put back).
+  * if it's inside a `class`, use `#private` identifiers and give them nice descriptive names; Bun already name-mangles these even if I don't have `--mangle-names` enabled, since their privacy is enforced at runtime.
 * let the code speak for itself. stating what the code does in a comment, when it would be obvious by reading it, just wastes time (and tokens). however, do not be shy about explaining potentially counterintuitive behavior or gotchas.
 
 ---

@@ -1,0 +1,34 @@
+# TODO: how to document all these self-defined ones
+callcc := [f] => f return
+while := [@cond @body] => callcc [break] => (
+    continue := nil
+    callcc [k] => continue = k
+    if (cond [:]) (
+        body [`break:, `continue:]
+        continue!
+    )
+)
+generator := [@body] => (
+    cont := nil
+    resume := [] => (body [`yield:]; done)
+    yield := [value] => callcc [k] => (
+        resume = k
+        cont value
+    )
+    [] => callcc [k] => (
+        cont = k
+        resume!
+    )
+)
+foreach := [@varname:name list @body] => (
+    i := 0
+    while i < #list (
+        callcc [k] => body [varname: list->i, `break:, `continue: k]
+        i = i + 1
+    )
+)
+eval := [value] => __eval value
+evalin := [env value] => __eval value env
+sandboxed := [value] => __eval value nil nil false
+# don't "return" anything
+;;

@@ -1,6 +1,7 @@
-import { Thing, ThingType } from "../objects/thing";
+import { Token } from "../tokenizer";
+
 declare module "*.bk" {
-    export const ast: Thing<ThingType.topblock>;
+    export const tokens: Token[];
     export const source: string;
-    export default ast;
+    export default tokens;
 }

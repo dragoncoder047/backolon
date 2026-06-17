@@ -25,12 +25,6 @@
         "backolon"
     ],
     "intentionallyNotExported": [
-        "MapValues",
-        "Hashed",
-        "ChildrenType",
-        "ValueType",
-        "TOKENIZE_RULES",
-        "OneTypeThing",
     ],
     "externalSymbolLinkMappings": {
         "bun": {
