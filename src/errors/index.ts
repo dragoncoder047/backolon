@@ -1,26 +1,61 @@
-const formatTrace = (file: URL, line: number, col: number, message: string, sources: Record<string, string>): string => {
-    const src = sources[file.href];
-    var lineInfo = "";
+import { max } from "lib0/math";
+
+/**
+ * Source location information for Backolon errors.
+ */
+export class Span {
+    constructor(
+        public readonly file: Readonly<URL>,
+        public readonly start: number,
+        public readonly end: number) { }
+
+}
+/**
+ * A sentinel location representing an unknown source.
+ */
+export const UNKNOWN_LOCATION = new Span(new URL("about:unknown"), 0, 0);
+
+
+const formatTrace = (loc: Span, message: string, getSource: (url: URL) => string): string => {
+    const { file, start, end } = loc;
+    const src = getSource(file);
+    var lineInfo = "", line = -1, col = -1;
     if (src) {
         const lines = src.split("\n");
-        const relevantLine = lines[line];
-        if (relevantLine && col < relevantLine.length) {
+        for (
+            line = 0, col = start;
+            line < lines.length && col >= lines[line]!.length;
+            col -= lines[line++]!.length);
+        if (line < lines.length) {
+            const relevantLine = lines[line]!;
             const lineNumberString = line + 1 + "";
-            lineInfo = `\n${lineNumberString} | ${relevantLine}\n${" ".repeat(lineNumberString.length)} | ${" ".repeat(col)}^`;
+            var spanLength = end - start;
+            var suffix = "";
+            if (spanLength > (relevantLine.length - col)) {
+                spanLength = relevantLine.length - col;
+                suffix = "...";
+            }
+            spanLength = max(spanLength, 1);
+            lineInfo = `\n${lineNumberString} | ${relevantLine}\n${" ".repeat(lineNumberString.length)} | ${" ".repeat(col) + "^".repeat(spanLength) + suffix}`;
         }
     }
     return `${file.href}:${line + 1}:${col + 1}: ${message}${lineInfo}`;
 }
 
 /**
- * Base class for Backolon parse and runtime errors.
+ * An error from Backolon code that contains the location in the source that caused the error.
  */
 export class BackolonError extends Error {
-    constructor(message: string, public readonly src: URL, public readonly line: number, public readonly col: number) {
+    constructor(message: string, public readonly loc: Span) {
         super(message);
+        this.name = this.constructor.name;
     }
-    [Symbol.toStringTag] = () => "BackolonError";
-    displayOn(sources: Record<string, string>): string {
-        return formatTrace(this.src, this.line, this.col, "error: " + this.message, sources) + "\n";
+    /**
+     * Formats the error message nicely
+     * @param getSource Function that returns the source code of the file at the given URL
+     * @returns nicely formatted error message, with arrows pointing to the offending token
+     */
+    displayOn(getSource: (url: URL) => string): string {
+        return formatTrace(this.loc, "error: " + this.message, getSource) + "\n";
     }
 }

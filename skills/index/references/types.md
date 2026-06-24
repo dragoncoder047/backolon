@@ -1,5 +1,0 @@
-# Types & Enums
-
-## Types
-
-### `Token`

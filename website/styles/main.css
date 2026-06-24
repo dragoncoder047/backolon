@@ -153,18 +153,18 @@ pre {
 .hero {
     text-align: center;
     padding: 4rem 2rem;
-}
 
-.hero h1 {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    color: var(--text1);
-}
+    & h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--text1);
+    }
 
-.hero p {
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
-    color: var(--text2);
+    & p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        color: var(--text2);
+    }
 }
 
 .hero-example pre {
@@ -194,31 +194,31 @@ pre {
     transition: all 0.2s ease;
     text-decoration: none;
     display: inline-block;
-}
 
-.btn-primary {
-    background-color: var(--accent);
-    color: var(--bg1);
-    border-color: var(--accent);
-}
+    &.primary {
+        background-color: var(--accent);
+        color: var(--bg1);
+        border-color: var(--accent);
 
-.btn-primary:hover {
-    background-color: var(--accent-hover);
-    border-color: var(--accent-hover);
-    text-decoration: none;
-}
+        &:hover {
+            background-color: var(--accent-hover);
+            border-color: var(--accent-hover);
+            text-decoration: none;
+        }
+    }
 
-.btn-secondary {
-    background-color: transparent;
-    color: var(--accent);
-    border-color: var(--accent);
-}
+    &.secondary {
+        background-color: transparent;
+        color: var(--accent);
+        border-color: var(--accent);
 
-.btn-secondary:hover {
-    background-color: var(--bg2);
-    border-color: var(--accent-hover);
-    color: var(--accent-hover);
-    text-decoration: none;
+        &:hover {
+            background-color: var(--bg2);
+            border-color: var(--accent-hover);
+            color: var(--accent-hover);
+            text-decoration: none;
+        }
+    }
 }
 
 /* Navigation */
@@ -227,15 +227,15 @@ nav {
     gap: 2rem;
     align-items: center;
     flex-direction: row;
-}
 
-nav a {
-    color: var(--text1);
-}
+    & a {
+        color: var(--text1);
 
-nav a:hover {
-    color: var(--accent);
-    text-decoration: none;
+        &:hover {
+            color: var(--accent);
+            text-decoration: none;
+        }
+    }
 }
 
 .logo {
@@ -279,6 +279,10 @@ nav a:hover {
     background-color: var(--bg3);
     border-left: 3px solid var(--accent);
     border-radius: 4px;
+
+    & [id] {
+        scroll-margin-top: 2rem;
+    }
 }
 
 .api-info {
@@ -325,39 +329,35 @@ details {
     display: block;
     margin: 0.1rem;
     font-family: monospace;
-}
 
-.nav-entry::before {
-    user-select: text;
-    display: inline-grid;
-    place-items: center;
-    line-height: 1;
-    vertical-align: middle;
-    color: var(--bg1);
-    width: 1.25em;
-    aspect-ratio: 1 / 1;
-    margin-right: 0.2rem;
-    border-radius: 50%;
-    padding: 0;
-}
+    &::before {
+        user-select: text;
+        display: inline-grid;
+        place-items: center;
+        line-height: 1;
+        vertical-align: middle;
+        color: var(--bg1);
+        width: 1.25em;
+        aspect-ratio: 1 / 1;
+        margin-right: 0.2rem;
+        border-radius: 50%;
+        padding: 0;
+    }
 
-.nav-entry.function::before {
-    content: "F";
-    background-color: #dc63cc;
-}
+    &.function::before {
+        content: "F";
+        background-color: #dc63cc;
+    }
 
-.nav-entry.syntax::before {
-    content: "S";
-    background-color: #dcdc63;
-}
+    &.syntax::before {
+        content: "S";
+        background-color: #dcdc63;
+    }
 
-.nav-entry.value::before {
-    content: "V";
-    background-color: #63dc6d;
-}
-
-.api-item [id] {
-    scroll-margin-top: 2rem;
+    &.value::before {
+        content: "V";
+        background-color: #63dc6d;
+    }
 }
 
 /* Footer */
@@ -368,10 +368,10 @@ footer {
     text-align: center;
     margin-top: 4rem;
     color: var(--text2);
-}
 
-footer a {
-    color: var(--accent);
+    & a {
+        color: var(--accent);
+    }
 }
 
 /* Responsive */

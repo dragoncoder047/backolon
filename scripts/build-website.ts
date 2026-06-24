@@ -49,7 +49,7 @@ function markdownElement(html: HTMLElement) {
 
 await build({
     splitting: true,
-    minify: true,
+    // minify: true,
     entrypoints: [
         "website/index.html",
         "website/repl/index.html",

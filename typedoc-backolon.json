@@ -1,26 +1,19 @@
 {
+    "$schema": "https://typedoc.org/schema.json",
     "extends": [
-        "./typedoc-common.json"
+        "./typedoc-api.json"
     ],
     "entryPoints": [
         "./src/index.ts",
         "./src/plugin/index.ts"
     ],
-    "sort": [
-        "kind",
-        "enum-member-source-order"
-    ],
-    "out": "./docs/docs/embedding",
-    "readme": "./website/api_readme.md",
-    "plugin": [
-        "@to-skills/typedoc"
-    ],
-    "llmsTxt": true,
+    "out": "./docs/api/backolon",
     "llmsTxtOutDir": "docs",
     "navigationLinks": {
         "Home": "/",
         "REPL": "/repl",
         "Language Docs": "/docs",
+        "JEB Docs": "/api/jeb",
         "Github": "https://github.com/r47onfire/backolon"
     }
 }

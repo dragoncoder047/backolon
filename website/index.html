@@ -19,7 +19,7 @@
             <nav>
                 <a href="/repl">REPL</a>
                 <a href="/docs">Language Docs</a>
-                <a href="/docs/embedding">JS API</a>
+                <a href="/api/backolon">JS API</a>
                 <a href="https://github.com/r47onfire/backolon" target="_blank">GitHub</a>
             </nav>
         </header>
@@ -54,9 +54,10 @@
                 </div>
 
                 <div class="cta-buttons">
-                    <a href="/repl/" class="btn btn-primary">Try the REPL</a>
-                    <a href="/docs/" class="btn btn-secondary">Language Docs</a>
-                    <a href="/docs/embedding/" class="btn btn-secondary">JS API</a>
+                    <a href="/repl" class="btn primary">Try the REPL</a>
+                    <a href="/docs" class="btn secondary">Language Docs</a>
+                    <a href="/api/backolon" class="btn secondary">Backolon JS API</a>
+                    <a href="/api/jeb" class="btn secondary">JEB JS API</a>
                 </div>
 
             </section>
@@ -104,7 +105,8 @@
                 ### Parsing
 
                 Backolon does not discard any token, meaning you can make whitespace significant or not as you desire,
-                or even introspect and parse the contents of comments.
+                or even introspect and parse the contents of comments (doing so requires a bit of work with the default
+                syntax, but it is possible).
 
                 ### Lambdas
 
@@ -113,8 +115,8 @@
 
                 ### Patterns
 
-                Syntax is defined through structural patterns that match sequences of tokens literally, allowing exotic
-                and complex syntax to be defined easily.
+                Syntax is defined through an extensible Pratt parser framework, allowing exotic and complex syntax to be
+                defined easily.
 
                 ### Runtime
 
@@ -122,7 +124,7 @@
                 ordinary values that can be passed around and stored.
             </section>
             <!-- NOTE: don't forget to re-indent the stuff since the html formatter wants to unindent it since it doesn't know it's a code block -->
-            <section class="content-block" markdown="block">
+            <!-- <section class="content-block" markdown="block">
                 ## Embed from JavaScript
 
                 ```js
@@ -137,7 +139,7 @@
                 scheduler.stepUntilSuspended();
                 console.log(task.result);
                 ```
-            </section>
+            </section> -->
         </main>
         <footer markdown="block">
             Made with ❤️ by [Burning Resistor Games](https://github.com/r47onfire/)

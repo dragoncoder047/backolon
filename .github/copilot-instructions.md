@@ -29,21 +29,6 @@ for an overview of the language itself and its syntax and behavior, check out th
 
 ---
 
-## Project structure (may be out of date)
-
-```
-src/
-  tokenizer/      # tokenizer
-  parser/         # core Pratt parselet engine
-  stdlib/         # builtin macros/functions that define core syntax and functionality
-test/             # Bun-based tests and fuzzing harnesses
-  fuzz/           # fuzz targets (inputs folder's contents is .gitignore'd; none of them are seeds)
-```
-
-Top‑level exports live in `src/index.ts`.
-
----
-
 ## Typescript conventions
 
 * `strict` mode is on.

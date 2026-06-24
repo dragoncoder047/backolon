@@ -1,7 +1,7 @@
-import { Token } from "../tokenizer";
 
 declare module "*.bk" {
-    export const tokens: Token[];
+    // TODO
+    export const tokens: false[];
     export const source: string;
     export default tokens;
 }

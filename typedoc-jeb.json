@@ -1,0 +1,19 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "extends": [
+        "./typedoc-api.json"
+    ],
+    "entryPoints": [
+        "./jeb/src/index.ts"
+    ],
+    "out": "./docs/api/jeb",
+    "llmsTxtOutDir": "./docs/jeb/",
+    "skillsOutDir": "../skills",
+    "navigationLinks": {
+        "Home": "/",
+        "REPL": "/repl",
+        "Backolon Language Docs": "/docs",
+        "Backolon API Docs": "/api/backolon",
+        "Github": "https://github.com/r47onfire/jeb"
+    }
+}
