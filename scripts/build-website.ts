@@ -5,7 +5,7 @@ import Prism from "prismjs";
 import plugin from "../src/plugin";
 import { build } from "./build-common.js";
 import { docsToHTML } from "./build-docs";
-import { extractBackolonDocs } from "./doc-extract";
+import { compileAllBackolonDocs } from "./doc-extract";
 
 
 const md = new markdown({
@@ -32,8 +32,6 @@ function dedent(str: string) {
     str = str.replace(/^(\s*)\n/, "");
     const match = str.match(/^[^\S\r\n]+/);
     const unIndented = match ? str.replace(new RegExp("^" + match[0], "gm"), "") : str;
-    // console.log("indented", str);
-    // console.log("unindented", unIndented);
     return unIndented;
 }
 
@@ -64,19 +62,6 @@ await build({
     plugins: [
         plugin,
         {
-            name: "SQUELCH_REQUIRE_JQUERY",
-            setup(build) {
-                build.onResolve({ filter: /^jquery$/ }, args => {
-                    // args.importer is the file doing the require/import
-                    if (args.importer && /jquery\.terminal/.test(args.importer)) {
-                        return { external: true, path: "" };
-                    }
-                    // otherwise let build resolve normally
-                    return;
-                });
-            }
-        },
-        {
             name: "HTML_PROCESS",
             setup(build) {
                 build.onLoad({ filter: /\.html$/ }, async args => {
@@ -89,7 +74,7 @@ await build({
                     const docEl = dom.querySelector("#__DOCS_CONTENT__");
                     if (docEl) {
                         docEl.removeAttribute("id");
-                        const { html, sidebar } = docsToHTML(extractBackolonDocs(await Bun.file(await Bun.resolve("../typedoc_output.json", import.meta.dir)).json()));
+                        const { html, sidebar } = docsToHTML(compileAllBackolonDocs());
                         docEl.innerHTML = html;
 
                         const sidebarEl = dom.querySelector("#__DOCS_SIDEBAR__")!;
@@ -107,4 +92,3 @@ await build({
 });
 
 console.log("Web Build OK");
-

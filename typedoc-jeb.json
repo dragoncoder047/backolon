@@ -9,6 +9,7 @@
     "out": "./docs/api/jeb",
     "llmsTxtOutDir": "./docs/jeb/",
     "skillsOutDir": "../skills",
+    "sourceLinkTemplate": "https://github.com/r47onfire/jeb/blob/main/src/{path}#L{line}",
     "navigationLinks": {
         "Home": "/",
         "REPL": "/repl",

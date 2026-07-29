@@ -11,6 +11,8 @@ homoiconic scripting language
 ## Quick Reference
 
 **errors:** `BackolonError` (An error from Backolon code that contains the location in the source that caused the error), `Span` (Source location information for Backolon errors)
+**runtime:** `Importer`, `NativeModule`, `BackolonVM`, `BackolonContinuation`, `SourceTracker`, `Module`, `ModuleLoadState`
+**parser:** `Parser`, `Parselet`
 **plugin:** `default` ([ESBuild](https://esbuild)
 
 ## References

@@ -9,6 +9,7 @@
     ],
     "out": "./docs/api/backolon",
     "llmsTxtOutDir": "docs",
+    "sourceLinkTemplate": "https://github.com/r47onfire/backolon/blob/main/src/{path}#L{line}",
     "navigationLinks": {
         "Home": "/",
         "REPL": "/repl",

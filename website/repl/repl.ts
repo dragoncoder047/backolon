@@ -1,8 +1,4 @@
 import * as Backolon from "@r47onfire/backolon";
-import $ from "jquery";
-import init from "jquery.terminal";
-
-init(window, $);
 
 // TODO: generate this programmatically
 const HELP_TEXT = `

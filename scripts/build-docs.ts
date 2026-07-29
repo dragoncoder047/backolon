@@ -1,11 +1,12 @@
 import Prism from "prismjs";
-import { Documentation, Example, FunctionDoc, SyntaxDoc, ValueDoc } from "./doc";
+
+// TODO: rewrite this to reuse JEB docstring format
 
 const e = Bun.escapeHTML;
 
 function syntaxHighlight(string: string, lang: string): string {
     if (lang === "backolon") {
-        // TODO: Backolon self-highlighting using an Unparser
+        // TODO: Backolon self-highlighting
         return string;
     }
     return Prism.highlight(string, Prism.languages[lang]!, lang);
@@ -102,39 +103,40 @@ function renderSyntax(modName: string, syn: SyntaxDoc) {
 
 export function docsToHTML(docs: Documentation) {
     var html = "", sidebar = "";
-    for (var [modName, modDoc] of Object.entries(docs)) {
-        sidebar += `<details open><summary><a href="#module-${s(modName)}">${e(modName)}</a></summary>`;
-        var section = "";
-        if (modDoc.functions.length > 0) {
-            section += `<section class="api-section"><h3>Functions</h3>`;
-            for (var doc of modDoc.functions) {
-                const { html, nav } = renderFunction(modName, doc);
-                section += html;
-                sidebar += nav;
-            }
-            section += "</section>";
-        }
-        if (modDoc.values.length > 0) {
-            section += `<section class="api-section"><h3>Values</h3>`;
-            for (var val of modDoc.values) {
-                const { html, nav } = renderValue(modName, val);
-                section += html;
-                sidebar += nav;
-            }
-            section += "</section>";
-        }
-        if (modDoc.syntax.length > 0) {
-            section += `<section class="api-section"><h3>Syntax</h3>`;
-            for (var syn of modDoc.syntax) {
-                const { html, nav } = renderSyntax(modName, syn);
-                section += html;
-                sidebar += nav;
-            }
-            section += "</section>";
-        }
-        sidebar += "</details>";
-        html += `<h2 id="module-${s(modName)}">${e(modName)}</h2>`;
-        html += `<section>${section}</section>`;
-    }
+    // TODO:
+    // for (var [modName, modDoc] of Object.entries(docs)) {
+    //     sidebar += `<details open><summary><a href="#module-${s(modName)}">${e(modName)}</a></summary>`;
+    //     var section = "";
+    //     if (modDoc.functions.length > 0) {
+    //         section += `<section class="api-section"><h3>Functions</h3>`;
+    //         for (var doc of modDoc.functions) {
+    //             const { html, nav } = renderFunction(modName, doc);
+    //             section += html;
+    //             sidebar += nav;
+    //         }
+    //         section += "</section>";
+    //     }
+    //     if (modDoc.values.length > 0) {
+    //         section += `<section class="api-section"><h3>Values</h3>`;
+    //         for (var val of modDoc.values) {
+    //             const { html, nav } = renderValue(modName, val);
+    //             section += html;
+    //             sidebar += nav;
+    //         }
+    //         section += "</section>";
+    //     }
+    //     if (modDoc.syntax.length > 0) {
+    //         section += `<section class="api-section"><h3>Syntax</h3>`;
+    //         for (var syn of modDoc.syntax) {
+    //             const { html, nav } = renderSyntax(modName, syn);
+    //             section += html;
+    //             sidebar += nav;
+    //         }
+    //         section += "</section>";
+    //     }
+    //     sidebar += "</details>";
+    //     html += `<h2 id="module-${s(modName)}">${e(modName)}</h2>`;
+    //     html += `<section>${section}</section>`;
+    // }
     return { html, sidebar };
 }

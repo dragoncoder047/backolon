@@ -7,31 +7,36 @@ export interface Parselet {
     /**
      * This is a JEB callable (builtin, lambda, etc) that implements the parse
      * handler of the parselet.
-     * 
-     * The signature is always (type, current token, left)
      *
-     * For a prefix parselet, it is passed only type="prefix" and current token; left is undefined.
+     * The signature is always (context, left, token)
      *
-     * For an infix parselet, it is passed type="infix", the current token, and the left-side expression.
+     * For a prefix position, left is undefined, and context.first is true.
+     *
+     * For an infix position, left is the left-side expression, and context.first is false.
      *
      * In either case the parse function must return a chunk of JEB code that implements the
-     * parse result, or call `skip` to mark what it has parsed as insignificant (`skip`
-     * is a continuation which doesn't return).
+     * parse result, call `skip()` to mark what it has parsed as insignificant (`skip`
+     * is a continuation which doesn't return), or call `discard()`
+     * which goes to the next token.
      */
     readonly parse: any;
     readonly precedence: number;
 }
 
+const RE = RegExp;
 export const createParselet = (prefix: RegExp | string, parse: any, precedence: number): Parselet => {
     const fixedRegExp =
         isString(prefix)
-            ? new RegExp(RegExp.escape(prefix), "y") :
-            /y/.test(prefix.flags)
+            ? new RE(RE.escape(prefix), "y") :
+            prefix.sticky
                 ? prefix :
-                new RegExp(prefix, prefix.flags + "y");
+                new RE(prefix, prefix.flags + "y");
     return {
         prefix: fixedRegExp,
         parse,
         precedence
     };
 }
+
+export const parseletComparator = (a: Parselet, b: Parselet) => a.precedence - b.precedence;
+

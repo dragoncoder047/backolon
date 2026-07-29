@@ -13,7 +13,6 @@
         "module": "ESNext",
         "types": [
             "bun",
-            "jquery",
             "node",
             "prismjs",
             "markdown-it"
