@@ -1,6 +1,5 @@
 export {
-    BackolonError,
-    type Span
+    BackolonError
 } from "./errors";
 export {
     type Parser
@@ -9,17 +8,19 @@ export {
     type Parselet
 } from "./parser/parselet";
 export {
-    type BackolonContinuation
-} from "./runtime/continuation";
+    type Span
+} from "./parser/span";
 export {
     Importer,
     type SourceTracker
 } from "./runtime/importer";
 export {
-    ModuleLoadState,
-    NativeModule,
+    Loader
+} from "./runtime/loader";
+export {
     type Module
 } from "./runtime/module";
 export {
     BackolonVM
 } from "./runtime/vm";
+

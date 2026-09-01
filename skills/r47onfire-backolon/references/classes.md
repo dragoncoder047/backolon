@@ -6,34 +6,32 @@
 An error from Backolon code that contains the location in the source that caused the error.
 *extends `JEBError`*
 ```ts
-constructor(message: string, loc: Span): BackolonError
+constructor(message: string, context: Record<string, any> & ErrorOptions, traceback?: StackTreeNode[]): BackolonError
 ```
-**Properties:**
-- `loc: Span`
-**Methods:**
-- `displayOn(getSource: (url: URL) => string): string` — Formats the error message nicely
 
 ## runtime
 
 ### `Importer`
 ```ts
-constructor(lazyLoad: boolean): Importer
+constructor(loaders: Loader[]): Importer
 ```
 **Properties:**
-- `lazyLoad: boolean`
-
-### `NativeModule`
-*extends `Module`*
-```ts
-constructor(init: (m: NativeModule) => void): NativeModule
-```
-**Properties:**
-- `loadState: LOADED` — Native modules are always loaded, since they don't have to call into Backolon code to load
-- `parselets: Parselet[]` — The saved parselets list at the end of the module body.
-- `constraints: Constraint<Parselet>[]`
-- `exports: Record<string, VariableReference>` — The named exports for the module
+- `loaders: Loader[]`
 **Methods:**
-- `load(): void` — Does nothing, since native modules are always loaded.
+- `loadModule(vm: BackolonVM, parent: Module | null, url: URL, asMain: boolean): void` — Pushes the required opcodes to the stack to load the module at the
+given URL and leave the Module on the stack.
+
+### `Loader`
+Object whose job it is to download or open the file
+and then load its contents into a module object.
+```ts
+constructor(): Loader
+```
+**Methods:**
+- `get(url: URL): Loader | undefined` — Returns undefined if this loader can't load the URL.
+Returns itself or another loader that will load the
+- `load(url: URL, module: Module, vm: BackolonVM, asMain: boolean): void` — Called when this loader has been selected to load the given URL
+into the given Module. Should push opcodes to do so.
 
 ### `BackolonVM`
 *extends `JebVM`*
@@ -43,5 +41,10 @@ constructor(importer: Importer): BackolonVM
 **Properties:**
 - `parser: Parser | null` — Current parser context - null if not parsing
 - `importer: Importer`
-- `modules: Record<string, Module>`
-- `sources: Record<string, SourceTracker>`
+- `modules: Record<string, Module>` — Module cache
+- `sources: Record<string, SourceTracker>` — Mapping of URL to source tracker
+- `spans: Record<string, Span>` — Mapping of location ID (for the JEB `at` identifier function) to the actual Span
+**Methods:**
+- `getState(): BackolonVMState`
+- `restoreState(state: BackolonVMState): void`
+- `start(url: URL): void` — Starts running the main module

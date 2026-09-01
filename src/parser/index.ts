@@ -1,6 +1,5 @@
-import { B_begin, B_define, B_let } from "@r47onfire/jeb";
+import { B_begin, B_define, B_let, JEBStateError } from "@r47onfire/jeb";
 import { SourceTracker } from "../runtime/importer";
-import { BackolonVM } from "../runtime/vm";
 import { Parselet } from "./parselet";
 import { Constraint, sortByConstraints } from "./sort";
 import { Span } from "./span";
@@ -20,12 +19,36 @@ export class Parser {
         public readonly constraints: Constraint<Parselet>[],
         public readonly skipErrors: boolean,
     ) { }
-    #firstForPrecedence: number[] = [];
+    #clean = false;
+    #precedenceOf!: Map<number, Parselet>;
+    addParselet(parselet: Parselet): Parser {
+        return new Parser(this.source, this.index, this.parselets.concat(parselet), this.constraints, this.skipErrors);
+    }
+    addConstraint(constraint: Constraint<Parselet>): Parser {
+        return new Parser(this.source, this.index, this.parselets, this.constraints.concat(constraint), this.skipErrors);
+    }
     sort() {
-        this.#firstForPrecedence = sortByConstraints(this.parselets, this.constraints);
+        this.#precedenceOf = sortByConstraints(this.parselets, this.constraints);
+        this.#clean = true;
+    }
+    #assertClean() {
+        if (!this.#clean) {
+            throw new JEBStateError("Cannot parse right now");
+        }
+    }
+    peek(): [precedence: number, parselet: Parselet, token: Token] | undefined {
+        this.#assertClean();
+        const { parselets, source: { code, src } } = this;
+        for (var i = parselets.length - 1; i >= 0; i--) {
+            const p = parselets[i]!;
+            p.prefix.lastIndex = this.index;
+            const match = p.prefix.exec(code);
+            if (match) {
+                return [i, p, new Token(match[0], new Span(src, this.index, this.index + match[0].length))];
+            }
+        }
     }
 }
-
 
 // const createParser = (source: SourceTracker, skipErrors: boolean): Parser => {
 //     return {
@@ -71,9 +94,6 @@ export class Parser {
 //     };
 //     return [token, next];
 // });
-
-export const installParserMachinery = (vm: BackolonVM) => {
-}
 
 const PARSER_CODE = [B_begin,
     [B_define, ["parseExpression", "minPrecedence", "orEqual", ["skipErrors", false]],

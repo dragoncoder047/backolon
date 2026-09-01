@@ -24,8 +24,8 @@
         "dev:serve": "python3 -m http.server -d docs",
         "dev:watch": "bun nodemon -e js,json,ts,css,md,html,bk -i docs -w src -w website -w scripts --exec \"bun run build:website\"",
         "fuzz": "bun run build-for-fuzzer && ./scripts/fuzz.sh",
-        "test": "bun test",
-        "test:watch": "bun test --watch",
+        "test": "BUN_JSC_useTailCalls=0 bun test",
+        "test:watch": "bun run test --watch",
         "prepare": "bun run build --minify",
         "clean-dist": "rm -rf dist/*",
         "clean-docs": "rm -rf docs/*"

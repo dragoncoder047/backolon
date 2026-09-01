@@ -7,6 +7,7 @@
         "defun",
         "exuo",
         "imaginarny",
+        "isinstance",
         "jsfuzz",
         "jsoncrush",
         "linkify",
