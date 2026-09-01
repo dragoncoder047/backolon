@@ -17,16 +17,16 @@
         }
     },
     "scripts": {
-        "build": "pnpm clean-dist && pnpm bun run scripts/build.ts",
-        "build-for-fuzzer": "pnpm bun run scripts/build-for-fuzzer.ts",
-        "build:website": "pnpm clean-docs && . scripts/build-website.sh",
-        "dev": "pnpm run \"/^dev:.*/\"",
+        "build": "bun run clean-dist && bun run scripts/build.ts",
+        "build-for-fuzzer": "bun run scripts/build-for-fuzzer.ts",
+        "build:website": "bun run clean-docs && . scripts/build-website.sh",
+        "dev": "bun run --parallel \"dev:*\"",
         "dev:serve": "python3 -m http.server -d docs",
-        "dev:watch": "pnpm nodemon -e js,json,ts,css,md,html,bk -i docs -w src -w website -w scripts --exec \"pnpm build:website\"",
-        "fuzz": "pnpm build-for-fuzzer && ./scripts/fuzz.sh",
-        "test": "pnpm bun test",
-        "test:watch": "pnpm test --watch",
-        "prepare": "pnpm build --minify",
+        "dev:watch": "bun nodemon -e js,json,ts,css,md,html,bk -i docs -w src -w website -w scripts --exec \"bun run build:website\"",
+        "fuzz": "bun run build-for-fuzzer && ./scripts/fuzz.sh",
+        "test": "bun test",
+        "test:watch": "bun test --watch",
+        "prepare": "bun run build --minify",
         "clean-dist": "rm -rf dist/*",
         "clean-docs": "rm -rf docs/*"
     },
@@ -38,25 +38,25 @@
     "homepage": "https://r47onfire.github.io/backolon",
     "devDependencies": {
         "@gitlab-org/jsfuzz": "^1.2.4",
-        "@skillit/typedoc": "^1.2.0",
-        "@types/bun": "^1.3.14",
-        "@types/markdown-it": "^14.1.2",
+        "@skillit/typedoc": "^2.0.3",
+        "@types/bun": "^1.4.0",
+        "@types/markdown-it": "^14.2.0",
         "@types/markdown-it-attrs": "^4.1.3",
-        "@types/node": "^25.9.3",
+        "@types/node": "^26.4.0",
         "@types/prismjs": "^1.26.6",
-        "bun": "^1.3.14",
-        "markdown-it": "^14.2.0",
-        "markdown-it-attrs": "^4.5.0",
-        "node-html-parser": "^7.1.0",
+        "markdown-it": "^15.0.1",
+        "markdown-it-attrs": "^5.0.1",
+        "node-html-parser": "^9.0.2",
         "nodemon": "^3.1.14",
         "prismjs": "^1.30.0",
-        "typedoc": "^0.28.19"
+        "typedoc": "^0.28.20"
     },
     "type": "module",
     "dependencies": {
+        "@r47onfire/game-math": "github:r47onfire/game-math",
         "@r47onfire/jeb": "file:jeb",
         "lib0": "^0.2.117",
         "lz-string": "^1.5.0",
-        "resurrect-esm": "^2.0.8"
+        "resurrect-esm": "^2.0.9"
     }
 }

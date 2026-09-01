@@ -1,5 +1,111 @@
 # Functions
 
+## auditHookTypes
+
+### `makeSingleEventWatcher`
+```ts
+makeSingleEventWatcher<T>(event: T, cb: (args: JEBAuditEvents[T]) => void): (name: keyof JEBAuditEvents, args: unknown[]) => false | void
+```
+**Parameters:**
+- `event: T`
+- `cb: (args: JEBAuditEvents[T]) => void`
+**Returns:** `(name: keyof JEBAuditEvents, args: unknown[]) => false | void`
+
+## builtins
+
+### `loadBuiltins`
+Install the built-in functions and opcodes to the builtins scope of the given VM.
+
+Usually you don't need to do this, since the JebVM constructor calls this automatically,
+but it might be needed if the VM state gets corrupted, or you mess with JebVM#builtinsEnv directly.
+```ts
+loadBuiltins(vm: JebVM): void
+```
+**Parameters:**
+- `vm: JebVM`
+
+## define
+
+### `makeJSFun`
+Creates a builtin function.
+```ts
+makeJSFun<T>(name: string, signature: T, fn: (args: Record<ShorthandToLonghand<T>[number]["name"], any> & (ExtractRest<T, true> extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (ExtractRest<T, false> extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Identifier | undefined) => any, doc: string): JSFun<CallableSignatureFromShorthand<T>>
+```
+**Parameters:**
+- `name: string`
+- `signature: T` — Defines the parameters of the function and how they should be interpreted
+- `fn: (args: Record<ShorthandToLonghand<T>[number]["name"], any> & (ExtractRest<T, true> extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (ExtractRest<T, false> extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Identifier | undefined) => any` — The function to implement the builtin. It should use the VM from the parameter, and **not**
+close over the one that is passed to the `vm` parameter of `defineBuiltin` (since this builtin may be reused for a sub-VM for
+e.g. an FFI callback).
+- `doc: string`
+**Returns:** `JSFun<CallableSignatureFromShorthand<T>>` — the builtin function, for referring to later
+
+### `define`
+Defines the object in the VM's builtins scope as a constant.
+```ts
+define(vm: JebVM, name: string, obj: any): void
+```
+**Parameters:**
+- `vm: JebVM`
+- `name: string`
+- `obj: any`
+
+### `makeOpcode`
+Creates a new opcode for the VM.
+```ts
+makeOpcode<T>(fn: T, doc: string | null): T
+```
+**Parameters:**
+- `fn: T` — The function to implement the opcode.
+- `doc: string | null`
+**Returns:** `T`
+
+### `defineApplier`
+Defines a new applier that can be used by the `jeb:apply` opcode to call something.
+```ts
+defineApplier<T, PO>(vm: JebVM, type: T, run: PO["run"], describe: PO["describe"], doc: string): void
+```
+**Parameters:**
+- `vm: JebVM`
+- `type: T`
+- `run: PO["run"]` — Should push opcodes to take the arguments object from the top of the stack and pass them to whatever the implementation is.
+It should not actually call that implementation as the arguments object is not actually on the stack at the point this is called.
+- `describe: PO["describe"]` — Returns the metadata of the function, which includes the signature (see CallableSignature)
+- `doc: string`
+
+### `defineEvaluator`
+Defines a new evaluator that can be used by the `jeb:eval` opcode to evaluate or unwrap something.
+```ts
+defineEvaluator<T>(vm: JebVM, type: T, fn: (this: unknown, vm: JebVM, args: [TypeValue<T[number]>], flags: EvalFlags) => void, doc: string): void
+```
+**Parameters:**
+- `vm: JebVM`
+- `type: T`
+- `fn: (this: unknown, vm: JebVM, args: [TypeValue<T[number]>], flags: EvalFlags) => void`
+- `doc: string`
+
+### `defineAccessor`
+Defines a new accessor that can be used by the `jeb:get` and `jeb:set` opcodes to look up or reassign a field on something.
+```ts
+defineAccessor<T>(vm: JebVM, type: T, fn: (this: unknown, vm: JebVM, args: [TypeValue<T[number]>], flags: AccessFlags) => Reference, doc: string): void
+```
+**Parameters:**
+- `vm: JebVM`
+- `type: T`
+- `fn: (this: unknown, vm: JebVM, args: [TypeValue<T[number]>], flags: AccessFlags) => Reference`
+- `doc: string`
+
+### `defineUnwrapper`
+Defines a new unwrapper to define how a special wrapper should be unwrapped.
+```ts
+defineUnwrapper<T>(vm: JebVM, type: T, fn: (this: unknown, vm: JebVM, args: [TypeValue<T[number]>], flags: void) => void, doc: string): void
+```
+**Parameters:**
+- `vm: JebVM`
+- `type: T`
+- `fn: (this: unknown, vm: JebVM, args: [TypeValue<T[number]>], flags: void) => void`
+- `doc: string`
+
 ## doc
 
 ### `firstLineRegex`
@@ -64,87 +170,80 @@ parseInline(s: string): DocNode[]
 - `s: string`
 **Returns:** `DocNode[]`
 
-## builtins
+## env
 
-### `loadBuiltins`
-Install the built-in functions and opcodes to the builtins scope of the given VM.
-
-Usually you don't need to do this, since the JebVM constructor calls this automatically,
-but it might be needed if the VM state gets corrupted, or you mess with JebVM#builtinsEnv directly.
+### `gensym`
+Returns a new unique symbol with a unique number description (to differentiate it in printouts).
 ```ts
-loadBuiltins(vm: JebVM): void
+gensym(s: string): symbol
 ```
 **Parameters:**
-- `vm: JebVM`
+- `s: string` — default: `"$gensym"`
+**Returns:** `symbol`
 
-### `alias`
-Copies the value of a builtin value to the new name in the builtins scope.
+## errors
+
+### `createStackLeafNode`
 ```ts
-alias(vm: JebVM, srcName: string, dstName: string): void
+createStackLeafNode(name: Identifier | undefined, location: Identifier | undefined): StackTreeNode
 ```
 **Parameters:**
-- `vm: JebVM`
-- `srcName: string` — Source (should already be defined)
-- `dstName: string` — Target (will be defined to be the same as the source's value)
+- `name: Identifier | undefined`
+- `location: Identifier | undefined`
+**Returns:** `StackTreeNode`
 
-### `defineAccessor`
-Defines a new accessor that can be used by the `jeb:get` and `jeb:set` opcodes to look up or reassign a field on something.
+### `createStackInnerNode`
 ```ts
-defineAccessor(vm: JebVM, apply: Accessor<any>): void
+createStackInnerNode(count: number, children: StackTreeNode[]): StackTreeNode
 ```
 **Parameters:**
-- `vm: JebVM`
-- `apply: Accessor<any>`
+- `count: number`
+- `children: StackTreeNode[]`
+**Returns:** `StackTreeNode`
 
-### `defineApplier`
-Defines a new applier that can be used by the `jeb:apply` opcode to call something.
+### `compressStackTree`
 ```ts
-defineApplier(vm: JebVM, apply: Applier<any>): void
+compressStackTree(nodes: StackTreeNode[]): StackTreeNode[]
 ```
 **Parameters:**
-- `vm: JebVM`
-- `apply: Applier<any>`
+- `nodes: StackTreeNode[]`
+**Returns:** `StackTreeNode[]`
 
-### `defineBuiltin`
-Defines a builtin function in the VM's builtins scope as a constant.
+### `formatStackTraceCompact`
+Formats a stack tree as a compact string representation
 ```ts
-defineBuiltin<T>(vm: T, name: string, arity: Arity, isSpecial: boolean, resultIsMacro: boolean, fn: (args: any[], vm: T) => any, doc: string): void
+formatStackTraceCompact(nodes: StackTreeNode[]): string
 ```
 **Parameters:**
-- `vm: T`
-- `name: string`
-- `arity: Arity` — The allowable number of arguments to the function.
-If an object, specifies the min and max.
-If a number, min and max are the same.
-If null, min = 0 and max = Infinity.
-- `isSpecial: boolean`
-- `resultIsMacro: boolean`
-- `fn: (args: any[], vm: T) => any` — The function to implement the builtin. It should use the VM from the parameter, and **not**
-close over the one that is passed to the `vm` parameter of `defineBuiltin` (since this builtin may be reused for a sub-VM for
-e.g. an FFI callback).
-- `doc: string`
+- `nodes: StackTreeNode[]` — The compressed stack tree nodes
+**Returns:** `string` — A formatted string like "foo &lt;- bar &lt;- (baz * 3) &lt;- qux"
 
-### `defineEvaluator`
-Defines a new applier that can be used by the `jeb:eval` opcode to evaluate or unwrap something.
+### `wrapThrowToError`
+Runs the function, and if it throws an error that isn't a JEBError,
+wraps it in the given error type and re-throws it, otherwise returns the function result.
 ```ts
-defineEvaluator(vm: JebVM, apply: Evaluator<any>): void
+wrapThrowToError<T>(kind: (message: string, options: { cause: any }) => JEBError, f: () => T): T
 ```
 **Parameters:**
-- `vm: JebVM`
-- `apply: Evaluator<any>`
+- `kind: (message: string, options: { cause: any }) => JEBError` — Kind of JEB error a thrown error causes
+- `f: () => T` — The function to catch errors from
+**Returns:** `T` — The result of the function or NOTHING if the function threw
+```
+defineBuiltin(vm, "test", null, false, false,
+    (vm, args) => wrapThrowToError(vm, "test:testError",
+        () => doSomethingThatMayThrow(vm, args[0])));
+```
 
-### `defineOpcode`
-Defines a new opcode for the VM.
+### `checkNothingOrPush`
+Pushes the value to the VM's data stack, but only if the value is not NOTHING.
 ```ts
-defineOpcode<T>(vm: T, name: string, fn: OpcodeFunction<T>, doc: string | null): void
+checkNothingOrPush(vm: JebVM, value: any): void
 ```
 **Parameters:**
-- `vm: T`
-- `name: string`
-- `fn: OpcodeFunction<T>` — The function to implement the opcode. It should use the VM from the parameter, and **not**
-close over the one that is passed to the `vm` parameter of `defineOpcode` (since this opcode may be reused for a sub-VM for
-e.g. an FFI callback).
-- `doc: string | null`
+- `vm: JebVM` — VM we're running in
+- `value: any` — Value to check
+
+## implicitBegin
 
 ### `implicitBegin`
 Sets up instructions to run all of the arguments in order and the result is the value of the last one.
@@ -156,129 +255,6 @@ implicitBegin(vm: JebVM, args: any[]): symbol
 - `args: any[]` — List of things to evaluate
 **Returns:** `symbol` — - NOTHING
 
-## dispatch
-
-### `findDispatcherForObject`
-```ts
-findDispatcherForObject<T>(table: T[], object: any): T | undefined
-```
-**Parameters:**
-- `table: T[]` — List of dispatchers
-- `object: any` — Object to be dispatched on
-**Returns:** `T | undefined` — The best match dispatcher, or undefined if none match
-
-## errors
-
-### `compressStackTree`
-```ts
-compressStackTree(nodes: StackTreeNode[]): StackTreeNode[]
-```
-**Parameters:**
-- `nodes: StackTreeNode[]`
-**Returns:** `StackTreeNode[]`
-
-### `createStackInnerNode`
-```ts
-createStackInnerNode(count: number, children: StackTreeNode[]): StackTreeNode
-```
-**Parameters:**
-- `count: number`
-- `children: StackTreeNode[]`
-**Returns:** `StackTreeNode`
-
-### `createStackLeafNode`
-```ts
-createStackLeafNode(name: string): StackTreeNode
-```
-**Parameters:**
-- `name: string`
-**Returns:** `StackTreeNode`
-
-### `jsError`
-Formats the stack nicely and then throws the error
-```ts
-jsError(type: string, message: string, stackTree: StackTreeNode[]): never
-```
-**Parameters:**
-- `type: string` — type string for the error
-- `message: string` — message of the error
-- `stackTree: StackTreeNode[]` — The compressed stack tree from the VM
-**Returns:** `never`
-
-### `resultToError`
-Runs the function, and if it returns a Err result, queues the error to be
-caught by JEB code and returns NOTHING, otherwise if it's an Ok
-just returns the result.
-```ts
-resultToError<T>(vm: JebVM, kind: string, result: Result<T, any>): typeof NOTHING | T
-```
-**Parameters:**
-- `vm: JebVM` — VM we're running in
-- `kind: string` — Kind of JEB error an Err causes
-- `result: Result<T, any>` — The result to look at
-**Returns:** `typeof NOTHING | T` — The result of the function or NOTHING if the function threw
-```
-defineBuiltin(vm, "test", null, false, false,
-    (vm, args) => resultToError(vm, "test:testError",
-        doSomethingThatReturnsAResult(vm, args[0])));
-```
-
-## linked_list
-
-### `llLength`
-Returns the length of the linked list quickly (since linked list
-nodes know their own length by way of being immutable)
-```ts
-llLength(ll: LinkedList<any>): number
-```
-**Parameters:**
-- `ll: LinkedList<any>`
-**Returns:** `number`
-
-### `llPop`
-Takes the top item off the linked list, and returns the item as well as the rest of the list
-```ts
-llPop<T>(ll: T): [value: T["value"], rest: T | null]
-```
-**Parameters:**
-- `ll: T`
-**Returns:** `[value: T["value"], rest: T | null]` — an object with value = the top item value, and rest = the 2nd and subsequent items list
-
-### `llPopN`
-Pops N items off the linked list and returns them in an array, as well as the rest of the linked list.
-If the list is shorter than the requested amount, the returned array will have all the items, and the rest will be null.
-```ts
-llPopN<T>(ll: T | null, popAmount: number): [values: T["value"][], rest: T | null]
-```
-**Parameters:**
-- `ll: T | null`
-- `popAmount: number` — number of items to pop
-**Returns:** `[values: T["value"][], rest: T | null]` — an object with values = the array of values, and rest = the 2nd and subsequent items list
-
-### `llPush`
-Returns a new linked list with the value added to the top
-```ts
-llPush<T>(top: LinkedList<T>, value: T): LinkedListNode<T>
-```
-**Parameters:**
-- `top: LinkedList<T>`
-- `value: T`
-**Returns:** `LinkedListNode<T>`
-
-### `llPushArray`
-Prepends the new items to the list in reverse order, so that the first item of the array is the new first item of the linked list, and returns the new linked list.
-```ts
-llPushArray<T>(ll: LinkedList<T>, moreValues: T[]): LinkedList<T>
-```
-**Parameters:**
-- `ll: LinkedList<T>`
-- `moreValues: T[]`
-**Returns:** `LinkedList<T>`
-```js
-// Convert the array to a linked list by pushing it to null:
-const linkedArray = llPushArray(null, [1, 2, 3]);
-// linkedArray == {data: 1, next: {data: 2, next: {data: 3, next: null}}};
-
 ## math
 
 ### `numberOp`
@@ -288,18 +264,10 @@ or downcast as needed to keep precision okay (divsion needs to be handled separa
 numberOp(cb: BinaryFun): (a: number | bigint, b: number | bigint) => number | bigint
 ```
 **Parameters:**
-- `cb: BinaryFun` — The function that will be called as either `(a: number, b: number) => number` or `(a: bigint, b: bigint) => bigint` (the types are all `any` due to typescript shenanigans)
+- `cb: BinaryFun` — The function that will be called as either `(a: number, b: number) =&gt; number` or `(a: bigint, b: bigint) =&gt; bigint` (the types are all `any` due to typescript shenanigans)
 **Returns:** `(a: number | bigint, b: number | bigint) => number | bigint` — the wrapped function that can be called with any number or bigint combination
 
-## overload
-
-### `theTypeName`
-```ts
-theTypeName(type: Type): string | undefined
-```
-**Parameters:**
-- `type: Type`
-**Returns:** `string | undefined`
+## protocol
 
 ### `typeMatches`
 Matches the object's type to the given specifier
@@ -311,6 +279,14 @@ typeMatches(obj: any, type: Type): number
 - `type: Type` — The type specifier
 **Returns:** `number` — Score of the match, higher is a closer match, 0 is no match
 
+### `theTypeName`
+```ts
+theTypeName(type: Type): string
+```
+**Parameters:**
+- `type: Type`
+**Returns:** `string`
+
 ### `typeOf`
 ```ts
 typeOf(x: any): Type
@@ -318,3 +294,87 @@ typeOf(x: any): Type
 **Parameters:**
 - `x: any`
 **Returns:** `Type`
+
+### `getProtocolHandler`
+```ts
+getProtocolHandler(protocols: Partial<JEBProtocols>, fast: boolean, name: PropertyKey, args: any[]): BaseProtocolObj<any, any[], {}, any> | DescribedProtocolObj<any, any[], {}, any, any> | undefined
+```
+**Parameters:**
+- `protocols: Partial<JEBProtocols>`
+- `fast: boolean`
+- `name: PropertyKey`
+- `args: any[]`
+**Returns:** `BaseProtocolObj<any, any[], {}, any> | DescribedProtocolObj<any, any[], {}, any, any> | undefined`
+
+## signature
+
+### `createSignature`
+```ts
+createSignature<S>(signature: S): CallableSignatureFromShorthand<S>
+```
+**Parameters:**
+- `signature: S`
+**Returns:** `CallableSignatureFromShorthand<S>`
+
+## utils
+
+### `isIdentifier`
+```ts
+isIdentifier(x: unknown): x is Identifier
+```
+**Parameters:**
+- `x: unknown`
+**Returns:** `x is Identifier`
+
+## vm
+
+### `pushData`
+```ts
+pushData(vm: JebVM, data: any): void
+```
+**Parameters:**
+- `vm: JebVM`
+- `data: any`
+
+### `pushCommand`
+```ts
+pushCommand<T>(vm: JebVM, cmd: T, args: GetArgParams<T>): void
+```
+**Parameters:**
+- `vm: JebVM`
+- `cmd: T`
+- `args: GetArgParams<T>`
+
+### `popData`
+```ts
+popData(vm: JebVM): any
+```
+**Parameters:**
+- `vm: JebVM`
+**Returns:** `any`
+
+### `popNData`
+```ts
+popNData(vm: JebVM, n: number): any[]
+```
+**Parameters:**
+- `vm: JebVM`
+- `n: number`
+**Returns:** `any[]`
+
+### `peekData`
+```ts
+peekData(vm: JebVM): any
+```
+**Parameters:**
+- `vm: JebVM`
+**Returns:** `any`
+
+## initializers
+
+### `__initializer`
+```ts
+__initializer(f: (x: JebVM) => void): void
+```
+**Parameters:**
+- `f: (x: JebVM) => void`

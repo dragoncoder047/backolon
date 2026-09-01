@@ -30,7 +30,7 @@
 
                     # Backolon
 
-                    A tiny, homoiconic language where control flow is continuation-based.
+                    A tiny, self-modifying homoiconic scripting language.
                 </div>
 
                 <div class="hero-example" markdown="block">
@@ -40,13 +40,13 @@
                     print "Hello, World!"
 
                     # Fizzbuzz
-                    fizzbuzz := [n] => n % 15 == 0 ? "fizzbuzz" : n % 5 == 0 ? "buzz" : n % 3 == 0 ? "fizz" : "{n}"
-                    foreach i (range 1 100) (
-                        print (fizzbuzz i)
+                    fizzbuzz = [n] => n % 15 == 0 ? "fizzbuzz" : n % 5 == 0 ? "buzz" : n % 3 == 0 ? "fizz" : "{n}"
+                    foreach i, range(1, 100), (
+                        print fizzbuzz i
                     )
 
                     # yin yang puzzle
-                    yinHelper := [char] => ((([cc] => (print char; cc)) (callcc [c] => c)))
+                    yinHelper = [char] => ((([cc] => (print char; cc)) (callcc [c] => c)))
                     (([yin] => (([yang] => (yin yang)) (yinHelper "*"))) (yinHelper "@"))
                     ```
 
@@ -64,7 +64,10 @@
                 <article markdown="block">
                     ## Homoiconic
 
-                    Expressions are structured data, so macros and syntax extensions stay concise and readable.
+                    The `Block` mechanism allows functions to take code as arguments and manipulate its behavior in a
+                    hygienic manner, staying concise and readable.
+
+                    Expression ASTs are also just JSON, so unhygenic macros are still possible and just as easy.
                 </article>
                 <article markdown="block">
                     ## Keywordless
@@ -74,9 +77,8 @@
                 <article markdown="block">
                     ## Self-Extensible
 
-                    coming soon! {.coming-soon}
-
-                    Define a new syntax, and then immediately use it in the same file.
+                    Backolon's syntax is (mostly) defined in Backolon itself, using a modified Pratt parser system
+                    allowing seamless modification of the grammar - mid-execution!
                 </article>
                 <article markdown="block">
                     ## First-class Continuations
@@ -85,10 +87,21 @@
                     and cooperative multitasking easy.
                 </article>
                 <article markdown="block">
+                    ## Powered by JEB
+
+                    Backolon is syntactic sugar over a powerful Scheme-like evaluation engine. Lower-level access to
+                    this layer is easy and enables advanced optimizations, manually or algorithmically.
+                </article>
+                <article markdown="block">
+                    ## Auditable
+
+                    JEB injects "audit events" into the code, that allow the host to prevent potentially dangerous
+                    things from happening (such as infinite loops or JavaScript injection).
+                </article>
+                <article markdown="block">
                     ## JS/TS Embedding
 
-                    Designed to be embedded in JavaScript applications for seamless scripting. You can use the provided
-                    FFI module, or create your own native functions.
+                    Designed to be embedded in JavaScript applications for seamless scripting.
                 </article>
             </section>
             <section class="content-block" markdown="block">
@@ -97,30 +110,10 @@
                 Backolon's extensible syntax makes it perfect for building domain-specific languages, such as
                 configuration files, while also allowing full Turing-complete functions where traditional syntax falls
                 short.
-            </section>
-            <section class="content-block" markdown="block">
-                ## How it works
 
-                ### Parsing
-
-                Backolon does not discard any token, meaning you can make whitespace significant or not as you desire,
-                or even introspect and parse the contents of comments (doing so requires a bit of work with the default
-                syntax, but it is possible).
-
-                ### Lambdas
-
-                Parameters can be lazy, preventing normal evaluation and allowing block bodies to be run once, not at
-                all, or multiple times, as determined by what they're passed to.
-
-                ### Patterns
-
-                Syntax is defined through an extensible Pratt parser framework, allowing exotic and complex syntax to be
-                defined easily.
-
-                ### Runtime
-
-                Every lambda receives a built-in `return` continuation, so `return`, `break`, and generators are
-                ordinary values that can be passed around and stored.
+                The macro system allows for incredibly powerful configuration systems to be expressed without modifying
+                Backolon's default syntax - but if the default isn't enough, Backolon makes adding custom parsers
+                trivial.
             </section>
             <!-- NOTE: don't forget to re-indent the stuff since the html formatter wants to unindent it since it doesn't know it's a code block -->
             <!-- <section class="content-block" markdown="block">

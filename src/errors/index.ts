@@ -1,32 +1,9 @@
+import { JEBError } from "@r47onfire/jeb";
 import { max } from "lib0/math";
-
-/**
- * Source location information for Backolon errors.
- */
-export class Span {
-    constructor(
-        /**
-         * URL uniquely identifying the source that this span is from.
-         */
-        public readonly file: Readonly<URL>,
-        /**
-         * Source index at which this span starts. (not line or column.)
-         */
-        public readonly start: number,
-        /**
-         * Source index at which this span ends.
-         */
-        public readonly end: number) { }
-
-}
-/**
- * A sentinel location representing an unknown source.
- */
-export const UNKNOWN_LOCATION = new Span(new URL("about:unknown"), 0, 0);
+import { Span } from "../parser/span";
 
 
-const formatTrace = (loc: Span, message: string, getSource: (url: URL) => string): string => {
-    const { file, start, end } = loc;
+const formatTrace = ({ file, start, end }: Span, message: string, getSource: (url: URL) => string): string => {
     const src = getSource(file);
     var lineInfo = "", line = -1, col = -1;
     if (src) {
@@ -54,10 +31,9 @@ const formatTrace = (loc: Span, message: string, getSource: (url: URL) => string
 /**
  * An error from Backolon code that contains the location in the source that caused the error.
  */
-export class BackolonError extends Error {
+export class BackolonError extends JEBError {
     constructor(message: string, public readonly loc: Span) {
         super(message);
-        this.name = this.constructor.name;
     }
     /**
      * Formats the error message nicely

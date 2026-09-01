@@ -1,30 +1,20 @@
 # Classes
 
-## callable
+## block
 
-### `BuiltinFunction`
-Wrapper for a Javascript function that can be called by the JEB runtime.
-The Javascript function has access to the VM so it can push opcodes to
-implement more than just computation.
-*implements `HasDocstring`*
+### `Block`
+A chunk of code that will be deferred evaluation, like an implicit lambda
 ```ts
-constructor(name: string, arity: Arity, isSpecial: boolean, resultIsMacro: boolean, impl: (args: any[], vm: JebVM) => any, doc: string): BuiltinFunction
+constructor(closureEnv: Env, body: any[]): Block
 ```
 **Properties:**
-- `name: string` — The name of the function as it should appear in a traceback.
-- `arity: Arity`
-- `isSpecial: boolean` — Whether the function's arguments should be evaluated (false) or passed unevaluated (true).
-- `resultIsMacro: boolean` — Whether the return value should be evaluated again in the caller's scope.
-- `impl: (args: any[], vm: JebVM) => any` — The javascript function implementation.
+- `closureEnv: Env`
+- `body: any[]`
 
-If the function returns the special value NOTHING, no
-value will be pushed as the result of the function call. Otherwise, the
-return value is pushed (even if it's `undefined`).
-- `doc: string` — The docstring given - should define the allowable syntax(es) of the function
-or macro and give a description of its behavior.
+## callable
 
 ### `CallableClass`
-Callable hack from stackoverflow.com/a/78553691. Subclasses of this
+Callable hack from https://stackoverflow.com/a/78553691. Subclasses of this
 are actually instances of `Function`, so `typeof this === "function"`.
 *extends `(Anonymous class)<this>`*
 ```ts
@@ -34,27 +24,38 @@ constructor(): CallableClass
 - `__call__(args: any[]): any` — Called when the object is invoked as a function (i.e. `this(...)`)
 - `__new__(args: any[]): any` — Called when the object is invoked as a class constructor (i.e. `new this(...)`)
 
-### `Lambda`
-A Lambda is a callable function or macro implemented as JEB code instead of
-a Javascript function.
-*extends `CallableClass`*
-*implements `HasDocstring`*
+### `JSFun`
+Wrapper for a Javascript function that can be called by the JEB runtime.
+The Javascript function has access to the VM so it can push opcodes to
+implement more than just computation.
+*implements `HasDocstring`, `ApplyMetadata`*
 ```ts
-constructor(isMacro: boolean, isImplicit: boolean, name: string | undefined, args: string[], optArgs: [name: string, defaultExpression: any][], restArg: string | null, body: any, closureEnv: Env, doc: string): Lambda
+constructor<S>(name: Identifier, signature: S, impl: (args: Record<S["params"][number]["name"], any> & (S["rest"] extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (S["kwRest"] extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Identifier | undefined) => any, doc: string): JSFun<S>
 ```
 **Properties:**
-- `isMacro: boolean` — Whether the return value should be evaluated again in the caller's scope.
-- `isImplicit: boolean` — Whether the lambda should be hidden from stack traces.
-- `name: string | undefined` — The name of the function as it should appear in a traceback. Ignored if isImplicit=true
-- `args: string[]` — The names of the required arguments.
-- `optArgs: [name: string, defaultExpression: any][]` — The names of the optional arguments along with their default expressions.
-If the default is needed, the expression for it will be evaluated in a dynamic
-environment consisting of the
-- `restArg: string | null` — The name of the rest argument at the end which will receive a list of
-all arguments passed beyond the required and optional named arguments.
-If null, there is no rest argument and the lambda has a maximum number of arguments.
-- `body: any` — The body code that will be evaluated in the new scope with the argument values bound.
-- `closureEnv: Env` — The environment that this lambda closes over.
+- `name: Identifier` — The name of the function as it should appear in a traceback.
+- `signature: S`
+- `impl: (args: Record<S["params"][number]["name"], any> & (S["rest"] extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (S["kwRest"] extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Identifier | undefined) => any` — The javascript function implementation.
+
+If the function returns the special value NOTHING, no
+value will be pushed as the result of the function call. Otherwise, the
+return value is pushed (even if it's `undefined`).
+- `doc: string` — The docstring given - should define the allowable syntax(es) of the function
+or macro and give a description of its behavior.
+
+### `Fun`
+A Fun is a callable function or macro implemented as JEB code instead of
+a Javascript function.
+*extends `CallableClass`*
+*implements `HasDocstring`, `ApplyMetadata`*
+```ts
+constructor<S>(isImplicit: boolean, name: Identifier | undefined, signature: S, body: Block, doc: string): Fun<S>
+```
+**Properties:**
+- `isImplicit: boolean` — Whether the function should be hidden from stack traces.
+- `name: Identifier | undefined` — The name of the function as it should appear in a traceback. Ignored if isImplicit=true
+- `signature: S`
+- `body: Block` — The body code that will be evaluated in the new scope with the argument values bound.
 - `doc: string` — The docstring given - should define the allowable syntax(es) of the function
 or macro and give a description of its behavior.
 **Methods:**
@@ -66,134 +67,183 @@ or macro and give a description of its behavior.
 ### `Continuation`
 A continuation which holds all the VM state, and can restore it at any time
 ```ts
-constructor(vm: JebVM, extraOps: Command[]): Continuation
+constructor<T>(vm: T, extraOps: Command[]): Continuation<T>
 ```
 **Properties:**
 - `env: Env` — Closed-over environment
 - `commands: LinkedList<Command>` — Closed-over command stack in progress
 - `data: LinkedList<any>` — Closed-over data stack in progress
 - `winders: DynamicWind` — Closed-over dynamic wind stack in progress
-- `traceback: StackCount | null` — Closed-over traceback stack in progress
+- `traceback: LinkedList<StackCount>` — Closed-over traceback stack in progress
+- `state: { [K in never]: T[K] }` — Other saved state
 **Methods:**
-- `invoke(vm: JebVM, data: any): void` — Call the continuation and restore the state of the VM
+- `invoke(vm: T, data: any): void` — Call the continuation and restore the state of the VM
 
 ### `DynamicWind`
 Node in a dynamic wind tree
 ```ts
-constructor(vm: JebVM): DynamicWind
+constructor<T>(vm: T): DynamicWind<T>
 ```
 **Properties:**
 - `handler: Windable | null`
 - `envHere: Env` — current env at the point of the dynamic wind start
-- `parent: DynamicWind | null`
+- `parent: DynamicWind<JebVM> | null`
 - `commandsHere: LinkedList<Command>` — closed-over command stack
 - `dataHere: LinkedList<any>` — closed-over data stack
+- `stateHere: { [K in never]: T[K] }` — Other saved state
 **Methods:**
-- `setHandler(handler: Windable): DynamicWind` — sets the handler after it has been processed
-- `processJumpHere(vm: JebVM): void` — processes the jump here, and adds instructions to call the enter and exit handlers
-- `restore(vm: JebVM): void` — Restores the dynamic wind state when an error occurs
-
-## dispatch
-
-### `Accessor`
-Utility object that handles when an object of the specified type is indexed.
-*extends `TypeDispatcher`*
-```ts
-constructor<T>(type: Type): Accessor<T>
-```
-*Inherits 2 properties from `TypeDispatcher` — see [`TypeDispatcher`](../typedispatcher.md)*
-**Methods:**
-- `access(object: TypeFor<T>, field: PropertyKey): LValue` — Called to create the LValue to implement the get and set operations.
-
-### `Applier`
-Utility object that handles when an object of the specified type is called.
-*extends `TypeDispatcher`*
-```ts
-constructor<T>(type: Type): Applier<T>
-```
-*Inherits 2 properties from `TypeDispatcher` — see [`TypeDispatcher`](../typedispatcher.md)*
-**Methods:**
-- `apply(func: TypeFor<T>, alreadyEvaluated: boolean, tailcallHint: boolean, args: any[], vm: JebVM): void` — Performs the application
-- `getNameOf(func: TypeFor<T>): string | undefined` — Gets the name of the function to appear in tracebacks, if undefined is returned it means it's a hidden callframe and won't show.
-Note: the apply opcode uses this to determine whether to insert a `jeb:tb_pop` opcode, but it relies on this applier's apply
-method to add the corresponding `jeb:tb_push` opcode.
-- `getArity(func: TypeFor<T>): Arity` — Gets the minimum and maximum arguments for the function call, this is checked before apply is called.
-- `getIsMacro(func: TypeFor<T>): boolean` — Returns true if the functor being called is a macro, and the result should be evaluated again in its caller's scope.
-
-### `EnvVarLValue`
-Represents a slot that can be assigned to
-*implements `LValue`*
-```ts
-constructor(env: Env, name: string): EnvVarLValue
-```
-**Properties:**
-- `env: Env`
-- `name: string`
-**Methods:**
-- `get(vm: JebVM, type: AccessType): void` — Pushes the value currently in the slot to the top of the stack, or
-throw an error if it's not readable.
-- `set(vm: JebVM, value: any, type: AccessType, create: boolean, readonly: boolean): void` — Set the value of the slot to the provided value,
-or throws an error if it's readonly. The stack should not be modified either way.
-- `referenceError(vm: JebVM, type: AccessType): void`
-
-### `Evaluator`
-Utility object that handles when an object of the specified type is evaluated.
-*extends `TypeDispatcher`*
-```ts
-constructor<T>(type: Type): Evaluator<T>
-```
-*Inherits 2 properties from `TypeDispatcher` — see [`TypeDispatcher`](../typedispatcher.md)*
-**Methods:**
-- `eval(object: TypeFor<T>, tailcallHint: boolean, vm: JebVM): void` — Called to push the opcodes needed to evaluate the object.
-
-### `TypeDispatcher`
-```ts
-constructor(type: Type): TypeDispatcher
-```
-**Properties:**
-- `type: Type` — The type that this dispatcher works with.
-- `doc: string` — Documentation string for this dispatcher type
+- `setHandler(handler: Windable): void` — sets the handler after it has been processed
+- `processJumpHere(vm: T): void` — processes the jump here, and adds instructions to call the enter and exit handlers
+- `restore(vm: T): void` — Restores the dynamic wind state when an error occurs
 
 ## env
 
 ### `Env`
 Key-value store for managing an environment, with inheritance from parent environments.
 ```ts
-constructor(bindings: Record<string, any>, parents: readonly Env[]): Env
+constructor(bindings: Record<Identifier, any>, parents: readonly Env[]): Env
 ```
 **Properties:**
-- `constants: Record<string, true>`
-- `bindings: Record<string, any>`
+- `constants: Record<Identifier, true>`
+- `bindings: Record<Identifier, any>`
 - `parents: readonly Env[]`
 **Methods:**
-- `get(name: string): Result<any, void>` — Look up the value, and return its value (in an ok result)
+- `get(name: Identifier): Result<any, void>` — Look up the value, and return its value (in an ok result)
 or an err result if not found
-- `add(name: string, value: any): void` — Defines the value in this scope (always succeeds)
-- `addConst(name: string, value: any): void` — Defines the constant in this scope (always succeeds)
-- `set(name: string, value: any): boolean | undefined` — Finds the scope in which this value is defined, and sets it there.
+- `add(name: Identifier, value: any): void` — Defines the value in this scope (always succeeds)
+- `addConst(name: Identifier, value: any): void` — Defines the constant in this scope (always succeeds)
+- `set(name: Identifier, value: any): boolean | undefined` — Finds the scope in which this value is defined, and sets it there.
 Returns true if it was set, false if it's a constant and can't be changed,
 or undefined if it wasn't defined anywhere.
-- `gensym(): string` — Generates a random symbol that isn't set anywhere already.
-- `getVisibleNames(): string[]` — returns a list of all the names visible here (direct and inherited)
 
-## overload
+## errors
 
-### `Arithmetic`
-Represents an object that you can use to perform operations on any kind of number-like quantity,
-such as a number or vector
+### `JEBError`
+Generic base class for an error thrown by a JEB program.
+*extends `Error`*
 ```ts
-constructor(): Arithmetic
+constructor(message: string, context: Record<string, any> & ErrorOptions, traceback?: StackTreeNode[]): JEBError
 ```
+**Properties:**
+- `context: Record<string, any> & ErrorOptions`
+- `traceback: StackTreeNode[]` (optional)
 **Methods:**
-- `overload<T>(op: keyof Operations, types: T, handler: (args: TypeArrayValue<T>) => Result<any, string>): void` — Defines a new overload
-- `call(op: keyof Operations, args: [any, ...any[]]): Result<any, string>` — Performs an operation
+- `toString(): string` — Returns a string representation of an object.
+
+### `JEBReferenceError`
+Variable not found.
+*extends `JEBError`*
+```ts
+constructor(message: string, context: Record<string, any> & ErrorOptions, traceback?: StackTreeNode[]): JEBReferenceError
+```
+*Inherits 2 properties from `JEBError` — see [`JEBError`](../jeberror.md)*
+**Methods:**
+- `toString(): string` — Returns a string representation of an object.
+
+### `JEBValueError`
+Value was correct type but out of range.
+*extends `JEBError`*
+```ts
+constructor(message: string, context: Record<string, any> & ErrorOptions, traceback?: StackTreeNode[]): JEBValueError
+```
+*Inherits 2 properties from `JEBError` — see [`JEBError`](../jeberror.md)*
+**Methods:**
+- `toString(): string` — Returns a string representation of an object.
+
+### `JEBTypeError`
+Value was wrong type.
+*extends `JEBError`*
+```ts
+constructor(message: string, context: Record<string, any> & ErrorOptions, traceback?: StackTreeNode[]): JEBTypeError
+```
+*Inherits 2 properties from `JEBError` — see [`JEBError`](../jeberror.md)*
+**Methods:**
+- `toString(): string` — Returns a string representation of an object.
+
+### `JEBSyntaxError`
+Malformed usage or syntax.
+*extends `JEBError`*
+```ts
+constructor(message: string, context: Record<string, any> & ErrorOptions, traceback?: StackTreeNode[]): JEBSyntaxError
+```
+*Inherits 2 properties from `JEBError` — see [`JEBError`](../jeberror.md)*
+**Methods:**
+- `toString(): string` — Returns a string representation of an object.
+
+### `JEBStateError`
+Program tried to operate on something previously invalidated.
+*extends `JEBError`*
+```ts
+constructor(message: string, context: Record<string, any> & ErrorOptions, traceback?: StackTreeNode[]): JEBStateError
+```
+*Inherits 2 properties from `JEBError` — see [`JEBError`](../jeberror.md)*
+**Methods:**
+- `toString(): string` — Returns a string representation of an object.
+
+### `JEBRecursionError`
+Too many recursive calls.
+*extends `JEBError`*
+```ts
+constructor(message: string, context: Record<string, any> & ErrorOptions, traceback?: StackTreeNode[]): JEBRecursionError
+```
+*Inherits 2 properties from `JEBError` — see [`JEBError`](../jeberror.md)*
+**Methods:**
+- `toString(): string` — Returns a string representation of an object.
+
+## protocol
+
+### `Reference`
+Represents a slot that can be assigned to
+```ts
+constructor(type: AccessType): Reference
+```
+**Properties:**
+- `type: AccessType`
+**Methods:**
+- `get(vm: JebVM, shouldBind: boolean): any` — Returns the current value, or returns `NOTHING` and throws an error (in the VM, not Javascript) if it's not readable.
+- `set(vm: JebVM, value: any, createIfNotFound: boolean, makeConstant: boolean): void` — Set the value of the slot to the provided value,
+or throws an error if it's readonly. The stack should not be modified either way.
+
+## reference
+
+### `ObjectPropertyReference`
+Represents a slot that can be assigned to
+*extends `Reference`*
+```ts
+constructor(type: AccessType, obj: any, name: PropertyKey): ObjectPropertyReference
+```
+**Properties:**
+- `obj: any`
+- `name: PropertyKey`
+*Inherits 1 properties from `Reference` — see [`Reference`](../reference.md)*
+**Methods:**
+- `get(vm: JebVM, shouldBind: boolean): any` — Returns the current value, or returns `NOTHING` and throws an error (in the VM, not Javascript) if it's not readable.
+- `set(vm: JebVM, value: any): void` — Set the value of the slot to the provided value,
+or throws an error if it's readonly. The stack should not be modified either way.
+
+### `VariableReference`
+Represents a slot that can be assigned to
+*extends `Reference`*
+```ts
+constructor(type: AccessType, env: Env, name: Identifier): VariableReference
+```
+**Properties:**
+- `notFoundMessage: string`
+- `env: Env`
+- `name: Identifier`
+*Inherits 1 properties from `Reference` — see [`Reference`](../reference.md)*
+**Methods:**
+- `get(): any` — Returns the current value, or returns `NOTHING` and throws an error (in the VM, not Javascript) if it's not readable.
+- `set(vm: JebVM, value: any, create: boolean, readonly: boolean): void` — Set the value of the slot to the provided value,
+or throws an error if it's readonly. The stack should not be modified either way.
+- `referenceError(): never`
 
 ## vm
 
 ### `JebVM`
 Base VM for running JEB code
 ```ts
-constructor(math: Arithmetic): JebVM
+constructor(): JebVM
 ```
 **Properties:**
 - `currentEnv: Env` — current environment
@@ -201,29 +251,78 @@ constructor(math: Arithmetic): JebVM
 - `dataStack: LinkedList<any>` — stack of values
 - `curDynamicWind: DynamicWind` — current dynamic wind stack (linked list / tree)
 - `paused: boolean` — whether the VM is paused
-- `tracebackStack: StackCount | null` — callstack entries
+- `tracebackStack: LinkedList<StackCount>` — callstack entries
 - `builtinsEnv: Env` — Environment that all builtins live in
-- `opcodeTable: Record<string, [impl: OpcodeFunction<this>, doc: string | null]>`
-- `applyTable: Applier<any>[]`
-- `evalTable: Evaluator<any>[]`
-- `accessTable: Accessor<any>[]`
-- `math: Arithmetic`
+- `protocols: Partial<JEBProtocols>`
+- `copyableState: never[]`
 **Methods:**
+- `addProtocol<N>(name: N, impl: JEBProtocols[N][number]): void`
+- `getProtocol<N, T>(fast: boolean, assert: T, name: N, args: Tuple<any, ArgcForName<N>>): JEBProtocols[N][number] | (T extends true ? never : undefined)`
 - `pushData(value: any): void`
 - `popNData(n: number): any[]`
 - `popData(): any`
 - `peekData(): any`
-- `pushCommand(name: string, args: any[]): void`
+- `pushCommand<T>(f: T, args: GetArgParams<T>): void`
+- `popCommand(): Command`
 - `step(): boolean` — Runs one opcode.
 - `start(code: any): void` — Starts running the code
 - `reset(): void` — Silently stops running the code, by resetting all stacks state back to the initial empty state.
-Does not clear the global or builtins env.
+Does not clear the builtins env.
 - `checkRecursion(length: number): void` — If the recursionDepth is larger than the given length, adds an error to the command stack
 to signal to the running program that it's recursing too much
-- `tracebackArray(): StackTreeNode[]` — Returns the names of the functions in the call stack, with innermost first
-- `tracebackPush(func: string, tailcallHint: boolean): void` — Adds a function call entry to the traceback stack
-- `tracebackPop(): void` — Drops all the tail-call entries off the stack, and then one more
-- `newDynamicWind(): DynamicWind`
+- `tracebackArray(numToDrop: number): StackTreeNode[]` — Returns the names of the functions in the call stack, with innermost first
+- `pushTraceback(func: Identifier | undefined, tailcallHint: boolean, callsiteLocation: Identifier | undefined): void` — Adds a function call entry to the traceback stack
+- `popTraceback(dropTail: boolean): void` — Drops all the tail-call entries off the stack, and then one more
+- `newDynamicWind(): DynamicWind<JebVM>`
 - `createEnv(parents: Env[]): Env`
-- `cc(extraOps: Command[]): Continuation` — Returns the current continuation at this state.
-- `fatalError(type: string, message: string): never`
+- `cc(extraOps: Command[]): Continuation<JebVM>` — Returns the current continuation at this state.
+- `fatalError(error: JEBError): never`
+- `addAuditHook(cb: (event: T, args: JEBAuditEvents[T]) => void): () => void` — Adds an audit hook that will be called every time something that should be audited happens.
+- `audit<T>(args: [event: T, ...JEBAuditEvents[T][]]): void` — Raises an auditing event
+
+## wrapper
+
+### `Wrapper`
+Represents a wrapped value that only appears as a directly-usable value under certain circumstances
+```ts
+constructor(obj: any): Wrapper
+```
+**Properties:**
+- `flag: string`
+- `obj: any`
+
+### `KeywordArg`
+Wrapper for a keyword argument that will redirect to the
+*extends `Wrapper`*
+```ts
+constructor(obj: any, name: string): KeywordArg
+```
+**Properties:**
+- `name: string`
+*Inherits 2 properties from `Wrapper` — see [`Wrapper`](../wrapper.md)*
+
+### `SplatArg`
+Wrapper to cause the object to unpack instead of being passed directly
+*extends `Wrapper`*
+```ts
+constructor(obj: any, isKeyword: boolean): SplatArg
+```
+**Properties:**
+- `isKeyword: boolean`
+*Inherits 2 properties from `Wrapper` — see [`Wrapper`](../wrapper.md)*
+
+### `ReferenceWrapper`
+Wrapper for a variable reference
+*extends `Wrapper`*
+```ts
+constructor(obj: any): ReferenceWrapper
+```
+*Inherits 2 properties from `Wrapper` — see [`Wrapper`](../wrapper.md)*
+
+### `MacroWrapper`
+Wrapper for a macro result
+*extends `Wrapper`*
+```ts
+constructor(obj: any): MacroWrapper
+```
+*Inherits 2 properties from `Wrapper` — see [`Wrapper`](../wrapper.md)*

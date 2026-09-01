@@ -1,14 +1,14 @@
 # TODO: how to document all these self-defined ones
 callcc = [f] => f return
-while = [@cond @body] => callcc [break] => (
+while = [^cond, ^body] => callcc [break] => (
     continue = nil
     callcc [k] => continue := k
-    if (cond [:]) (
+    if cond(), (
         body [`break:, `continue:]
-        continue!
+        continue()
     )
 )
-generator = [@body] => (
+generator = [^body] => (
     cont = nil
     resume = [] => (body [`yield:]; done)
     yield = [value] => callcc [k] => (
@@ -17,18 +17,15 @@ generator = [@body] => (
     )
     [] => callcc [k] => (
         cont := k
-        resume!
+        resume()
     )
 )
-foreach = [@varname:name list @body] => (
+foreach = [@varname, list, ^body] => (
     i = 0
-    while i < #list (
+    while i < #list, (
         callcc [k] => body [varname: list->i, `break:, `continue: k]
         i := i + 1
     )
 )
-eval = [value] => __eval value
-evalin = [env value] => __eval value env
-sandboxed = [value] => __eval value nil nil false
 # don't "return" anything
 ;;

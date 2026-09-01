@@ -1,5 +1,6 @@
-import { EnvVarLValue, LinkedList, llPopN, llPushArray } from "@r47onfire/jeb";
-import { Parselet, parseletComparator } from "../parser/parselet";
+import { VariableReference } from "@r47onfire/jeb";
+import { Parselet } from "../parser/parselet";
+import { Constraint } from "../parser/sort";
 import { BackolonVM } from "./vm";
 
 export const enum ModuleLoadState {
@@ -10,9 +11,10 @@ export const enum ModuleLoadState {
 
 export abstract class Module {
     /** The saved parselets list at the end of the module body. */
-    parselets: LinkedList<Parselet> = null;
+    parselets: Parselet[] = [];
+    constraints: Constraint<Parselet>[] = [];
     /** The named exports for the module */
-    exports: Record<string, EnvVarLValue> = {};
+    exports: Record<string, VariableReference> = {};
     /**
      * This is used to detect and throw a "circular import!" error when
      * attempting to do something (access properties, etc) of a module
@@ -37,8 +39,6 @@ export class NativeModule extends Module {
     constructor(init: (m: NativeModule) => void) {
         super();
         init(this);
-        // Ensure they're sorted
-        this.parselets = llPushArray(null, llPopN(this.parselets, Infinity)[0].sort(parseletComparator));
     }
 }
 

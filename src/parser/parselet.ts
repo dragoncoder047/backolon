@@ -1,7 +1,8 @@
 import { isString } from "lib0/function";
-export interface Parselet {
+
+export class Parselet {
     /**
-     * It must have the sticky (y) flag.
+     * It always has the sticky (y) flag.
      */
     readonly prefix: RegExp;
     /**
@@ -20,23 +21,13 @@ export interface Parselet {
      * which goes to the next token.
      */
     readonly parse: any;
-    readonly precedence: number;
+    constructor(prefix: RegExp | string, parse: any) {
+        this.prefix =
+            isString(prefix)
+                ? new RegExp(RegExp.escape(prefix), "y") :
+                prefix.sticky
+                    ? prefix :
+                    new RegExp(prefix, prefix.flags + "y");
+        this.parse = parse;
+    }
 }
-
-const RE = RegExp;
-export const createParselet = (prefix: RegExp | string, parse: any, precedence: number): Parselet => {
-    const fixedRegExp =
-        isString(prefix)
-            ? new RE(RE.escape(prefix), "y") :
-            prefix.sticky
-                ? prefix :
-                new RE(prefix, prefix.flags + "y");
-    return {
-        prefix: fixedRegExp,
-        parse,
-        precedence
-    };
-}
-
-export const parseletComparator = (a: Parselet, b: Parselet) => a.precedence - b.precedence;
-

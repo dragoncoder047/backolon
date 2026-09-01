@@ -20,6 +20,7 @@ for an overview of the language itself and its syntax and behavior, check out th
   * don't use `pnpm tsc`; that will only lint and not build (tsc is set to `noEmit: true` since Bun handles building)
 
 * to run the unit tests: `AGENT=1 pnpm test`, or start a background terminal and `AGENT=1 pnpm test:watch` (which reruns automatically on file changes).
+  * building is not required to run unit tests
 
 * to fuzz test: `pnpm fuzz {entrypoint}`
   * this runs the fuzzer on `test/fuzz/{entrypoint}.fuzz.cjs`

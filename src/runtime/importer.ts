@@ -3,7 +3,6 @@ export class Importer {
 }
 
 export interface SourceTracker {
-    readonly src: Readonly<URL>;
     readonly code: string;
     readonly tags: Record<number, string[]>;
 }

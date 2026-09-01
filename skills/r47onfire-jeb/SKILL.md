@@ -10,7 +10,7 @@ simple JSON evaluation virtual machine with first-class continuations
 
 ## Quick Reference
 
-74 exports (29 functions, 13 classes, 20 types, 1 enums, 11 constants) — see references/ for full API.
+177 exports (36 functions, 23 classes, 43 types, 3 enums, 72 constants) — see references/ for full API.
 
 ## References
 
