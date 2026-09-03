@@ -1,23 +1,24 @@
-import { B_begin, B_define, B_let, JEBStateError } from "@r47onfire/jeb";
+import { B_begin, B_define, B_let, Continuation, JEBStateError } from "@r47onfire/jeb";
 import { SourceTracker } from "../runtime/importer";
+import { BackolonVM } from "../runtime/vm";
 import { Parselet } from "./parselet";
 import { Constraint, sortByConstraints } from "./sort";
 import { Span } from "./span";
 
 export class Token {
     constructor(
-        public readonly text: string,
-        public readonly span: Span,
+        readonly text: string,
+        readonly span: Span,
     ) { }
 }
 
 export class Parser {
     constructor(
-        public readonly source: SourceTracker,
-        public readonly index: number,
-        public readonly parselets: Parselet[],
-        public readonly constraints: Constraint<Parselet>[],
-        public readonly skipErrors: boolean,
+        readonly source: SourceTracker,
+        readonly index: number,
+        readonly parselets: Parselet[],
+        readonly constraints: Constraint<Parselet>[],
+        readonly skipErrors: boolean,
     ) { }
     #clean = false;
     #precedenceOf!: Map<number, Parselet>;
@@ -28,72 +29,40 @@ export class Parser {
         return new Parser(this.source, this.index, this.parselets, this.constraints.concat(constraint), this.skipErrors);
     }
     sort() {
+        if (this.#clean) return;
         this.#precedenceOf = sortByConstraints(this.parselets, this.constraints);
         this.#clean = true;
     }
     #assertClean() {
-        if (!this.#clean) {
-            throw new JEBStateError("Cannot parse right now");
-        }
+        if (!this.#clean) throw new JEBStateError("Cannot parse right now");
     }
     peek(): [precedence: number, parselet: Parselet, token: Token] | undefined {
         this.#assertClean();
-        const { parselets, source: { code, src } } = this;
+        const { parselets, source: { code, src }, index } = this;
         for (var i = parselets.length - 1; i >= 0; i--) {
-            const p = parselets[i]!;
-            p.prefix.lastIndex = this.index;
-            const match = p.prefix.exec(code);
+            const p = parselets[i]!, regex = p.prefix;
+            regex.lastIndex = index;
+            const match = regex.exec(code);
             if (match) {
-                return [i, p, new Token(match[0], new Span(src, this.index, this.index + match[0].length))];
+                const text = match[0];
+                return [i, p, new Token(text, new Span(src, index, index + text.length))];
             }
         }
     }
 }
 
-// const createParser = (source: SourceTracker, skipErrors: boolean): Parser => {
-//     return {
-//         source,
-//         index: 0,
-//         parselets: [],
-//         skipErrors,
-//     }
-// }
-
-// const matchParselet = (code: string, index: number, parselet: Parselet) => {
-//     const regex = parselet.prefix;
-//     regex.lastIndex = index;
-//     return regex.exec(code);
-// }
-
-// const firstMatch = <T>(parser: Parser, parselets: LinkedList<Parselet>, callback: (parselet: Parselet, match: RegExpExecArray) => T): T | undefined => {
-//     const { source: { code }, index } = parser;
-//     for (var parselet = parselets?.value!; parselets; parselet = (parselets = parselets.next)?.value!) {
-//         const match = matchParselet(code, index, parselet);
-//         if (match) return callback(parselet, match);
-//     }
-// }
-
-// const peekPrecedence = (parser: Parser) => firstMatch(parser, parser.parselets, parselet => parselet.precedence);
-
-// const matchToToken = (match: RegExpExecArray, source: SourceTracker, start: number): Token => {
-//     const text = match[0], len = text.length, end = start + len;
-//     return {
-//         text,
-//         span: {
-//             file: source.src,
-//             start, end
-//         },
-//     };
-// }
-
-// const nextToken = (parser: Parser): [token: Token, next: Parser] | undefined => firstMatch(parser, parser.parselets, (_, match) => {
-//     const token = matchToToken(match, parser.source, parser.index);
-//     const next: Parser = {
-//         ...parser,
-//         index: token.span.end,
-//     };
-//     return [token, next];
-// });
+const createParserContext = (
+    parser: Parser,
+    parselet: Parselet,
+    first: boolean,
+    left: any,
+    token: Token,
+    skip: Continuation<BackolonVM>,
+    discard: Continuation<BackolonVM>) => {
+        return {
+            first, left, token, skip, discard,
+        }
+}
 
 const PARSER_CODE = [B_begin,
     [B_define, ["parseExpression", "minPrecedence", "orEqual", ["skipErrors", false]],

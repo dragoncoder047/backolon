@@ -2,10 +2,10 @@ import { JebVM, pushCommand, pushData } from "@r47onfire/jeb";
 import { Parser } from "../parser";
 import { Span } from "../parser/span";
 import { Importer, OP_do_import, SourceTracker } from "./importer";
-import { Module } from "./module";
+import { Module, MODULE_NAME } from "./module";
 
 interface BackolonVMState {
-    moduleLoad: [string, parent: Module | null | true][];
+    moduleLoad: [string, parent: Module | null][];
     parser: Parser | null;
 }
 
@@ -16,7 +16,6 @@ export class BackolonVM extends JebVM {
         super();
     }
     override getState(): BackolonVMState {
-        // Get state of module loading
         return {
             moduleLoad: Object.entries(this.modules ?? {}).map(({ 0: name, 1: mod }) => [name, mod.parent] as const),
             parser: this.parser,
@@ -30,14 +29,17 @@ export class BackolonVM extends JebVM {
     modules: Record<string, Module> = {};
     /** Mapping of URL to source tracker */
     sources: Record<string, SourceTracker> = {};
-    /** Mapping of location ID (for the JEB `at` identifier function) to the actual {@link Span} */
-    spans: Record<string, Span> = {};
+    /** Mapping of module name to a list of location IDs (for the JEB `at` identifier function) to the actual {@link Span} */
+    maps: Record<string, Span[]> = {};
     /**
      * Starts running the main module
      * @param url URL of the main module
      */
-    start(url: URL) {
+    override start(url: URL) {
         pushCommand(this, OP_do_import, null, true);
         pushData(this, url);
+    }
+    override getCurrentFile() {
+        return this.currentEnv.get(MODULE_NAME).or(undefined);
     }
 }

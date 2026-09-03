@@ -6,18 +6,16 @@ export class Parselet {
      */
     readonly prefix: RegExp;
     /**
-     * This is a JEB callable (builtin, lambda, etc) that implements the parse
+     * This is a JEB callable (builtin, lambda, etc) of one argument that implements the parse
      * handler of the parselet.
      *
-     * The signature is always (context, left, token)
+     * For a prefix position, context.left is undefined, and context.first is true.
      *
-     * For a prefix position, left is undefined, and context.first is true.
-     *
-     * For an infix position, left is the left-side expression, and context.first is false.
+     * For an infix position, context.left is the left-side expression, and context.first is false.
      *
      * In either case the parse function must return a chunk of JEB code that implements the
-     * parse result, call `skip()` to mark what it has parsed as insignificant (`skip`
-     * is a continuation which doesn't return), or call `discard()`
+     * parse result, call `context.skip()` to mark what it has parsed as insignificant (`skip`
+     * is a continuation which doesn't return), or call `context.discard()`
      * which goes to the next token.
      */
     readonly parse: any;

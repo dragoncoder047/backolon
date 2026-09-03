@@ -1,33 +1,39 @@
-import { BackolonVM, Importer, Loader, Module } from "@r47onfire/backolon";
-import { makeTestRun, run } from "@r47onfire/jeb/test";
-import { describe, expect, test } from "bun:test";
+import { BackolonVM, Finder, Importer, IndexResolver, NoModuleError } from "@r47onfire/backolon";
+import { makeTestRun, runAsync } from "@r47onfire/jeb/test";
+import { expect, test } from "bun:test";
 
-class TestLoader extends Loader {
-    get() {
+type VFS = Record<string, string>;
+
+class TestFinder extends Finder {
+    match() {
         return this;
     }
-    load(url: URL, module: Module, vm: BackolonVM, asMain: boolean): void {
-        throw "Load";
+    async getText(path: URL) {
+        return this.vfs[path.href]!;
     }
+    vfs!: VFS;
 }
 
-const testTest = makeTestRun(class extends BackolonVM { constructor() { super(new Importer([new TestLoader()])) } });
+const vfs = (vm: BackolonVM, files: VFS) => {
+    (vm.importer.finders[0] as TestFinder).vfs = files;
+};
 
-testTest(test, "foo", vm => {
-    expect(run(vm, new URL("test://main"))).toBeTrue();
+const vfsURL = (file: string) => new URL(file, "test://");
+const MAIN = vfsURL("main.bk");
+
+const main = (vm: BackolonVM, file: string) => vfs(vm, { [MAIN.href]: file });
+
+const testTest = makeTestRun(class extends BackolonVM { constructor() { super(new Importer(new IndexResolver(), [new TestFinder()])) } });
+
+testTest(test, "foo", async vm => {
+    main(vm, "");
+    expect(await runAsync(vm, MAIN)).toBeTrue();
 });
 
 // test("empty result", () => {
 //     expectEval("", {
 //         t: ThingType.nil,
 //     });
-// });
-// test("roundtrip", () => {
-//     const s = new Scheduler([BUILTINS_MODULE]);
-//     s.startTask(1, "a + 1", null, F);
-//     const s2 = new Scheduler([BUILTINS_MODULE]);
-//     s2.loadFromSerialized(s.serializeTasks());
-//     expect(s2).toEqual(s);
 // });
 // test("trivial return value", () => {
 //     expectEval("123\n", {

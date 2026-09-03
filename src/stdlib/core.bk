@@ -1,11 +1,16 @@
-# TODO: how to document all these self-defined ones
-callcc = [f] => f return
-while = [^cond, ^body] => callcc [break] => (
-    continue = nil
-    callcc [k] => continue := k
-    if cond(), (
-        body [`break:, `continue:]
-        continue()
+callcc = [f] => (
+    "Call-with-current-continuation"
+    f return
+)
+while = [^cond, ^body] => (
+    "while loop"
+    callcc [break] => (
+        continue = nil
+        callcc [k] => continue := k
+        if cond(), (
+            body [`break:, `continue:]
+            continue()
+        )
     )
 )
 generator = [^body] => (
@@ -24,7 +29,7 @@ foreach = [@varname, list, ^body] => (
     i = 0
     while i < #list, (
         callcc [k] => body [varname: list->i, `break:, `continue: k]
-        i := i + 1
+        i++
     )
 )
 # don't "return" anything

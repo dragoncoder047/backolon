@@ -1,4 +1,4 @@
-import { VariableReference } from "@r47onfire/jeb";
+import { Env, VariableReference } from "@r47onfire/jeb";
 import { Parselet } from "../parser/parselet";
 import { Constraint } from "../parser/sort";
 
@@ -14,8 +14,14 @@ export class Module {
      * when it's not finished loading, as well as to avoid loading it when
      * it's already loaded
      */
-    parent: Module | true | null;
-    constructor(public id: URL, parent: Module | null) {
+    parent: Module | null;
+    constructor(public global: Env, public id: URL, parent: Module | null) {
         this.parent = parent;
     }
 }
+
+/**
+ * Special symbol identifier used to identify module names that can't be shadowed.
+ */
+export const MODULE_NAME = Symbol("__name__");
+

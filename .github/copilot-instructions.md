@@ -8,21 +8,21 @@ for an overview of the language itself and its syntax and behavior, check out th
 
 ## Development cold start
 
-0. make sure `pnpm` is installed.
-1. install dependencies: `pnpm install`
+0. make sure `bun` is installed.
+1. install dependencies: `bun install`
 
 ---
 
 ## Basic tasks
 
-* to build: `pnpm build`
-  * don't use `pnpm build-for-fuzzer`; that builds it as a CommonJS module which is only used by the fuzzer and not exported/uploaded to npm
-  * don't use `pnpm tsc`; that will only lint and not build (tsc is set to `noEmit: true` since Bun handles building)
+* to build: `bun run build`
+  * don't use `bun run build-for-fuzzer`; that builds it as a CommonJS module which is only used by the fuzzer and not exported/uploaded to npm
+  * don't use `bunx tsc`; that will only lint and not build (tsc is set to `noEmit: true` since Bun handles building)
 
-* to run the unit tests: `AGENT=1 pnpm test`, or start a background terminal and `AGENT=1 pnpm test:watch` (which reruns automatically on file changes).
+* to run the unit tests: `AGENT=1 bun run test`, or start a background terminal and `AGENT=1 bun run test:watch` (which reruns automatically on file changes).
   * building is not required to run unit tests
 
-* to fuzz test: `pnpm fuzz {entrypoint}`
+* to fuzz test: `bun run fuzz {entrypoint}`
   * this runs the fuzzer on `test/fuzz/{entrypoint}.fuzz.cjs`
   * inputs get dumped into `test/fuzz/inputs/{entrypoint}/`
   * the fuzzer will keep running until it crashes, so just ^C it after 30 or so lines of "PULSE" with no "NEW".
@@ -47,7 +47,7 @@ for an overview of the language itself and its syntax and behavior, check out th
 
 ## Notes on adding new fuzzer entrypoints
 
-* The fuzzer is actually kind of stupid; it instruments the code by reparsing it and injecting instrumentation on every line, and the parser can't handle ES6 module syntax. (This is why `pnpm build-for-fuzzer` uses commonjs mode.)
+* The fuzzer is actually kind of stupid; it instruments the code by reparsing it and injecting instrumentation on every line, and the parser can't handle ES6 module syntax. (This is why `bun run build-for-fuzzer` uses commonjs mode.)
 * Because the fuzzer harnesses can't use a second import to peek into the internals of Backolon to test it, they can only test stuff exported by the main `src/index.ts`.
 * This is also why the stack trace that prints out when the fuzzer does find a crash is completely useless apart from the functions name, since the fuzzer injects code, the line/column numbers have changed.
 
