@@ -28,19 +28,20 @@ constructor(text: string, span: Span): Token
 
 ### `Parser`
 ```ts
-constructor(source: SourceTracker, index: number, parselets: Parselet[], constraints: Constraint<Parselet>[], skipErrors: boolean): Parser
+constructor(source: SourceTracker, index: number, parselets: Parselet[], constraints: readonly Constraint<Parselet>[], skipErrors: boolean): Parser
 ```
 **Properties:**
 - `source: SourceTracker`
 - `index: number`
 - `parselets: Parselet[]`
-- `constraints: Constraint<Parselet>[]`
+- `constraints: readonly Constraint<Parselet>[]`
 - `skipErrors: boolean`
 **Methods:**
 - `addParselet(parselet: Parselet): Parser`
 - `addConstraint(constraint: Constraint<Parselet>): Parser`
 - `sort(): void`
-- `peek(): [precedence: number, parselet: Parselet, token: Token] | undefined`
+- `test(regex: RegExp): RegExpExecArray | null`
+- `peek(minPrecedence: number, startPrecedence: number): [parselet: Parselet, token: Token] | undefined`
 
 ### `Parselet`
 ```ts
@@ -92,7 +93,7 @@ constructor(resolver: Resolver, finders: Finder[], loaders: Loader[]): Importer
 - `finders: Finder[]`
 - `loaders: Loader[]`
 **Methods:**
-- `loadModule(vm: BackolonVM, parent: Module | null, path: URL, asMain: boolean): Promise<void>` — Pushes the required opcodes to the stack to load the module at the
+- `loadModule(vm: BackolonVM, parent: Module | null, path: URL, asMain: boolean): Promise<symbol>` — Pushes the required opcodes to the stack to load the module at the
 given URL and leave the Module on the stack.
 - `getBytes(path: URL): Promise<Uint8Array<ArrayBufferLike>>`
 - `getText(path: URL): Promise<string>`
@@ -180,9 +181,9 @@ it's already loaded
 constructor(): Resolver
 ```
 **Methods:**
-- `resolve(path: URL): Generator<URL, void, void>` — Resolves the module specifier to a concrete file or list of choices
+- `resolve(path: URL): Generator<URL, void, void>` — Resolves the module specifier to a concrete file or files
 (e.g. if the given import had no extension, one must be chosen
-based on what files exist) or throws an error if none exist.
+based on what files exist).
 
 ### `IndexResolver`
 *extends `Resolver`*
@@ -190,12 +191,12 @@ based on what files exist) or throws an error if none exist.
 constructor(): IndexResolver
 ```
 **Methods:**
-- `resolve(path: URL): Generator<URL, void, unknown>` — Resolves the module specifier to a concrete file or list of choices
+- `resolve(path: URL): Generator<URL, void, unknown>` — Resolves the module specifier to a concrete file or files
 (e.g. if the given import had no extension, one must be chosen
-based on what files exist) or throws an error if none exist.
+based on what files exist).
 
 ### `BackolonVM`
-*extends `JebVM`*
+*extends `JebVM<BackolonVM>`*
 ```ts
 constructor(importer: Importer): BackolonVM
 ```

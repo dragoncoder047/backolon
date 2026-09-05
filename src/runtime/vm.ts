@@ -9,7 +9,7 @@ interface BackolonVMState {
     parser: Parser | null;
 }
 
-export class BackolonVM extends JebVM {
+export class BackolonVM extends JebVM<BackolonVM> {
     /** Current parser context - null if not parsing */
     parser: Parser | null = null;
     constructor(public importer: Importer) {

@@ -1,4 +1,5 @@
 import { JEBError } from "@r47onfire/jeb";
+import { max } from "lib0/math";
 
 /**
  * An error from Backolon code that contains the location in the source that caused the error.
@@ -14,9 +15,8 @@ export class NoModuleError extends BackolonError {
     get tag() { return "bk:no_module" }
 }
 
-import { max } from "lib0/math";
-
-const formatTrace = ({ file, start, end }: Span, message: string, getSource: (url: URL) => string): string => {
+// what is this
+const formatTrace = (file: URL, start: number, end: number, message: string, getSource: (url: URL) => string): string => {
     const src = getSource(file);
     var lineInfo = "", line = -1, col = -1;
     if (src) {

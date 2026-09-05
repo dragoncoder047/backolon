@@ -14,12 +14,12 @@ const B_audit: JSFun<CallableSignatureFromShorthand<["event", "params", true]>>
 
 ### `OP_tbPop`
 ```ts
-const OP_tbPop: (vm: JebVM) => void
+const OP_tbPop: (vm: any) => any
 ```
 
 ### `OP_tbPush`
 ```ts
-const OP_tbPush: (vm: JebVM, __namedParameters: [f: Identifier, Identifier | undefined, tail?: boolean]) => void
+const OP_tbPush: (vm: JebVM, __namedParameters: [f: Identifier, Location | undefined, tail?: boolean]) => void
 ```
 
 ### `OP_shuffle`
@@ -29,7 +29,7 @@ const OP_shuffle: (vm: JebVM, __namedParameters: [number, number[]]) => void
 
 ### `OP_eval`
 ```ts
-const OP_eval: (vm: JebVM, __namedParameters: [Identifier | undefined, tail?: boolean]) => void
+const OP_eval: (vm: JebVM, __namedParameters: [Location | undefined, tail?: boolean]) => void
 ```
 
 ### `B_eval`
@@ -44,12 +44,12 @@ const B_macro_wrap: JSFun<CallableSignatureFromShorthand<["code"]>>
 
 ### `OP_apply`
 ```ts
-const OP_apply: (vm: JebVM, __namedParameters: [any[], location?: Identifier, tail?: boolean, noEval?: boolean]) => void
+const OP_apply: (vm: JebVM, __namedParameters: [any[], location?: Location, tail?: boolean, noEval?: boolean]) => void
 ```
 
 ### `B_atLocation`
 ```ts
-const B_atLocation: JSFun<CallableSignatureFromShorthand<["location", readonly [true, "expr"]]>>
+const B_atLocation: JSFun<CallableSignatureFromShorthand<["start", "end", readonly [true, "expr"]]>>
 ```
 
 ### `B_splat`
@@ -74,7 +74,7 @@ const OP_get: (vm: JebVM, __namedParameters: [boolean]) => void
 
 ### `OP_set`
 ```ts
-const OP_set: (vm: JebVM, __namedParameters: [create?: boolean, readonly?: boolean]) => void
+const OP_set: (vm: JebVM, __namedParameters: [create?: boolean, readonly_?: boolean]) => void
 ```
 
 ### `B_dot`
@@ -112,9 +112,14 @@ const B_with: JSFun<CallableSignatureFromShorthand<[readonly [true, "binding"], 
 const B_is_nil: JSFun<CallableSignatureFromShorthand<["value"]>>
 ```
 
+### `OP_set_env`
+```ts
+const OP_set_env: (vm: JebVM, __namedParameters: [Env]) => Env
+```
+
 ### `OP_if`
 ```ts
-const OP_if: (vm: JebVM, __namedParameters: [any, any, asm?: false] | [Command | null, Command | null, true]) => void
+const OP_if: (vm: T, __namedParameters: [any, any, asm?: false] | [Command<T> | null, Command<T> | null, true]) => void
 ```
 
 ### `B_if`
@@ -288,6 +293,11 @@ const B_jsonstringify: JSFun<CallableSignatureFromShorthand<["value"]>>
 ```
 
 ## define
+
+### `ALL_OPCODES`
+```ts
+const ALL_OPCODES: Record<string, [fn: OpcodeFunction<any, any>, doc: string | null]>
+```
 
 ### `NOTHING`
 Special symbol to represent 'no value' in contexts where `undefined` is a valid value.

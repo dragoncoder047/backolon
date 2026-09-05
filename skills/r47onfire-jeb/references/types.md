@@ -70,10 +70,15 @@ interface for a thing that has a docstring.
 
 ## errors
 
+### `Location`
+```ts
+[start: number | undefined, end: number | undefined, file: string | undefined]
+```
+
 ### `StackTreeNode`
 Tree node representing a compressed stack trace
 ```ts
-Readonly<{ leaf: false; count: number; children: StackTreeNode[]; hash: number } | { leaf: true; name: Identifier | undefined; location: Identifier | undefined; hash: number }>
+Readonly<{ leaf: false; count: number; children: StackTreeNode[]; hash: number } | { leaf: true; name: Identifier | undefined; location: Location | undefined; hash: number }>
 ```
 
 ## math
@@ -152,12 +157,12 @@ ProtocolsList<Result<any, string>, [Type[]], {}, void, void>
 ### `ApplyFlags`
 **Properties:**
 - `tail: boolean`
-- `location: Identifier | undefined`
+- `location: Location | undefined`
 
 ### `EvalFlags`
 **Properties:**
 - `tail: boolean`
-- `location: Identifier | undefined`
+- `location: Location | undefined`
 
 ### `AccessFlags`
 **Properties:**
@@ -284,20 +289,20 @@ string | symbol
 ### `Command`
 Data for the command
 ```ts
-[opcode: OpcodeFunction<any>, immediateArgs: any[]]
+[opcode: OpcodeFunction<any, T>, immediateArgs: any[]]
 ```
 
 ### `StackCount`
 **Properties:**
 - `name: Identifier | undefined`
-- `location: Identifier | undefined`
+- `location: Location | undefined`
 - `count: number`
 - `tail: boolean`
 
 ### `OpcodeFunction`
 Function that implements an opcode for the VM by pushing instructions or pushing and popping data.
 ```ts
-(vm: JebVM, args: T) => void & { doc?: string | null }
+(vm: U, args: T) => void
 ```
 
 ### `GetArgParams`

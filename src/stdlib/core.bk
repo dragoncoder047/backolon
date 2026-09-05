@@ -1,36 +1,39 @@
-callcc = [f] => (
-    "Call-with-current-continuation"
+const callcc = fn(f)
+    "call-with-current-continuation"
     f return
-)
-while = [^cond, ^body] => (
+end
+const while = fn(^cond, ^body)
     "while loop"
-    callcc [break] => (
-        continue = nil
-        callcc [k] => continue := k
-        if cond(), (
+    callcc fn(break)
+        let continue = nil
+        callcc fn(k) continue = k
+        if cond() then
             body [`break:, `continue:]
             continue()
-        )
-    )
-)
-generator = [^body] => (
-    cont = nil
-    resume = [] => (body [`yield:]; done)
-    yield = [value] => callcc [k] => (
-        resume := k
+        end
+    end
+end
+const generator = fn(^body)
+    let cont = nil
+    let resume = fn()
+        body [`yield:]
+        done
+    end
+    let yield = fn(value) callcc fn(k)
+        resume = k
         cont value
-    )
-    [] => callcc [k] => (
-        cont := k
+    end
+    fn() callcc fn(k)
+        cont = k
         resume()
-    )
-)
-foreach = [@varname, list, ^body] => (
-    i = 0
-    while i < #list, (
-        callcc [k] => body [varname: list->i, `break:, `continue: k]
+    end
+end
+const foreach = fn(@varname, list, ^body)
+    let i = 0
+    while i < #list do
+        callcc fn(k) body [varname: list->i, `break:, `continue: k]
         i++
-    )
-)
+    end
+end
 # don't "return" anything
 ;;

@@ -17,14 +17,14 @@ export class Constraint<T> {
  * Sorts the objects in ascending precedence order according to the constraints given.
  * @returns a mapping of item -> index in list for speed
  */
-export const sortByConstraints = <T>(items: T[], constraints: Constraint<T>[]) => {
+export const sortByConstraints = <T>(items: T[], constraints: readonly Constraint<T>[]) => {
     const precedences = assignPrecedences(items, constraints);
     insertionSort(items, (a, b) => precedences.get(a)! - precedences.get(b)!);
-    return new Map(items.map((x, i) => [i, x]));
+    return new Map(items.map((x, i) => [x, i]));
 }
 
 
-const assignPrecedences = <T>(items: T[], constraints: Constraint<T>[]): Map<T, number> => {
+const assignPrecedences = <T>(items: T[], constraints: readonly Constraint<T>[]): Map<T, number> => {
     if (items.length === 0) {
         return new Map();
     }
@@ -52,7 +52,7 @@ const assignPrecedences = <T>(items: T[], constraints: Constraint<T>[]): Map<T, 
     return items.reduce((result, x) => result.set(x, repToLevel.get(equivMap.find(x))!), new Map());
 }
 
-const findEquivalenceClasses = <T>(items: T[], constraints: Constraint<T>[]): UnionFind<T> => {
+const findEquivalenceClasses = <T>(items: T[], constraints: readonly Constraint<T>[]): UnionFind<T> => {
     const uf = new UnionFind(items);
 
     for (var constraint of constraints) {
@@ -65,7 +65,7 @@ const findEquivalenceClasses = <T>(items: T[], constraints: Constraint<T>[]): Un
 }
 
 const partitionEqualIslands = <T>(
-    constraints: Constraint<T>[],
+    constraints: readonly Constraint<T>[],
     equivMap: UnionFind<T>,
     items: T[],
 ): [graph: Map<T, Set<T>>, reps: Set<T>] => {

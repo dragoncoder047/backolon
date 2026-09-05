@@ -29,12 +29,12 @@ loadBuiltins(vm: JebVM): void
 ### `makeJSFun`
 Creates a builtin function.
 ```ts
-makeJSFun<T>(name: string, signature: T, fn: (args: Record<ShorthandToLonghand<T>[number]["name"], any> & (ExtractRest<T, true> extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (ExtractRest<T, false> extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Identifier | undefined) => any, doc: string): JSFun<CallableSignatureFromShorthand<T>>
+makeJSFun<T>(name: string, signature: T, fn: (args: Record<ShorthandToLonghand<T>[number]["name"], any> & (ExtractRest<T, true> extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (ExtractRest<T, false> extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Location | undefined) => any, doc: string): JSFun<CallableSignatureFromShorthand<T>>
 ```
 **Parameters:**
 - `name: string`
 - `signature: T` — Defines the parameters of the function and how they should be interpreted
-- `fn: (args: Record<ShorthandToLonghand<T>[number]["name"], any> & (ExtractRest<T, true> extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (ExtractRest<T, false> extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Identifier | undefined) => any` — The function to implement the builtin. It should use the VM from the parameter, and **not**
+- `fn: (args: Record<ShorthandToLonghand<T>[number]["name"], any> & (ExtractRest<T, true> extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (ExtractRest<T, false> extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Location | undefined) => any` — The function to implement the builtin. It should use the VM from the parameter, and **not**
 close over the one that is passed to the `vm` parameter of `defineBuiltin` (since this builtin may be reused for a sub-VM for
 e.g. an FFI callback).
 - `doc: string`
@@ -53,9 +53,10 @@ define(vm: JebVM, name: string, obj: any): void
 ### `makeOpcode`
 Creates a new opcode for the VM.
 ```ts
-makeOpcode<T>(fn: T, doc: string | null): T
+makeOpcode<T>(id: string | null, fn: T, doc: string | null): T
 ```
 **Parameters:**
+- `id: string | null`
 - `fn: T` — The function to implement the opcode.
 - `doc: string | null`
 **Returns:** `T`
@@ -185,11 +186,11 @@ gensym(s: string): symbol
 
 ### `createStackLeafNode`
 ```ts
-createStackLeafNode(name: Identifier | undefined, location: Identifier | undefined): StackTreeNode
+createStackLeafNode(name: Identifier | undefined, location: Location | undefined): StackTreeNode
 ```
 **Parameters:**
 - `name: Identifier | undefined`
-- `location: Identifier | undefined`
+- `location: Location | undefined`
 **Returns:** `StackTreeNode`
 
 ### `createStackInnerNode`
@@ -209,6 +210,15 @@ compressStackTree(nodes: StackTreeNode[]): StackTreeNode[]
 - `nodes: StackTreeNode[]`
 **Returns:** `StackTreeNode[]`
 
+### `locationsEqual`
+```ts
+locationsEqual(location1: Location | undefined, location2: Location | undefined): boolean
+```
+**Parameters:**
+- `location1: Location | undefined`
+- `location2: Location | undefined`
+**Returns:** `boolean`
+
 ### `formatStackTraceCompact`
 Formats a stack tree as a compact string representation
 ```ts
@@ -227,7 +237,7 @@ wrapThrowToError<T>(kind: (message: string, options: { cause: any }) => JEBError
 **Parameters:**
 - `kind: (message: string, options: { cause: any }) => JEBError` — Kind of JEB error a thrown error causes
 - `f: () => T` — The function to catch errors from
-**Returns:** `T` — The result of the function or NOTHING if the function threw
+**Returns:** `T`
 ```
 defineBuiltin(vm, "test", null, false, false,
     (vm, args) => wrapThrowToError(vm, "test:testError",
@@ -237,11 +247,22 @@ defineBuiltin(vm, "test", null, false, false,
 ### `checkNothingOrPush`
 Pushes the value to the VM's data stack, but only if the value is not NOTHING.
 ```ts
-checkNothingOrPush(vm: JebVM, value: any): void
+checkNothingOrPush<T>(vm: T, value: any): void
 ```
 **Parameters:**
-- `vm: JebVM` — VM we're running in
+- `vm: T` — VM we're running in
 - `value: any` — Value to check
+
+### `promisifyVM`
+Pauses the VM while the promise is pending, and then resumes it when it
+resolves or rejects.
+```ts
+promisifyVM<T, X>(vm: T, promise: Promise<X>): typeof NOTHING
+```
+**Parameters:**
+- `vm: T`
+- `promise: Promise<X>`
+**Returns:** `typeof NOTHING`
 
 ## implicitBegin
 
@@ -330,44 +351,44 @@ isIdentifier(x: unknown): x is Identifier
 
 ### `pushData`
 ```ts
-pushData(vm: JebVM, data: any): void
+pushData<T>(vm: T, data: any): void
 ```
 **Parameters:**
-- `vm: JebVM`
+- `vm: T`
 - `data: any`
 
 ### `pushCommand`
 ```ts
-pushCommand<T>(vm: JebVM, cmd: T, args: GetArgParams<T>): void
+pushCommand<T, U>(vm: U, cmd: T, args: GetArgParams<T>): void
 ```
 **Parameters:**
-- `vm: JebVM`
+- `vm: U`
 - `cmd: T`
 - `args: GetArgParams<T>`
 
 ### `popData`
 ```ts
-popData(vm: JebVM): any
+popData<T>(vm: T): any
 ```
 **Parameters:**
-- `vm: JebVM`
+- `vm: T`
 **Returns:** `any`
 
 ### `popNData`
 ```ts
-popNData(vm: JebVM, n: number): any[]
+popNData<T>(vm: T, n: number): any[]
 ```
 **Parameters:**
-- `vm: JebVM`
+- `vm: T`
 - `n: number`
 **Returns:** `any[]`
 
 ### `peekData`
 ```ts
-peekData(vm: JebVM): any
+peekData<T>(vm: T): any
 ```
 **Parameters:**
-- `vm: JebVM`
+- `vm: T`
 **Returns:** `any`
 
 ## initializers

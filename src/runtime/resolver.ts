@@ -1,8 +1,8 @@
 export abstract class Resolver {
     /**
-     * Resolves the module specifier to a concrete file or list of choices
+     * Resolves the module specifier to a concrete file or files
      * (e.g. if the given import had no extension, one must be chosen
-     * based on what files exist) or throws an error if none exist.
+     * based on what files exist).
      */
     abstract resolve(path: URL): Generator<URL, void, void>;
 }

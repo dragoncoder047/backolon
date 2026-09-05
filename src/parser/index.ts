@@ -1,9 +1,9 @@
 import { B_begin, B_define, B_let, Continuation, JEBStateError } from "@r47onfire/jeb";
 import { SourceTracker } from "../runtime/importer";
-import { BackolonVM } from "../runtime/vm";
 import { Parselet } from "./parselet";
 import { Constraint, sortByConstraints } from "./sort";
 import { Span } from "./span";
+import { BackolonVM } from "../runtime/vm";
 
 export class Token {
     constructor(
@@ -17,11 +17,11 @@ export class Parser {
         readonly source: SourceTracker,
         readonly index: number,
         readonly parselets: Parselet[],
-        readonly constraints: Constraint<Parselet>[],
+        readonly constraints: readonly Constraint<Parselet>[],
         readonly skipErrors: boolean,
     ) { }
     #clean = false;
-    #precedenceOf!: Map<number, Parselet>;
+    #precedenceOf!: Map<Parselet, number>;
     addParselet(parselet: Parselet): Parser {
         return new Parser(this.source, this.index, this.parselets.concat(parselet), this.constraints, this.skipErrors);
     }
@@ -36,16 +36,19 @@ export class Parser {
     #assertClean() {
         if (!this.#clean) throw new JEBStateError("Cannot parse right now");
     }
-    peek(): [precedence: number, parselet: Parselet, token: Token] | undefined {
+    test(regex: RegExp) {
+        regex.lastIndex = this.index;
+        return regex.exec(this.source.code);
+    }
+    peek(minPrecedence: number, startPrecedence: number = this.parselets.length - 1): [parselet: Parselet, token: Token] | undefined {
         this.#assertClean();
-        const { parselets, source: { code, src }, index } = this;
-        for (var i = parselets.length - 1; i >= 0; i--) {
-            const p = parselets[i]!, regex = p.prefix;
-            regex.lastIndex = index;
-            const match = regex.exec(code);
+        const { parselets, source, index } = this;
+        for (var i = startPrecedence; i >= minPrecedence; i--) {
+            const p = parselets[i]!;
+            const match = this.test(p.prefix);
             if (match) {
                 const text = match[0];
-                return [i, p, new Token(text, new Span(src, index, index + text.length))];
+                return [p, new Token(text, new Span(source.src, index, index + text.length))];
             }
         }
     }
@@ -59,10 +62,12 @@ const createParserContext = (
     token: Token,
     skip: Continuation<BackolonVM>,
     discard: Continuation<BackolonVM>) => {
-        return {
-            first, left, token, skip, discard,
-        }
+    return {
+        first, left, token, skip, discard,
+    }
 }
+
+
 
 const PARSER_CODE = [B_begin,
     [B_define, ["parseExpression", "minPrecedence", "orEqual", ["skipErrors", false]],
@@ -81,13 +86,13 @@ const PARSER_CODE = [B_begin,
 /*
 
 parser context control functions:
-    tryConsume(string/regex) = get token at current position or undefined if it doesn't match
+    test(regex) = test if regex matches but don't advance
+    tryConsume(regex) = get token at current position or undefined if it doesn't match
     tag(span, tag) = syntax highlighting tagging
     save() = save parser state
     restore(saved) = restore parser state
-    shouldStop() = true if the next token is lower precedence
 
-parseExpression(minPrecedence, orEqual, skipErrors=false) {
+parseExpression(minPrecedence, orEqual) {
 
     let left = undefined
     let first = true
@@ -103,12 +108,7 @@ parseExpression(minPrecedence, orEqual, skipErrors=false) {
                 break findloop
             }
         } else { // nothing matched
-            if (skipErrors) {
-                tag(savedPosition, "error")
-                resetParserPosition(savedPosition + 1)
-            } else {
-                die("failed to parse")
-            }
+            die("failed to parse")
         }
         first = false
     }

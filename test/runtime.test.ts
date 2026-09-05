@@ -25,9 +25,11 @@ const main = (vm: BackolonVM, file: string) => vfs(vm, { [MAIN.href]: file });
 
 const testTest = makeTestRun(class extends BackolonVM { constructor() { super(new Importer(new IndexResolver(), [new TestFinder()])) } });
 
-testTest(test, "foo", async vm => {
-    main(vm, "");
+testTest(test, "foo", async (vm, out) => {
+    main(vm, "print 'hello world'");
     expect(await runAsync(vm, MAIN)).toBeTrue();
+    expect(vm.popData()).toBeUndefined();
+    expect(out).toEqual(["hello world"]);
 });
 
 // test("empty result", () => {
@@ -58,131 +60,131 @@ testTest(test, "foo", async vm => {
 //         })).toEqual(["1", "2"]);
 //     });
 //     test("call 'print' with 0 arguments prints newline", () => {
-//         expect(expectEval("print!", {
+//         expect(expectEval("print()", {
 //             t: ThingType.nil,
 //         })).toEqual([""]);
 //     });
 //     test("'print' with varargs", () => {
-//         expect(expectEval("print 1; print 2 3; print 4 5 6", {
+//         expect(expectEval("print 1; print 2, 3; print 4, 5, 6", {
 //             t: ThingType.nil,
 //         })).toEqual(["1", "2 3", "4 5 6"]);
 //     });
 // });
 // describe("variables", () => {
 //     test("declaration return value", () => {
-//         expectEval("a := 1", {
+//         expectEval("let a = 1", {
 //             t: ThingType.number,
 //             v: 1
 //         });
 //     });
 //     test("initialization and retrieval", () => {
-//         expect(expectEval("a := __declare; a b print; b 'test'; b", {
+//         expect(expectEval("let a = __declare; a b print; b 'test'; b", {
 //             t: ThingType.nativefunc,
 //             v: "print"
 //         })).toEqual(["test"]);
 //     });
 //     test("redeclaration throws", () => {
-//         expectEvalError("a := nil; a := nil", "variable \"a\" already exists in this scope");
+//         expectEvalError("let a = nil; let a = nil", "variable \"a\" already exists in this scope");
 //     });
 //     test("new scopes are not created by inner blocks", () => {
-//         expectEvalError("(a := nil); (a := nil)", "variable \"a\" already exists in this scope");
+//         expectEvalError("(let a = nil); (let a = nil)", "variable \"a\" already exists in this scope");
 //     });
 //     test("can only declare a name", () => {
-//         expectEvalError("1 := 2", "cannot assign to number");
+//         expectEvalError("let 1 = 2", "cannot assign to number");
 //     });
 //     test("declarations override globals", () => {
-//         expectEvalError("print := 1; print 'hi'", "can't call number");
+//         expectEvalError("let print = 1; print 'hi'", "can't call number");
 //     });
 //     test("reassignment", () => {
-//         expect(expectEval("a := 1; print a; a = 2; print a = 3; a", {
+//         expect(expectEval("let a = 1; print a; a = 2; print a = 3; a", {
 //             t: ThingType.number,
 //             v: 3
 //         })).toEqual(["1", "3"]);
 //     });
 //     test("assignment can span multiple lines", () => {
-//         expectEval("a := nil; a =\n3; a", {
+//         expectEval("let a = nil; a =\n3; a", {
 //             t: ThingType.number,
 //             v: 3
 //         });
 //     });
 //     test("assignment is right associative", () => {
-//         expectEval("a := nil; b := nil; a = b = 1", {
+//         expectEval("let a = nil; let b = nil; a = b = 1", {
 //             t: ThingType.number,
 //             v: 1
 //         });
 //     });
 //     test("assignment requires the variable to exist", () => {
-//         expectEvalError("thisWasNotDeclared = 1", "undefined: \"thisWasNotDeclared\"", "note: change the \"=\" to \":=\" to declare \"thisWasNotDeclared\" to be in this scope");
+//         expectEvalError("thisWasNotDeclared = 1", "undefined: \"thisWasNotDeclared\"", "note: use \"let\" to declare \"thisWasNotDeclared\" to be in this scope");
 //     });
 // });
 // describe("lambdas", () => {
 //     test("create lambdas", () => {
-//         expectEval("[] => 1", {
+//         expectEval("fn() 1", {
 //             t: ThingType.func,
 //             v: null,
 //         });
 //     });
 //     test("lambdas get the name of the first thing they're assigned to", () => {
-//         expectEval("foo := [] => 1; bar := foo; bar", {
+//         expectEval("let foo = fn() 1; let bar = foo; bar", {
 //             t: ThingType.func,
 //             v: "foo",
 //         });
 //     });
 //     test("'return' exists and is a continuation", () => {
-//         expectEval("([] => return)!", {
+//         expectEval("(fn() return)()", {
 //             t: ThingType.continuation,
 //         });
 //     });
 //     test("'return' correctly stops execution and returns the value", () => {
-//         expect(expectEval("([] => (return 3; print 1))!", {
+//         expect(expectEval("(fn() return 3; print 1)()", {
 //             t: ThingType.number,
 //             v: 3
 //         })).toEqual([]);
 //     });
 //     test("closed-over scopes can be accessed and mutated", () => {
-//         expectEval("callWithThree := [function] => function 3; outerVariable := nil; callWithThree [three] => outerVariable = three; outerVariable", {
+//         expectEval("let callWithThree = fn(f) f 3; let outerVariable = nil; callWithThree fn(three) outerVariable = three; outerVariable", {
 //             t: ThingType.number,
 //             v: 3
 //         });
 //     });
 //     test("lambda default parameters have dynamic scope", () => {
-//         expectEval("x := 4; f := [a=x] => a; ([] => (x := 3; f!))!", {
+//         expectEval("let x = 4; let f = fn(a=x) a; let x = 3 in f()", {
 //             t: ThingType.number,
 //             v: 3
 //         });
 //     });
 //     test("lambdas are terminated by a newline like everything else", () => {
-//         expect(expectEval("f := [x] => print x 'hi'\nf 1\nf 2", {
+//         expect(expectEval("let f = fn(x) print x, 'hi'\nf 1\nf 2", {
 //             t: ThingType.nil,
 //         })).toEqual(["1 hi", "2 hi"]);
 //     });
 //     test("lambdas with rest parameters", () => {
-//         expect(expectEval("f := [x y z...] => print x y z; f 1 2; f 1 2 3 4 5", {
+//         expect(expectEval("let f = fn(x, y, z...) print x, y, z; f 1, 2; f 1, 2, 3, 4, 5", {
 //             t: ThingType.nil,
 //         })).toEqual(["1 2 []", "1 2 [3, 4, 5]"]);
-//         expectEvalError("[x... y...] => 1", "can only have 1 rest parameter");
+//         expectEvalError("fn(x..., y...) 1", "can only have 1 rest parameter");
 //     });
 //     test("recurson is capped", () => {
-//         expectEvalError("f := [x] => (x x; x x); f f", "too much recursion");
-//         expectEvalError("f := [x] => (if x > 0 (f x - 1) (g!)); g := [] => f 10; g!", "too much recursion");
+//         expectEvalError("let f = fn(x) (x x; x x); f f", "too much recursion");
+//         expectEvalError("let f = fn(x) if x > 0 then f x - 1 else g(); let g = fn() f 10; g()", "too much recursion");
 //     });
 // });
 // describe("conditionals", () => {
 //     test("if true", () => {
-//         expectEval("if true 'foo' 'bar'", {
+//         expectEval("if true then 'foo' else 'bar' end", {
 //             t: ThingType.string,
 //             v: "foo"
 //         });
-//         expectEval("if false 'foo' 'bar'", {
+//         expectEval("if false then 'foo' else 'bar' end", {
 //             t: ThingType.string,
 //             v: "bar"
 //         });
 //     });
 //     test("if side effects", () => {
-//         expect(expectEval("if true (print 1) (print 2)", {
+//         expect(expectEval("if true then print 1 else print 2", {
 //             t: ThingType.nil,
 //         })).toEqual(["1"]);
-//         expect(expectEval("if false (print 1) (print 2)", {
+//         expect(expectEval("if false then print 1 else print 2", {
 //             t: ThingType.nil,
 //         })).toEqual(["2"]);
 //     });

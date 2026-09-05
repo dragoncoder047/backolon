@@ -1,4 +1,4 @@
-import { OP_eval, OP_set_env, pushCommand, pushData } from "@r47onfire/jeb";
+import { Continuation, JEBStateError, OP_apply, OP_eval, OP_set_env, pushCommand, pushData } from "@r47onfire/jeb";
 import { Span } from "../parser/span";
 import { Importer, SourceTracker } from "./importer";
 import { JSONModule, JSONSourceMap } from "./jsmod";
@@ -44,9 +44,10 @@ export class JSONModuleLoader extends Loader {
     }
     async load(vm: BackolonVM, url: URL, module: Module, importer: Importer) {
         const { code, sourceMap } = await importer.getJSON(url) as JSONModule;
-        pushCommand(vm as any, OP_set_env, module.global);
+        pushCommand(vm as any, OP_set_env, vm.currentEnv);
         pushCommand(vm as any, OP_eval, undefined);
         pushData(vm, code);
+        vm.currentEnv = module.global;
         if (sourceMap) {
             (importer.getJSON(new URL(sourceMap, url)) as Promise<JSONSourceMap>).then(({ mappings, contents }) => {
                 vm.maps[url.href] = mappings.map(({ 0: start, 1: end }) => new Span(url, start, end));
@@ -65,7 +66,8 @@ export class BackolonSourceModuleLoader extends Loader {
     }
     async load(vm: BackolonVM, url: URL, module: Module, importer: Importer) {
         const text = await importer.getText(url);
-        console.log("load module", text);
-        throw 1;
+        pushData(vm, new Continuation(vm, []));
+        pushCommand(vm, OP_apply, [module], undefined, true, true);
+        throw new Error("need to load " + JSON.stringify(text));
     }
 }

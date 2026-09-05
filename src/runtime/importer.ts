@@ -1,5 +1,5 @@
 import { isinstance } from "@r47onfire/game-math";
-import { JEBError, JEBStateError, JEBTypeError, makeOpcode, peekData, popData, promisifyVM, pushData } from "@r47onfire/jeb";
+import { JEBError, JEBStateError, JEBTypeError, makeOpcode, NOTHING, peekData, popData, promisifyVM, pushData, theTypeName, typeOf } from "@r47onfire/jeb";
 import { BackolonError } from "../errors";
 import { Finder } from "./finder";
 import { JSModule, JSONModule, JSONSourceMap } from "./jsmod";
@@ -38,9 +38,10 @@ export class Importer {
                 throw new JEBStateError(`circular import of module ${path.href} (<- ${culprits.join(" <- ")})`);
             }
             pushData(vm, m);
-            return;
+            return NOTHING;
         }
         for (var resolved of this.resolver.resolve(path)) {
+            // TODO: continue if file not found
             for (var loader of this.loaders) {
                 const g = loader.match(resolved);
                 if (g) {
@@ -50,7 +51,7 @@ export class Importer {
                     const module = vm.modules[resolved.href] = new Module(env, resolved, parent);
                     vm.pushCommand(OP_cleanup_module, resolved);
                     await g.load(vm, resolved, module, this);
-                    return;
+                    return NOTHING;
                 }
             }
         }
@@ -61,7 +62,7 @@ export class Importer {
             const f = finder.match(path);
             if (f) return f[method](path) as any;
         }
-        throw new JEBTypeError(`don't know how to load module from ${path.href}`);
+        throw new JEBTypeError(`don't know how to load file from ${path.href}`);
     }
     getBytes(path: URL): Promise<Uint8Array> {
         return this.#get(path, "getBytes");
@@ -85,18 +86,18 @@ export class SourceTracker {
     ) { }
 }
 
-export const OP_do_import = makeOpcode((vm: BackolonVM, { 0: parent, 1: asMain }: [parent: Module | null, main?: boolean]) => {
+export const OP_do_import = makeOpcode("import", (vm: BackolonVM, { 0: parent, 1: asMain }: [parent: Module | null, main?: boolean]) => {
     const url = popData(vm);
     if (!isinstance(url, URL)) {
         throw new BackolonError("Module import source must be an absolute URL");
     }
     promisifyVM(vm, vm.importer.loadModule(vm, parent, url, asMain ?? false));
-}, null);
+}, "..");
 
-const OP_cleanup_module = makeOpcode((vm, { 0: url }: [URL]) => {
+const OP_cleanup_module = makeOpcode(null, (vm: BackolonVM, { 0: url }: [URL]) => {
     const module = peekData(vm);
     if (!isinstance(module, Module)) {
-        throw new JEBError(`Loader didn't properly load ${url.href}!!`)
+        throw new JEBError(`Loader didn't properly load ${url.href}!! Got a ${theTypeName(typeOf(module))}`)
     }
     module.parent = null;
 }, null);

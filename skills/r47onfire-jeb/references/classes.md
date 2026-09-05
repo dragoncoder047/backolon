@@ -30,12 +30,12 @@ The Javascript function has access to the VM so it can push opcodes to
 implement more than just computation.
 *implements `HasDocstring`, `ApplyMetadata`*
 ```ts
-constructor<S>(name: Identifier, signature: S, impl: (args: Record<S["params"][number]["name"], any> & (S["rest"] extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (S["kwRest"] extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Identifier | undefined) => any, doc: string): JSFun<S>
+constructor<S>(name: Identifier, signature: S, impl: (args: Record<S["params"][number]["name"], any> & (S["rest"] extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (S["kwRest"] extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Location | undefined) => any, doc: string): JSFun<S>
 ```
 **Properties:**
 - `name: Identifier` — The name of the function as it should appear in a traceback.
 - `signature: S`
-- `impl: (args: Record<S["params"][number]["name"], any> & (S["rest"] extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (S["kwRest"] extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Identifier | undefined) => any` — The javascript function implementation.
+- `impl: (args: Record<S["params"][number]["name"], any> & (S["rest"] extends { name: N } ? { [x in PropertyKey]: any[] } : {}) & (S["kwRest"] extends { name: N } ? { [x in PropertyKey]: Record<any, any> } : {}), vm: JebVM, location: Location | undefined) => any` — The javascript function implementation.
 
 If the function returns the special value NOTHING, no
 value will be pushed as the result of the function call. Otherwise, the
@@ -67,15 +67,15 @@ or macro and give a description of its behavior.
 ### `Continuation`
 A continuation which holds all the VM state, and can restore it at any time
 ```ts
-constructor<T>(vm: T, extraOps: Command[]): Continuation<T>
+constructor<T>(vm: T, extraOps: Command<T>[]): Continuation<T>
 ```
 **Properties:**
 - `env: Env` — Closed-over environment
-- `commands: LinkedList<Command>` — Closed-over command stack in progress
+- `commands: LinkedList<Command<T>>` — Closed-over command stack in progress
 - `data: LinkedList<any>` — Closed-over data stack in progress
-- `winders: DynamicWind` — Closed-over dynamic wind stack in progress
+- `winders: DynamicWind<T>` — Closed-over dynamic wind stack in progress
 - `traceback: LinkedList<StackCount>` — Closed-over traceback stack in progress
-- `state: { [K in never]: T[K] }` — Other saved state
+- `state: any` — Other saved state
 **Methods:**
 - `invoke(vm: T, data: any): void` — Call the continuation and restore the state of the VM
 
@@ -87,10 +87,10 @@ constructor<T>(vm: T): DynamicWind<T>
 **Properties:**
 - `handler: Windable | null`
 - `envHere: Env` — current env at the point of the dynamic wind start
-- `parent: DynamicWind<JebVM> | null`
-- `commandsHere: LinkedList<Command>` — closed-over command stack
+- `parent: DynamicWind<T> | null`
+- `commandsHere: LinkedList<Command<T>>` — closed-over command stack
 - `dataHere: LinkedList<any>` — closed-over data stack
-- `stateHere: { [K in never]: T[K] }` — Other saved state
+- `stateHere: any` — Other saved state
 **Methods:**
 - `setHandler(handler: Windable): void` — sets the handler after it has been processed
 - `processJumpHere(vm: T): void` — processes the jump here, and adds instructions to call the enter and exit handlers
@@ -243,27 +243,29 @@ or throws an error if it's readonly. The stack should not be modified either way
 ### `JebVM`
 Base VM for running JEB code
 ```ts
-constructor(): JebVM
+constructor<T>(): JebVM<T>
 ```
 **Properties:**
 - `currentEnv: Env` — current environment
-- `commandStack: LinkedList<Command>` — stack of commands to execute
+- `commandStack: LinkedList<Command<T>>` — stack of commands to execute
 - `dataStack: LinkedList<any>` — stack of values
-- `curDynamicWind: DynamicWind` — current dynamic wind stack (linked list / tree)
+- `curDynamicWind: DynamicWind<T>` — current dynamic wind stack (linked list / tree)
 - `paused: boolean` — whether the VM is paused
+- `awaiting: Promise<void> | null` — the Promise that the VM is currently waiting on
 - `tracebackStack: LinkedList<StackCount>` — callstack entries
 - `builtinsEnv: Env` — Environment that all builtins live in
 - `protocols: Partial<JEBProtocols>`
-- `copyableState: never[]`
 **Methods:**
+- `getState(): any`
+- `restoreState(state: any): void`
 - `addProtocol<N>(name: N, impl: JEBProtocols[N][number]): void`
 - `getProtocol<N, T>(fast: boolean, assert: T, name: N, args: Tuple<any, ArgcForName<N>>): JEBProtocols[N][number] | (T extends true ? never : undefined)`
 - `pushData(value: any): void`
 - `popNData(n: number): any[]`
 - `popData(): any`
 - `peekData(): any`
-- `pushCommand<T>(f: T, args: GetArgParams<T>): void`
-- `popCommand(): Command`
+- `pushCommand<TOpcode>(f: TOpcode, args: GetArgParams<TOpcode>): void`
+- `popCommand(): Command<T>`
 - `step(): boolean` — Runs one opcode.
 - `start(code: any): void` — Starts running the code
 - `reset(): void` — Silently stops running the code, by resetting all stacks state back to the initial empty state.
@@ -271,11 +273,12 @@ Does not clear the builtins env.
 - `checkRecursion(length: number): void` — If the recursionDepth is larger than the given length, adds an error to the command stack
 to signal to the running program that it's recursing too much
 - `tracebackArray(numToDrop: number): StackTreeNode[]` — Returns the names of the functions in the call stack, with innermost first
-- `pushTraceback(func: Identifier | undefined, tailcallHint: boolean, callsiteLocation: Identifier | undefined): void` — Adds a function call entry to the traceback stack
+- `pushTraceback(func: Identifier | undefined, tailcallHint: boolean, callsiteLocation: Location | undefined): void` — Adds a function call entry to the traceback stack
 - `popTraceback(dropTail: boolean): void` — Drops all the tail-call entries off the stack, and then one more
-- `newDynamicWind(): DynamicWind<JebVM>`
+- `newDynamicWind(): DynamicWind<T>`
 - `createEnv(parents: Env[]): Env`
-- `cc(extraOps: Command[]): Continuation<JebVM>` — Returns the current continuation at this state.
+- `getCurrentFile(): string | undefined`
+- `cc(extraOps: Command<T>[]): Continuation<T>` — Returns the current continuation at this state.
 - `fatalError(error: JEBError): never`
 - `addAuditHook(cb: (event: T, args: JEBAuditEvents[T]) => void): () => void` — Adds an audit hook that will be called every time something that should be audited happens.
 - `audit<T>(args: [event: T, ...JEBAuditEvents[T][]]): void` — Raises an auditing event
