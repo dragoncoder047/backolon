@@ -11,18 +11,21 @@ It is designed to be:
 ## Quick example
 
 ```backolon
-# Hello World
+## Hello World
 print "Hello, World!"
 
-# Fizzbuzz
-fizzbuzz := [n] => n % 15 == 0 ? "fizzbuzz" : n % 5 == 0 ? "buzz" : n % 3 == 0 ? "fizz" : "{n}"
-foreach i (range 1 100) (
-    print (fizzbuzz i)
-)
+## List filtering, mapping, reducing
+["hello", "world", "!"] |?> # != "!" |*> upper # |+> _ + # ## -> "helloworld"
 
-# yin yang puzzle
-yinHelper := [char] => ((([cc] => (print char; cc)) (callcc [c] => c)))
-(([yin] => (([yang] => (yin yang)) (yinHelper "*"))) (yinHelper "@"))
+## Fizzbuzz
+let fizzbuzz = fn(n) n % 15 == 0 ? "fizzbuzz" : n % 5 == 0 ? "buzz" : n % 3 == 0 ? "fizz" : "{n}"
+foreach i in range(1, 100) do
+    print fizzbuzz i
+end
+
+## yin yang puzzle
+let yinHelper = fn(char) fn(c) ((fn(cc) (print char; cc)) (callcc fn(c) c))
+let yin = (yinHelper "*"), yang = (yinHelper "@") in yin yang end
 ```
 
 ## Why Backolon?
