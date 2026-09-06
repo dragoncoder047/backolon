@@ -42,4 +42,7 @@ export class BackolonVM extends JebVM<BackolonVM> {
     override getCurrentFile() {
         return this.currentEnv.get(MODULE_NAME).or(undefined);
     }
+    registerSpan(span: Span) {
+        return (this.maps[span.file.href] ??= []).push(span) - 1;
+    }
 }

@@ -1,14 +1,14 @@
-import { B_begin, B_define, B_let, Continuation, JEBStateError } from "@r47onfire/jeb";
+import { B_begin, B_define, B_let, JEBStateError } from "@r47onfire/jeb";
 import { SourceTracker } from "../runtime/importer";
+import { BackolonVM } from "../runtime/vm";
 import { Parselet } from "./parselet";
 import { Constraint, sortByConstraints } from "./sort";
 import { Span } from "./span";
-import { BackolonVM } from "../runtime/vm";
 
 export class Token {
     constructor(
         readonly text: string,
-        readonly span: Span,
+        readonly spanID: number,
     ) { }
 }
 
@@ -40,54 +40,27 @@ export class Parser {
         regex.lastIndex = this.index;
         return regex.exec(this.source.code);
     }
-    peek(minPrecedence: number, startPrecedence: number = this.parselets.length - 1): [parselet: Parselet, token: Token] | undefined {
+    peek(vm: BackolonVM, minPrecedence: number, startPrecedence: number = this.parselets.length - 1): [parselet: Parselet, token: Token] | undefined {
         this.#assertClean();
         const { parselets, source, index } = this;
+        // TODO: find longest match in specified range and go with that one instead of first match of highest precedence
         for (var i = startPrecedence; i >= minPrecedence; i--) {
             const p = parselets[i]!;
             const match = this.test(p.prefix);
             if (match) {
                 const text = match[0];
-                return [p, new Token(text, new Span(source.src, index, index + text.length))];
+                return [p, new Token(text, vm.registerSpan(new Span(source.src, index, index + text.length)))];
             }
         }
     }
 }
 
-const createParserContext = (
-    parser: Parser,
-    parselet: Parselet,
-    first: boolean,
-    left: any,
-    token: Token,
-    skip: Continuation<BackolonVM>,
-    discard: Continuation<BackolonVM>) => {
-    return {
-        first, left, token, skip, discard,
-    }
-}
-
-
-
-const PARSER_CODE = [B_begin,
-    [B_define, ["parseExpression", "minPrecedence", "orEqual", ["skipErrors", false]],
-        [B_let, [
-            ["left", undefined],
-            ["first", true],
-            ["curParselet", ["getCurrentParselet"]]
-        ],
-            ["while", ["or", ["$", "first"], [">", ["peekPrecedence"], ["$", "minPrecedence"]]],
-                [B_let, [["savedPos", ["parseletPosition"]]],
-                    ["foreach", "parselet", ["allParselets"]
-                    /* AAAAAAAA */]]]]],
-];
-
 
 /*
 
-parser context control functions:
+sys.parser control functions not given in context:
     test(regex) = test if regex matches but don't advance
-    tryConsume(regex) = get token at current position or undefined if it doesn't match
+    eat(regex) = get token at current position or undefined if it doesn't match
     tag(span, tag) = syntax highlighting tagging
     save() = save parser state
     restore(saved) = restore parser state

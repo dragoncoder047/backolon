@@ -20,11 +20,11 @@ constructor(message: string, context: Record<string, any> & ErrorOptions, traceb
 
 ### `Token`
 ```ts
-constructor(text: string, span: Span): Token
+constructor(text: string, spanID: number): Token
 ```
 **Properties:**
 - `text: string`
-- `span: Span`
+- `spanID: number`
 
 ### `Parser`
 ```ts
@@ -41,7 +41,7 @@ constructor(source: SourceTracker, index: number, parselets: Parselet[], constra
 - `addConstraint(constraint: Constraint<Parselet>): Parser`
 - `sort(): void`
 - `test(regex: RegExp): RegExpExecArray | null`
-- `peek(minPrecedence: number, startPrecedence: number): [parselet: Parselet, token: Token] | undefined`
+- `peek(vm: BackolonVM, minPrecedence: number, startPrecedence: number): [parselet: Parselet, token: Token] | undefined`
 
 ### `Parselet`
 ```ts
@@ -211,3 +211,4 @@ constructor(importer: Importer): BackolonVM
 - `restoreState(state: BackolonVMState): void`
 - `start(url: URL): void` — Starts running the main module
 - `getCurrentFile(): any`
+- `registerSpan(span: Span): number`
