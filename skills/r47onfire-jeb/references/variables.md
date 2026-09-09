@@ -49,7 +49,7 @@ const OP_apply: (vm: JebVM, __namedParameters: [any[], location?: Location, tail
 
 ### `B_atLocation`
 ```ts
-const B_atLocation: JSFun<CallableSignatureFromShorthand<["pos", readonly [true, "expr"]]>>
+const B_atLocation: JSFun<CallableSignatureFromShorthand<[readonly [true, "pos"], readonly [true, "expr"]]>>
 ```
 
 ### `B_splat`

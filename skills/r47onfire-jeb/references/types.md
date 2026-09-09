@@ -72,7 +72,7 @@ interface for a thing that has a docstring.
 
 ### `Location`
 ```ts
-[id: number | undefined, file: string | undefined]
+[id: number | undefined, file: number | undefined]
 ```
 
 ### `StackTreeNode`

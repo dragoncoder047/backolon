@@ -277,7 +277,6 @@ to signal to the running program that it's recursing too much
 - `popTraceback(dropTail: boolean): void` — Drops all the tail-call entries off the stack, and then one more
 - `newDynamicWind(): DynamicWind<T>`
 - `createEnv(parents: Env[]): Env`
-- `getCurrentFile(): string | undefined`
 - `cc(extraOps: Command<T>[]): Continuation<T>` — Returns the current continuation at this state.
 - `fatalError(error: JEBError): never`
 - `addAuditHook(cb: (event: T, args: JEBAuditEvents[T]) => void): () => void` — Adds an audit hook that will be called every time something that should be audited happens.

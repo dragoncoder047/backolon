@@ -1,4 +1,4 @@
-import { B_begin, B_define, B_let, JEBStateError } from "@r47onfire/jeb";
+import { JEBStateError, Location } from "@r47onfire/jeb";
 import { SourceTracker } from "../runtime/importer";
 import { BackolonVM } from "../runtime/vm";
 import { Parselet } from "./parselet";
@@ -8,7 +8,7 @@ import { Span } from "./span";
 export class Token {
     constructor(
         readonly text: string,
-        readonly spanID: number,
+        readonly location: Location,
     ) { }
 }
 

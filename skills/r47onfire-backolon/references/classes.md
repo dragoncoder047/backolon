@@ -20,11 +20,11 @@ constructor(message: string, context: Record<string, any> & ErrorOptions, traceb
 
 ### `Token`
 ```ts
-constructor(text: string, spanID: number): Token
+constructor(text: string, location: Location): Token
 ```
 **Properties:**
 - `text: string`
-- `spanID: number`
+- `location: Location`
 
 ### `Parser`
 ```ts
@@ -206,9 +206,10 @@ constructor(importer: Importer): BackolonVM
 - `modules: Record<string, Module>` — Module cache
 - `sources: Record<string, SourceTracker>` — Mapping of URL to source tracker
 - `maps: Record<string, Span[]>` — Mapping of module name to a list of location IDs (for the JEB `at` identifier function) to the actual Span
+- `files: Map<string, number>` — For keeping track of all files indexes in maps
 **Methods:**
 - `getState(): BackolonVMState`
 - `restoreState(state: BackolonVMState): void`
 - `start(url: URL): void` — Starts running the main module
-- `getCurrentFile(): any`
-- `registerSpan(span: Span): number`
+- `fileIndex(url: URL): number`
+- `registerSpan(span: Span): Location`

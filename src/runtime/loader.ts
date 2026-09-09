@@ -1,4 +1,4 @@
-import { Continuation, JEBStateError, OP_apply, OP_eval, OP_set_env, pushCommand, pushData } from "@r47onfire/jeb";
+import { Continuation, OP_apply, OP_eval, OP_set_env, pushCommand, pushData } from "@r47onfire/jeb";
 import { Span } from "../parser/span";
 import { Importer, SourceTracker } from "./importer";
 import { JSONModule, JSONSourceMap } from "./jsmod";
@@ -43,17 +43,22 @@ export class JSONModuleLoader extends Loader {
         if (url.pathname.endsWith(".bk.json")) return this;
     }
     async load(vm: BackolonVM, url: URL, module: Module, importer: Importer) {
-        const { code, sourceMap } = await importer.getJSON(url) as JSONModule;
-        pushCommand(vm as any, OP_set_env, vm.currentEnv);
-        pushCommand(vm as any, OP_eval, undefined);
-        pushData(vm, code);
+        var { code, sourceMap, files } = await importer.getJSON(url) as JSONModule;
         vm.currentEnv = module.global;
-        if (sourceMap) {
+        const absFiles = files.map(f => new URL(f, url));
+        // TODO: make the data be sloinked and use sloink to rewrite the tagged indices on load time
+        if (sourceMap && files) {
+            absFiles.forEach(f => vm.fileIndex(f));
             (importer.getJSON(new URL(sourceMap, url)) as Promise<JSONSourceMap>).then(({ mappings, contents }) => {
-                vm.maps[url.href] = mappings.map(({ 0: start, 1: end }) => new Span(url, start, end));
-                vm.sources[url.href] = new SourceTracker(url, contents, {});
+                return absFiles.forEach((f, i) => {
+                    vm.maps[f.href] = mappings[i]!.map(({ 0: start, 1: end }) => new Span(url, start, end));
+                    return vm.sources[f.href] = new SourceTracker(f, contents[i]!, {});
+                });
             });
         }
+        pushCommand(vm, OP_set_env, vm.currentEnv);
+        pushCommand(vm, OP_eval, undefined);
+        pushData(vm, code);
     }
 }
 

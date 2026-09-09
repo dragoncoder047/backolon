@@ -10,11 +10,12 @@ to be able to be imported.
 Interface for a JSON module object
 **Properties:**
 - `code: any[]`
+- `files: string[]`
 - `sourceMap: string` (optional)
 
 ### `JSONSourceMap`
-Not a sourcemap-V3 since there is only one file source and the mappings don't
+Not a sourcemap-V3 since the mappings don't
 have any concept of "compiled line/pos".
 **Properties:**
-- `contents: string`
-- `mappings: [start: number, end: number][]`
+- `contents: string[]`
+- `mappings: [start: number, end: number][][]`

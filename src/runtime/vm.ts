@@ -1,8 +1,8 @@
-import { JebVM, pushCommand, pushData } from "@r47onfire/jeb";
+import { JebVM, Location, pushCommand, pushData } from "@r47onfire/jeb";
 import { Parser } from "../parser";
 import { Span } from "../parser/span";
 import { Importer, OP_do_import, SourceTracker } from "./importer";
-import { Module, MODULE_NAME } from "./module";
+import { Module } from "./module";
 
 interface BackolonVMState {
     moduleLoad: [string, parent: Module | null][];
@@ -31,6 +31,8 @@ export class BackolonVM extends JebVM<BackolonVM> {
     sources: Record<string, SourceTracker> = {};
     /** Mapping of module name to a list of location IDs (for the JEB `at` identifier function) to the actual {@link Span} */
     maps: Record<string, Span[]> = {};
+    /** For keeping track of all files indexes in {@link maps} */
+    files = new Map<string, number>();
     /**
      * Starts running the main module
      * @param url URL of the main module
@@ -39,10 +41,11 @@ export class BackolonVM extends JebVM<BackolonVM> {
         pushCommand(this, OP_do_import, null, true);
         pushData(this, url);
     }
-    override getCurrentFile() {
-        return this.currentEnv.get(MODULE_NAME).or(undefined);
+    fileIndex(url: URL) {
+        return this.files.getOrInsert(url.href, this.files.size);
     }
-    registerSpan(span: Span) {
-        return (this.maps[span.file.href] ??= []).push(span) - 1;
+    registerSpan(span: Span): Location {
+        const url = span.file;
+        return [(this.maps[url.href] ??= []).push(span) - 1, this.fileIndex(url)];
     }
 }

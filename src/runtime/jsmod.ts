@@ -12,14 +12,15 @@ export interface JSModule {
 /** Interface for a JSON module object */
 export interface JSONModule {
     code: any[];
+    files: string[];
     sourceMap?: string;
 }
 
 /**
- * Not a sourcemap-V3 since there is only one file source and the mappings don't
+ * Not a sourcemap-V3 since the mappings don't
  * have any concept of "compiled line/pos".
  */
 export interface JSONSourceMap {
-    contents: string;
-    mappings: [start: number, end: number][];
+    contents: string[];
+    mappings: [start: number, end: number][][];
 }
